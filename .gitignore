@@ -64,3 +64,48 @@ android/app/key.properties
 # Có thể bỏ comment ở dưới nếu bạn không muốn đẩy các file sinh tự động lên Github
 # *.g.dart
 # *.freezed.dart
+
+# ---------------------------------------------
+# AI AGENT TOOLS & SKILLS (KHÔNG PUSH LÊN GIT)
+# ---------------------------------------------
+
+# Antigravity / Gemini CLI
+.agents/
+.gemini/
+AGENTS.md
+GEMINI.md
+skills-lock.json
+
+# Claude / Anthropic
+.claude/
+CLAUDE.md
+
+# Cursor
+.cursor/
+.cursorrules
+
+# Kiro
+.kiro/
+
+# Windsurf
+.windsurfrules
+
+# Qoder
+.qoder/
+QODER.md
+
+# CodeBuddy
+.codebuddy/
+CODEBUDDY.md
+
+# opencode
+opencode.jsonc
+
+# MCP config (có thể chứa API keys)
+.mcp.json
+
+# code-review-graph (generated DB)
+.code-review-graph/
+
+# Metadata file của Antigravity workspace
+.metadata
