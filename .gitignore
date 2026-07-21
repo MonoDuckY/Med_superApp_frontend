@@ -1,4 +1,4 @@
-# Miscellaneous
+﻿# Miscellaneous
 *.class
 *.log
 *.pyc
@@ -23,15 +23,18 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Flutter/Dart/Pub related
+# ---------------------------------------------
+# FLUTTER / DART / PUB
+# ---------------------------------------------
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/coverage/
+/mobile/build/
+/mobile/android/build/
+/mobile/coverage/
 
 # Symbolication related
 app.*.symbols
@@ -40,72 +43,65 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+/mobile/android/app/debug
+/mobile/android/app/profile
+/mobile/android/app/release
 
-# ---------------------------------------------
-# BỔ SUNG THÊM ĐỂ BẢO MẬT & TRÁNH RÁC REPO
-# ---------------------------------------------
-
-# Biến môi trường và thông tin nhạy cảm
-.env
-.env.*
-*.env
-
-# Cấu hình chứng chỉ ký ứng dụng Android (Keystore) - TUYỆT ĐỐI KHÔNG PUSH LÊN
-*.jks
-*.keystore
-key.properties
-android/key.properties
-android/app/key.properties
-
-# Các file sinh ra tự động nếu bạn có dùng build_runner sau này (Freezed, JSON Serializable,...)
-# Có thể bỏ comment ở dưới nếu bạn không muốn đẩy các file sinh tự động lên Github
+# Dart code generation (Freezed, JSON Serializable, etc.)
+# Uncomment if you do not want to push generated files
 # *.g.dart
 # *.freezed.dart
 
 # ---------------------------------------------
-# AI AGENT TOOLS & SKILLS (KHÔNG PUSH LÊN GIT)
+# NEXT.JS / NODE.JS
 # ---------------------------------------------
+node_modules/
+.next/
+nextjs/.env.local
+nextjs/.env.*.local
+nextjs/out/
+nextjs/.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Antigravity / Gemini CLI
+# ---------------------------------------------
+# BAO MAT & BIEN MOI TRUONG
+# ---------------------------------------------
+.env
+.env.*
+*.env
+!.env.example
+!.env.*.example
+
+# Android Keystore - TUYET DOI KHONG PUSH LEN
+*.jks
+*.keystore
+key.properties
+mobile/android/key.properties
+mobile/android/app/key.properties
+
+# ---------------------------------------------
+# AI AGENT TOOLS & SKILLS (KHONG PUSH LEN GIT)
+# ---------------------------------------------
 .agents/
 .gemini/
 AGENTS.md
 GEMINI.md
 skills-lock.json
-
-# Claude / Anthropic
 .claude/
 CLAUDE.md
-
-# Cursor
 .cursor/
 .cursorrules
-
-# Kiro
 .kiro/
-
-# Windsurf
 .windsurfrules
-
-# Qoder
 .qoder/
 QODER.md
-
-# CodeBuddy
 .codebuddy/
 CODEBUDDY.md
-
-# opencode
 opencode.jsonc
-
-# MCP config (có thể chứa API keys)
 .mcp.json
-
-# code-review-graph (generated DB)
 .code-review-graph/
-
-# Metadata file của Antigravity workspace
 .metadata
+mobile/.metadata
