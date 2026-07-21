@@ -1,0 +1,52 @@
+openapi: "3.0.3"
+info:
+  title: Med SuperApp API
+  description: |
+    API specification cho ứng dụng chẩn đoán hình ảnh y tế.
+    File này là source of truth cho cả Flutter (mobile/) và Next.js (nextjs/).
+    
+    Được maintain bởi Backend team (Med_superApp_backend).
+    Mọi thay đổi API phải cập nhật file này trước.
+  version: "1.0.0"
+  contact:
+    name: Backend Team
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: https://api.medsuperapp.example.com/api/v1
+    description: Production (TBD)
+
+# ============================================================
+# PLACEHOLDER — Backend team sẽ điền vào sau
+# ============================================================
+# Các nhóm endpoint dự kiến:
+#   /auth        — Đăng nhập, đăng ký, refresh token
+#   /users       — Quản lý người dùng
+#   /diagnoses   — Tạo và lấy kết quả chẩn đoán
+#   /images      — Upload và lấy metadata ảnh y tế
+#   /reports     — Báo cáo và lịch sử
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      description: Wrapper chuẩn cho mọi response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          nullable: true
+        errorCode:
+          type: string
+          nullable: true
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths: {}
