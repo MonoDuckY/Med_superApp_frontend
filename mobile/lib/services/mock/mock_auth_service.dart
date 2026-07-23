@@ -6,43 +6,50 @@ import '../abstract/auth_service_abstract.dart';
 /// Dùng khi AppConstants.useMockServices = true (chưa có backend).
 /// KHÔNG chứa logic business thật — chỉ trả về fake data.
 class MockAuthService implements AuthServiceAbstract {
-  // Fake users cho từng role
+  // Fake users giả lập dữ liệu backend (dùng username thay vì email)
   static final _fakeUsers = {
-    'doctor@example.com': UserModel(
+    // Staff — login bằng username
+    'doctor01': UserModel(
       id: 'usr_001',
-      email: 'doctor@example.com',
+      username: 'doctor01',
       fullName: 'BS. Nguyễn Văn A',
       role: 'DOCTOR',
+      status: 'ACTIVE',
     ),
-    'admin@example.com': UserModel(
+    'admin': UserModel(
       id: 'usr_002',
-      email: 'admin@example.com',
+      username: 'admin',
       fullName: 'Admin Hệ Thống',
       role: 'ADMIN',
+      status: 'ACTIVE',
     ),
-    'researcher@example.com': UserModel(
+    // Patient — login bằng số điện thoại (cũng là username)
+    '0123456789': UserModel(
       id: 'usr_003',
-      email: 'researcher@example.com',
-      fullName: 'ThS. Trần Thị B',
-      role: 'RESEARCHER',
+      username: '0123456789',
+      fullName: 'Nguyễn Thị C',
+      role: 'PATIENT',
+      status: 'ACTIVE',
+      phoneNumber: '0123456789',
+      patientId: 'BN000001',
     ),
   };
 
   UserModel? _currentUser;
 
   @override
-  Future<ApiResponse<UserModel>> login(String email, String password) async {
+  Future<ApiResponse<UserModel>> login(String username, String password) async {
     // Giả latency network
     await Future.delayed(const Duration(milliseconds: 800));
 
-    final user = _fakeUsers[email];
-    if (user != null && password == '123456') {
+    final user = _fakeUsers[username];
+    if (user != null && password == 'Admin123!') {
       _currentUser = user;
       return ApiResponse.success(user, message: 'Đăng nhập thành công');
     }
 
     return ApiResponse.failure(
-      'Email hoặc mật khẩu không đúng',
+      'Tên đăng nhập hoặc mật khẩu không đúng',
       errorCode: 'AUTH_INVALID_CREDENTIALS',
     );
   }

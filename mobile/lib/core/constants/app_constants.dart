@@ -13,5 +13,5 @@ class AppConstants {
   static const String keyUserData     = 'user_data';
 
   // Feature flags
-  static const bool useMockServices = true; // ← Đổi thành false khi backend sẵn sàng
+  static const bool useMockServices = false; // ← Đổi thành false khi backend sẵn sàng
 }
