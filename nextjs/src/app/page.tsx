@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Activity, 
   FlaskConical, 
@@ -54,30 +55,15 @@ const DEPARTMENTS: Record<DepartmentType, DepartmentDetails> = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [activeDept, setActiveDept] = useState<DepartmentType>("administration");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   
-  // Validation, Loading & Success States
+  // Validation & Loading States
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [successUser, setSuccessUser] = useState("");
-
-  // Simulated auto-fill helper for developer testing and user review
-  const handleSimulateFill = (type: DepartmentType) => {
-    setActiveDept(type);
-    if (type === "clinical") {
-      setUsername("0912345678");
-    } else if (type === "research") {
-      setUsername("0987654321");
-    } else {
-      setUsername("+84123456789");
-    }
-    setPassword("Hospital@2026");
-    setError(null);
-  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,16 +92,8 @@ export default function LoginPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      setSuccessUser(username.trim());
-      setSuccess(true);
+      router.push("/user-management/create-user");
     }, 1500);
-  };
-
-  const handleReset = () => {
-    setSuccess(false);
-    setUsername("");
-    setPassword("");
-    setError(null);
   };
 
   return (
@@ -209,31 +187,7 @@ export default function LoginPage() {
 
         {/* Centered Login Content Container */}
         <div className="my-auto mx-auto w-full max-w-[420px] py-8">
-          {success ? (
-            /* SUCCESS STATE */
-            <div className="flex flex-col items-center text-center p-6 bg-slate-50 rounded-hms-lg border border-slate-100 shadow-sm animate-[fadeIn_0.4s_ease-out]">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
-                <CheckCircle2 className="h-8 w-8" />
-              </div>
-              <h2 className="text-2xl font-bold text-neutral-900 mb-2">Access Granted</h2>
-              <p className="text-sm text-neutral-500 mb-4 leading-relaxed">
-                Welcome back, <code className="bg-slate-200 px-1.5 py-0.5 rounded text-neutral-900 font-mono text-xs">{successUser}</code>. Initializing your secure clinical portal environment...
-              </p>
-              
-              {/* Progress loader simulation */}
-              <div className="w-full bg-slate-200 rounded-full h-1.5 mb-6 overflow-hidden">
-                <div className="bg-success h-1.5 rounded-full animate-[loading-bar_1.5s_ease-in-out_infinite]" style={{ width: '60%' }}></div>
-              </div>
-
-              <button
-                onClick={handleReset}
-                className="w-full h-10 px-4 rounded-hms text-xs font-semibold border border-slate-200 text-neutral-900 bg-white hover:bg-slate-50 transition-colors"
-              >
-                Return to Login Page
-              </button>
-            </div>
-          ) : (
-            /* NORMAL FORM STATE */
+        
             <form onSubmit={handleLoginSubmit} className="flex flex-col gap-6">
               <div>
                 <h1 className="text-2xl font-bold text-neutral-900 tracking-tight sm:text-3xl">
@@ -404,7 +358,7 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-          )}
+ 
         </div>
 
         {/* Footer (Right) */}
