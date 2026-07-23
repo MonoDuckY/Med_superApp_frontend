@@ -88,12 +88,50 @@ export default function LoginPage() {
       return;
     }
 
-    // Simulated Loading state
+    // Real API login call to the backend
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/user-management/create-user");
-    }, 1500);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    
+    fetch(`${apiUrl}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phoneNumber: username.trim(),
+        password: password,
+      }),
+    })
+      .then(async (res) => {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const result = await res.json();
+          if (!result.success) {
+            throw new Error(result.message || "Login failed. Please check your credentials.");
+          }
+          return result.data;
+        } else {
+          if (!res.ok) {
+            throw new Error("HTTP connection error. Server returned " + res.status);
+          }
+          throw new Error("Invalid response format from server.");
+        }
+      })
+      .then((data) => {
+        if (data && data.token) {
+          localStorage.setItem("authToken", data.token);
+        }
+        if (data && data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        router.push("/user-management/create-user");
+      })
+      .catch((err) => {
+        setError(err.message || "Could not connect to the authentication server.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
