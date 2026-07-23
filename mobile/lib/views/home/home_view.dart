@@ -33,7 +33,7 @@ class HomeView extends StatelessWidget {
           children: [
             DrawerHeader(
               decoration: const BoxDecoration(
-                color: AppColors.medicalBlue,
+                color: AppColors.primary,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,7 +42,7 @@ class HomeView extends StatelessWidget {
                   const CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: AppColors.medicalBlue),
+                    child: Icon(Icons.person, size: 40, color: AppColors.primary),
                   ),
                   const SizedBox(height: 12),
                   Text(

@@ -1,35 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
-import '../core/constants/app_constants.dart';
-import '../services/abstract/auth_service_abstract.dart';
-import '../services/mock/mock_auth_service.dart';
-import '../services/remote/auth_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
-  // Inject service theo feature flag — đổi sang false khi backend sẵn sàng
-  final AuthServiceAbstract _authService = AppConstants.useMockServices
-      ? MockAuthService()
-      : RemoteAuthService();
-
   String phoneNumber = '';
-  String password = '';
-  bool isPasswordVisible = false;
   bool isLoading = false;
   String? errorMessage;
 
-  bool get isValidPassword {
-    final hasUppercase = password.contains(RegExp(r'[A-Z]'));
-    final hasLowercase = password.contains(RegExp(r'[a-z]'));
-    final hasDigits = password.contains(RegExp(r'[0-9]'));
-    return hasUppercase && hasLowercase && hasDigits && password.length >= 8;
-  }
-
   bool get isValidPhone {
-    return phoneNumber.length >= 10;
+    // Chấp nhận 10 chữ số bắt đầu bằng 0, hoặc định dạng +84
+    final cleaned = phoneNumber.replaceAll(RegExp(r'[\s\-()]'), '');
+    return RegExp(r'^(0\d{9}|\+84\d{9})$').hasMatch(cleaned);
   }
 
-  bool get isValid => isValidPhone && isValidPassword;
+  bool get isValid => isValidPhone;
 
   void setPhoneNumber(String value) {
     phoneNumber = value;
@@ -37,42 +20,26 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPassword(String value) {
-    password = value;
-    errorMessage = null;
-    notifyListeners();
-  }
-
-  void togglePasswordVisibility() {
-    isPasswordVisible = !isPasswordVisible;
-    notifyListeners();
-  }
-
-  Future<void> login(BuildContext context) async {
+  /// Điều hướng sang màn OTP.
+  /// Khi backend hỗ trợ OTP, gọi API gửi SMS tại đây trước khi navigate.
+  Future<void> requestOtp(BuildContext context) async {
     if (!isValid) return;
 
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
-    final result = await _authService.login(phoneNumber, password);
+    // TODO: Gọi API gửi OTP qua SMS khi backend hỗ trợ
+    // final result = await authService.sendOtp(phoneNumber);
+    await Future.delayed(const Duration(milliseconds: 600)); // Giả latency
 
-    if (result.success && result.data != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_logged_in', true);
-      // Ghi nhớ username (phoneNumber) cho session
-      await prefs.setString(AppConstants.keyUserData, phoneNumber);
+    isLoading = false;
+    notifyListeners();
 
-      isLoading = false;
-      notifyListeners();
-
-      if (context.mounted) {
-        context.go('/home');
-      }
-    } else {
-      isLoading = false;
-      errorMessage = result.message;
-      notifyListeners();
+    if (context.mounted) {
+      // Encode số điện thoại vào path parameter
+      final encoded = Uri.encodeComponent(phoneNumber.trim());
+      context.push('/otp/$encoded');
     }
   }
 }

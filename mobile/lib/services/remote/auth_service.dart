@@ -12,8 +12,8 @@ class RemoteAuthService implements AuthServiceAbstract {
   @override
   Future<ApiResponse<UserModel>> login(String username, String password) async {
     try {
-      final response = await _dio.post('/auth/login', data: {
-        'username': username, // Khớp với LoginRequest.username trên backend
+      final response = await _dio.post('/api/auth/login', data: {
+        'phoneNumber': username, // Khớp với LoginRequest.phoneNumber trên backend
         'password': password,
       });
       // Backend trả ApiResponse<AuthResponse> — data chứa accessToken, refreshToken, user
@@ -43,7 +43,7 @@ class RemoteAuthService implements AuthServiceAbstract {
   Future<ApiResponse<void>> logout() async {
     try {
       final refreshToken = await ApiClient.getRefreshToken();
-      final response = await _dio.post('/auth/logout', data: {
+      final response = await _dio.post('/api/auth/logout', data: {
         'refreshToken': refreshToken, // Backend bắt buộc có field này để revoke
       });
       await ApiClient.clearTokens();
@@ -56,7 +56,7 @@ class RemoteAuthService implements AuthServiceAbstract {
   @override
   Future<ApiResponse<UserModel>> getProfile() async {
     try {
-      final response = await _dio.get('/auth/me');
+      final response = await _dio.get('/api/auth/me');
       return ApiResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => UserModel.fromJson(json as Map<String, dynamic>),

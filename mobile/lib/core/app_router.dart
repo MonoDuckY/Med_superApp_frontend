@@ -1,31 +1,27 @@
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../views/onboarding/onboarding_view.dart';
 import '../views/auth/login_view.dart';
+import '../views/auth/otp_view.dart';
 import '../views/home/home_view.dart';
 
 class AppRouter {
   AppRouter._();
 
   static final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/login',
     redirect: (context, state) async {
       final prefs = await SharedPreferences.getInstance();
-      final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-      final isLoggedIn = prefs.getBool('is_logged_in') ?? false; // Mock login state
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
-      final isGoingToOnboarding = state.uri.toString() == '/';
-      final isGoingToLogin = state.uri.toString() == '/login';
+      final path = state.uri.toString();
+      final isGoingToLogin = path == '/login';
+      final isGoingToOtp = path.startsWith('/otp');
 
-      if (!hasSeenOnboarding && !isGoingToOnboarding) {
-        return '/';
-      }
-
-      if (hasSeenOnboarding && !isLoggedIn && !isGoingToLogin) {
+      if (!isLoggedIn && !isGoingToLogin && !isGoingToOtp) {
         return '/login';
       }
 
-      if (isLoggedIn && (isGoingToOnboarding || isGoingToLogin)) {
+      if (isLoggedIn && (isGoingToLogin || isGoingToOtp)) {
         return '/home';
       }
 
@@ -33,12 +29,15 @@ class AppRouter {
     },
     routes: [
       GoRoute(
-        path: '/',
-        builder: (context, state) => const OnboardingView(),
-      ),
-      GoRoute(
         path: '/login',
         builder: (context, state) => const LoginView(),
+      ),
+      GoRoute(
+        path: '/otp/:phoneNumber',
+        builder: (context, state) {
+          final phoneNumber = state.pathParameters['phoneNumber'] ?? '';
+          return OtpView(phoneNumber: phoneNumber);
+        },
       ),
       GoRoute(
         path: '/home',
