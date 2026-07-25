@@ -1,152 +1,132 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  Users,
-  Activity,
-  FlaskConical,
-  FileText,
-  Settings,
-  UserPlus,
-  Bell,
-  Plus,
-  X,
-  Info,
-  CheckCircle2,
-  ChevronDown,
-  Loader2,
-  ShieldAlert
+  LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
+  FileText, Settings, Bell, ChevronDown, ChevronRight, X,
+  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck,
 } from "lucide-react";
 
-// Types
-type RoleType = "" | "clinical" | "research" | "administration" | "super_admin";
-type StatusType = "" | "active" | "pending" | "suspended";
+/* ─── Types ─── */
+type Role = "Admin" | "Doctor" | "Staff" | "Researcher" | "Patient" | "";
+type Status = "Active" | "Inactive" | "";
+type Gender = "Male" | "Female" | "Other" | "";
 
-interface UserFormState {
-  fullName: string;
-  phoneNumber: string;
-  email: string;
-  role: RoleType;
-  status: StatusType;
+/* ─── Nav data ─── */
+const NAV = [
+  { icon: <LayoutDashboard size={15} strokeWidth={1.75} />, label: "Dashboard" },
+  {
+    icon: <Users size={15} strokeWidth={1.75} />, label: "User Management", active: true,
+    children: [{ label: "All Users" }, { label: "Create User", active: true }, { label: "Roles & Permissions" }],
+  },
+  { icon: <Stethoscope size={15} strokeWidth={1.75} />, label: "Clinical", badge: 3 },
+  { icon: <FlaskConical size={15} strokeWidth={1.75} />, label: "Research" },
+  { icon: <FileText size={15} strokeWidth={1.75} />, label: "Reports" },
+  { icon: <Settings size={15} strokeWidth={1.75} />, label: "Settings" },
+];
+
+/* ─── Shared input style ─── */
+const INPUT = "w-full h-10 px-3 text-[13px] text-[#0F172A] placeholder:text-[#CBD5E1] bg-white border border-[#E2E8F0] outline-none transition-all duration-150 focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10";
+const SELECT = `${INPUT} appearance-none cursor-pointer pr-8`;
+
+/* ─── Field wrapper ─── */
+function Field({
+  label, required, optional, hint, error, children, className = "",
+}: {
+  label: string; required?: boolean; optional?: boolean;
+  hint?: string; error?: string; children: React.ReactNode; className?: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      <label className="text-[12px] font-semibold text-[#0F172A] flex items-center gap-1.5 leading-none">
+        {label}
+        {required && <span className="text-[#EF4444] text-[11px]">*</span>}
+        {optional && (
+          <span className="text-[10px] font-normal text-[#94A3B8] bg-[#F1F5F9] px-1.5 py-0.5 rounded">
+            Optional
+          </span>
+        )}
+      </label>
+      {children}
+      {hint && !error && <p className="text-[11px] text-[#94A3B8] leading-none">{hint}</p>}
+      {error && (
+        <p className="flex items-center gap-1 text-[11px] text-[#EF4444] leading-none">
+          <AlertCircle size={10} strokeWidth={2} />{error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── Section header ─── */
+function SectionHeader({ num, title, sub }: { num: string; title: string; sub: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <div className="w-7 h-7 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0">
+        <span className="text-white text-[11px] font-bold">{num}</span>
+      </div>
+      <div>
+        <p className="text-[13px] font-bold text-[#0F172A] leading-none">{title}</p>
+        <p className="text-[11px] text-[#94A3B8] leading-none mt-0.5">{sub}</p>
+      </div>
+    </div>
+  );
 }
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const [expandedNav, setExpandedNav] = useState("User Management");
 
-  // Form State
-  const [form, setForm] = useState<UserFormState>({
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    role: "",
-    status: "",
-  });
+  /* form state */
+  const [fullName, setFullName]     = useState("");
+  const [phone, setPhone]           = useState("");
+  const [email, setEmail]           = useState("");
+  const [role, setRole]             = useState<Role>("");
+  const [status, setStatus]         = useState<Status>("");
+  const [dob, setDob]               = useState("");
+  const [gender, setGender]         = useState<Gender>("");
+  const [address, setAddress]       = useState("");
+  const [cccd, setCccd]             = useState("");
+  const [bhyt, setBhyt]             = useState("");
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [dragOver, setDragOver]     = useState(false);
+  const [errors, setErrors]         = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
 
-  // Flow & State handling
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [createdUser, setCreatedUser] = useState<{
-    staffId: string;
-    fullName: string;
-    phoneNumber: string;
-    roleName: string;
-    tempPass: string;
-  } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  // Dropdown UI toggle states
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-
-  // Field validation and submit
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    // Empty Validation Checks
-    if (!form.fullName.trim()) {
-      setError("Full Name is a required field.");
-      return;
-    }
-    if (!form.phoneNumber.trim()) {
-      setError("Phone Number is a required field.");
-      return;
-    }
-    if (!form.role) {
-      setError("Please select an Account Role.");
-      return;
-    }
-    if (!form.status) {
-      setError("Please select an Account Status.");
-      return;
-    }
-
-    // Phone Number Regex format checking (starts with 0 or +84 followed by 9 digits)
-    const phoneRegex = /^(\+84|0)\d{9}$/;
-    if (!phoneRegex.test(form.phoneNumber.trim())) {
-      setError("Phone Number must be a valid format (e.g. 0912345678 or +84912345678).");
-      return;
-    }
-
-    // Email pattern verification (if filled)
-    if (form.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(form.email.trim())) {
-        setError("Please enter a valid Email Address format.");
-        return;
-      }
-    }
-
-    // Submit Simulation
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      
-      // Calculate a mockup Staff ID
-      const prefix = 
-        form.role === "clinical" ? "CLN" : 
-        form.role === "research" ? "RES" : 
-        form.role === "administration" ? "ADM" : "SA";
-      const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
-      const generatedStaffId = `${prefix}-${randomDigits}`;
-
-      // Mock random temporary password
-      const generatedTempPass = Math.random().toString(36).slice(-8).toUpperCase() + "@2026";
-
-      // Map display role
-      const roleMap: Record<RoleType, string> = {
-        "": "",
-        clinical: "Clinical Practitioner",
-        research: "AI Researcher",
-        administration: "Hospital Administrator",
-        super_admin: "Super Operations Administrator"
-      };
-
-      setCreatedUser({
-        staffId: generatedStaffId,
-        fullName: form.fullName.trim(),
-        phoneNumber: form.phoneNumber.trim(),
-        roleName: roleMap[form.role],
-        tempPass: generatedTempPass
-      });
-
-      setSuccess(true);
-    }, 1500);
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!fullName.trim())  e.fullName = "Full name is required.";
+    if (!phone.trim())     e.phone = "Phone number is required.";
+    else if (!/^(\+?84|0)\d{9}$/.test(phone.replace(/\s/g, "")))
+      e.phone = "Enter a valid Vietnamese phone number.";
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      e.email = "Enter a valid email address.";
+    if (!role)   e.role   = "Please select a role.";
+    if (!status) e.status = "Please select a status.";
+    if (!dob)    e.dob    = "Date of birth is required.";
+    if (!gender) e.gender = "Please select a gender.";
+    if (!address.trim()) e.address = "Permanent address is required.";
+    if (role === "Doctor" && !licenseFile)
+      e.license = "Professional license is required for Doctors.";
+    return e;
   };
 
-  const handleResetForm = () => {
-    setForm({
-      fullName: "",
-      phoneNumber: "",
-      email: "",
-      role: "",
-      status: "",
-    });
-    setCreatedUser(null);
-    setSuccess(false);
-    setError(null);
+  const handleCreate = () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setErrors({});
+    setIsSubmitting(true);
+    setTimeout(() => { setIsSubmitting(false); setSubmitted(true); }, 1800);
+  };
+
+  const handleReset = () => {
+    setFullName(""); setPhone(""); setEmail(""); setRole(""); setStatus("");
+    setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
+    setLicenseFile(null); setErrors({}); setSubmitted(false);
   };
 
   const handleCancel = () => {
@@ -155,498 +135,435 @@ export default function CreateUserPage() {
     }
   };
 
-  const selectRole = (role: RoleType) => {
-    setForm({ ...form, role });
-    setShowRoleDropdown(false);
-    if (error) setError(null);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) { setLicenseFile(file); setErrors((p) => ({ ...p, license: "" })); }
   };
 
-  const selectStatus = (status: StatusType) => {
-    setForm({ ...form, status });
-    setShowStatusDropdown(false);
-    if (error) setError(null);
+  const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setLicenseFile(file); setErrors((p) => ({ ...p, license: "" })); }
   };
+
+  /* ── Sidebar ── */
+  const Sidebar = () => (
+    <aside className="w-[220px] flex-shrink-0 bg-[#0C1A2E] flex flex-col h-full">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
+        <div className="w-8 h-8 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0"
+          style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
+          <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+            <div className="absolute w-3.5 h-[4px] bg-white rounded-sm" />
+            <div className="absolute w-[4px] h-3.5 bg-white rounded-sm" />
+          </div>
+        </div>
+        <div>
+          <p className="text-white font-bold text-[13px] leading-none tracking-wide">HMS</p>
+          <p className="text-[#475569] text-[10px] mt-0.5 tracking-wide">Admin Console</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        {NAV.map((item) => (
+          <div key={item.label} className="mb-0.5">
+            <button
+              onClick={() => setExpandedNav(expandedNav === item.label ? "" : item.label)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all group ${
+                item.active ? "bg-[#0EA5E9]/15 text-[#38BDF8]" : "text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8]"
+              }`}
+            >
+              <span className={item.active ? "text-[#38BDF8]" : "text-[#475569] group-hover:text-[#64748B]"}>
+                {item.icon}
+              </span>
+              <span className="text-[12px] font-medium flex-1">{item.label}</span>
+              {"badge" in item && item.badge && (
+                <span className="w-4 h-4 rounded-full bg-[#EF4444] text-white text-[9px] font-bold flex items-center justify-center">
+                  {item.badge}
+                </span>
+              )}
+              {"children" in item && item.children && (
+                <ChevronDown size={12} strokeWidth={2}
+                  className={`transition-transform ${expandedNav === item.label ? "rotate-180" : ""}`} />
+              )}
+            </button>
+            {"children" in item && item.children && expandedNav === item.label && (
+              <div className="ml-8 mt-0.5 flex flex-col gap-0.5">
+                {item.children.map((c) => (
+                  <button key={c.label}
+                    className={`w-full text-left text-[11px] px-3 py-2 rounded-lg transition-all ${
+                      c.active ? "text-[#38BDF8] bg-[#0EA5E9]/10 font-semibold" : "text-[#475569] hover:text-[#64748B] hover:bg-white/5"
+                    }`}>
+                    {c.active && <span className="inline-block w-1 h-1 rounded-full bg-[#0EA5E9] mr-2 mb-0.5" />}
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </nav>
+
+      <div className="border-t border-white/8 px-4 py-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 flex items-center justify-center">
+            <span className="text-[11px] font-bold text-[#38BDF8]">SA</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold text-[#CBD5E1] truncate">Super Admin</p>
+            <p className="text-[10px] text-[#475569] truncate">ADM-20241105</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
 
   return (
-    <div className="flex min-h-screen w-full select-none bg-surface font-inter text-neutral-500">
-      
-      {/* SIDEBAR NAVIGATION PANE */}
-      <aside className="relative hidden w-64 shrink-0 flex-col justify-between bg-[#0B1528] p-6 text-white md:flex border-r border-slate-900">
-        <div className="flex flex-col gap-8">
-          {/* Logo Header */}
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <Sidebar />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex-shrink-0 h-14 bg-white border-b border-[#E2E8F0] flex items-center px-8 gap-4">
+          <div className="flex items-center gap-1.5 flex-1">
+            <span className="text-[12px] text-[#64748B] hover:text-[#0EA5E9] cursor-pointer transition-colors" onClick={() => router.push("/")}>User Management</span>
+            <ChevronRight size={12} strokeWidth={2} className="text-[#CBD5E1]" />
+            <span className="text-[12px] font-semibold text-[#0F172A]">Create User</span>
+          </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-hms bg-primary shadow-md shadow-primary/20">
-              <Plus className="h-5.5 w-5.5 text-white stroke-[3px]" />
+            <div className="relative hidden xl:flex items-center">
+              <Search size={13} strokeWidth={2} className="absolute left-3 text-[#94A3B8] pointer-events-none" />
+              <input type="text" placeholder="Search users…"
+                className="h-8 pl-8 pr-4 w-44 text-[12px] text-[#0F172A] placeholder:text-[#CBD5E1] bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all" />
             </div>
+            <button className="relative w-8 h-8 rounded-lg border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0EA5E9] hover:border-[#0EA5E9] transition-all">
+              <Bell size={14} strokeWidth={1.75} />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#EF4444] text-white text-[8px] font-bold flex items-center justify-center">3</span>
+            </button>
+            <div className="w-8 h-8 rounded-full bg-[#0EA5E9] flex items-center justify-center cursor-pointer">
+              <span className="text-white text-[11px] font-bold">SA</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto px-8 py-6">
+          <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="font-mono text-[15px] font-bold leading-none tracking-tight">HMS</h2>
-              <p className="text-[9px] tracking-wider text-slate-400 font-semibold font-mono mt-0.5">Admin Console</p>
+              <h1 className="text-[#0F172A] font-bold text-xl flex items-center gap-2.5 mb-1">
+                <UserPlus size={19} strokeWidth={2} className="text-[#0EA5E9]" />
+                Create New User Account
+              </h1>
+              <p className="text-[#64748B] text-[13px]">
+                Register a new staff member or patient. Fields marked <span className="text-[#EF4444] font-bold">*</span> are required.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg px-3 py-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+              <span className="text-[11px] font-medium text-[#0369A1]">System Online</span>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            <button className="flex w-full items-center gap-3 py-2 px-3 text-sm font-semibold rounded-hms text-slate-400 hover:bg-slate-900 hover:text-white transition-all text-left">
-              <LayoutDashboard className="h-4.5 w-4.5" />
-              <span>Dashboard</span>
-            </button>
-
-            {/* User Management Expanded Block */}
-            <div className="flex flex-col gap-1">
-              <button className="flex w-full items-center justify-between py-2 px-3 text-sm font-semibold rounded-hms text-white bg-slate-900 transition-all text-left">
-                <div className="flex items-center gap-3">
-                  <Users className="h-4.5 w-4.5 text-primary" />
-                  <span>User Management</span>
-                </div>
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              </button>
-              
-              <div className="flex flex-col pl-9 border-l border-slate-800 ml-5 my-1 gap-1">
-                <button className="w-full text-left py-1.5 text-xs text-slate-400 hover:text-white font-medium">
-                  All Users
-                </button>
-                <button className="w-full text-left py-1.5 text-xs text-primary font-bold flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Create User
-                </button>
-                <button className="w-full text-left py-1.5 text-xs text-slate-400 hover:text-white font-medium">
-                  Roles & Permissions
-                </button>
+          {submitted ? (
+            /* Success */
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-12 flex flex-col items-center text-center max-w-[520px] mx-auto mt-8">
+              <div className="w-16 h-16 rounded-full bg-[#10B981]/10 flex items-center justify-center mb-5">
+                <CheckCircle2 size={32} strokeWidth={1.5} className="text-[#10B981]" />
               </div>
-            </div>
-
-            {/* Clinical (With notification badge) */}
-            <button className="flex w-full items-center justify-between py-2 px-3 text-sm font-semibold rounded-hms text-slate-400 hover:bg-slate-900 hover:text-white transition-all text-left">
-              <div className="flex items-center gap-3">
-                <Activity className="h-4.5 w-4.5" />
-                <span>Clinical</span>
-              </div>
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-white">
-                3
-              </span>
-            </button>
-
-            <button className="flex w-full items-center gap-3 py-2 px-3 text-sm font-semibold rounded-hms text-slate-400 hover:bg-slate-900 hover:text-white transition-all text-left">
-              <FlaskConical className="h-4.5 w-4.5" />
-              <span>Research</span>
-            </button>
-
-            <button className="flex w-full items-center gap-3 py-2 px-3 text-sm font-semibold rounded-hms text-slate-400 hover:bg-slate-900 hover:text-white transition-all text-left">
-              <FileText className="h-4.5 w-4.5" />
-              <span>Reports</span>
-            </button>
-
-            <button className="flex w-full items-center gap-3 py-2 px-3 text-sm font-semibold rounded-hms text-slate-400 hover:bg-slate-900 hover:text-white transition-all text-left">
-              <Settings className="h-4.5 w-4.5" />
-              <span>Settings</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Sidebar Profile footer */}
-        <div className="flex items-center gap-3 border-t border-slate-900 pt-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary font-bold text-white text-xs">
-            SA
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-white leading-tight">Super Admin</h4>
-            <p className="text-[10px] font-semibold text-slate-400 font-mono mt-0.5">ADM-20241105</p>
-          </div>
-        </div>
-      </aside>
-
-      {/* MAIN CONTAINER */}
-      <main className="flex flex-1 flex-col justify-between bg-surface p-6 sm:p-10">
-        
-        {/* Top Navbar Row */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className="text-slate-400 hover:text-slate-600 cursor-pointer">User Management</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-neutral-900 font-bold">Create User</span>
-          </div>
-
-          {/* Action Hub */}
-          <div className="flex items-center gap-4">
-            {/* Notification bell badge */}
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">
-              <Bell className="h-4 w-4 text-slate-600" />
-              <span className="absolute -top-1.5 -right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-critical px-1 text-[9px] font-bold text-white border border-white">
-                3
-              </span>
-            </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow-sm shadow-primary/20">
-              SA
-            </div>
-          </div>
-        </div>
-
-        {/* Form Body Wrap */}
-        <div className="my-auto mx-auto w-full max-w-[800px] py-6">
-          
-          {/* Title Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-hms bg-primary/10 text-primary">
-                <UserPlus className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-neutral-900 tracking-tight sm:text-2xl">
-                  Create New User Account
-                </h1>
-                <p className="text-xs text-neutral-500 mt-1">
-                  Add a new staff member to the HMS system. Required fields are marked with <span className="text-critical">*</span>
+              <h2 className="text-[#0F172A] font-bold text-xl mb-2">Account Created</h2>
+              <p className="text-[#64748B] text-sm leading-relaxed mb-6">
+                <span className="font-semibold text-[#0F172A]">{fullName}</span> has been added as{" "}
+                <span className="font-semibold text-[#0EA5E9]">{role}</span>.
+              </p>
+              <div className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4 mb-6 text-left">
+                <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider font-semibold mb-1.5">Generated User ID</p>
+                <p className="font-mono font-bold text-[#0EA5E9] text-lg tracking-widest">
+                  {role === "Admin" ? "ADM" : role === "Doctor" ? "DR" : role === "Researcher" ? "RES" : role === "Patient" ? "PAT" : "STF"}
+                  -{Date.now().toString().slice(-8)}
                 </p>
               </div>
-            </div>
-
-            
-          </div>
-
-          {success && createdUser ? (
-            /* SUCCESS STATE DISPLAY CARD */
-            <div className="rounded-hms-lg border border-slate-200 bg-white p-6 shadow-md shadow-slate-100/50 animate-[fadeIn_0.4s_ease-out]">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10 text-success">
-                  <CheckCircle2 className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-neutral-900">User Account Registered Successfully</h3>
-                  <p className="text-xs text-neutral-500">Security audits logged. Credentials queued for dispatch.</p>
-                </div>
-              </div>
-
-              {/* Review Details Table layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50 border border-slate-100 rounded-hms p-5 mb-5 font-medium">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Staff Name</span>
-                  <span className="text-sm font-semibold text-neutral-900 mt-1 block">{createdUser.fullName}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Phone Number</span>
-                  <span className="text-sm font-semibold text-neutral-900 mt-1 block">{createdUser.phoneNumber}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Role Assigned</span>
-                  <span className="text-sm font-semibold text-neutral-900 mt-1 block">{createdUser.roleName}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">System Generated ID</span>
-                  <span className="text-sm font-bold text-primary font-mono mt-1 block">{createdUser.staffId}</span>
-                </div>
-                <div className="md:col-span-2 border-t border-slate-200/60 pt-3 mt-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Temporary Password</span>
-                  <span className="text-xs font-bold font-mono text-slate-700 bg-white border border-slate-200 rounded px-2.5 py-1 w-fit mt-1 block select-text">
-                    {createdUser.tempPass}
-                  </span>
-                </div>
-              </div>
-
-              {/* Notification Banner info */}
-              <div className="flex gap-2.5 rounded-hms bg-sky-50 border border-sky-100 p-4 text-xs text-slate-600 leading-relaxed mb-6 font-medium">
-                <Info className="h-4.5 w-4.5 text-primary shrink-0 mt-0.5" />
-                <span>
-                  The credentials listed above (Staff ID and temporary password) have been compiled and sent via automated SMS to <strong>{createdUser.phoneNumber}</strong>. The user must verify the temporary password and complete their secure password configuration upon first login.
-                </span>
-              </div>
-
-              {/* Success Actions */}
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={handleResetForm}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-hms bg-primary font-semibold text-white px-5 shadow-sm shadow-primary/10 hover:bg-primary/95 transition-all text-xs"
-                >
-                  Create Another User
+              <div className="flex gap-3 w-full">
+                <button onClick={handleReset}
+                  className="flex-1 h-10 rounded-lg border border-[#E2E8F0] text-[13px] font-medium text-[#64748B] hover:bg-[#F8FAFC] transition-all">
+                  Create Another
+                </button>
+                <button onClick={() => router.push("/")}
+                  className="flex-1 h-10 rounded-lg bg-[#0EA5E9] text-white text-[13px] font-semibold hover:bg-[#0284C7] transition-colors shadow-sm shadow-sky-100">
+                  View All Users
                 </button>
               </div>
             </div>
           ) : (
-            /* ACTIVE FORM STATE */
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              
-              {/* Account Information Card */}
-              <div className="rounded-hms-lg border border-slate-200 bg-white shadow-md shadow-slate-100/50 overflow-visible">
-                
-                {/* Card Header */}
-                <div className="flex items-center justify-between border-b border-slate-150 px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="h-4 w-1.5 rounded-full bg-primary" />
-                    <span className="text-sm font-bold text-neutral-900 uppercase tracking-wide">
-                      Account Information
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    HMS Admin Console · v2.4.1
-                  </span>
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+
+              {/* Card header */}
+              <div className="flex items-center justify-between px-7 py-4 border-b border-[#F1F5F9] bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-1.5 h-5 rounded-full bg-[#0EA5E9]" />
+                  <span className="text-[13px] font-bold text-[#0F172A]">New Staff Account</span>
+                  <span className="text-[11px] text-[#94A3B8] bg-[#F1F5F9] px-2 py-0.5 rounded">3 sections</span>
                 </div>
-
-                {/* Card Content Form Fields */}
-                <div className="p-6 flex flex-col gap-5">
-                  
-                  {/* Row 1: Full Name and Phone Number */}
-                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                    
-                    {/* Full Name */}
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="fullName" className="text-xs font-bold text-neutral-900">
-                        Full Name <span className="text-critical font-bold">*</span>
-                      </label>
-                      <input
-                        id="fullName"
-                        type="text"
-                        disabled={loading}
-                        value={form.fullName}
-                        onChange={(e) => {
-                          setForm({ ...form, fullName: e.target.value });
-                          if (error) setError(null);
-                        }}
-                        placeholder="e.g. Nguyễn Thị Lan"
-                        className={`w-full h-11 px-3.5 rounded-hms text-sm bg-slate-50 border text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                          error && !form.fullName.trim()
-                            ? "border-critical ring-2 ring-critical/10"
-                            : "border-slate-200 focus:border-primary"
-                        }`}
-                      />
-                    </div>
-
-                    {/* Phone Number */}
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="phoneNumber" className="text-xs font-bold text-neutral-900">
-                        Phone Number <span className="text-critical font-bold">*</span>
-                      </label>
-                      <input
-                        id="phoneNumber"
-                        type="text"
-                        disabled={loading}
-                        value={form.phoneNumber}
-                        onChange={(e) => {
-                          setForm({ ...form, phoneNumber: e.target.value });
-                          if (error) setError(null);
-                        }}
-                        placeholder="e.g. 0912345678"
-                        className={`w-full h-11 px-3.5 rounded-hms text-sm bg-slate-50 border text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                          error && (!form.phoneNumber.trim() || !/^(\+84|0)\d{9}$/.test(form.phoneNumber.trim()))
-                            ? "border-critical ring-2 ring-critical/10"
-                            : "border-slate-200 focus:border-primary"
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 2: Email Address */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <label htmlFor="email" className="text-xs font-bold text-neutral-900">
-                        Email Address
-                      </label>
-                      <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[10px] text-slate-500 font-semibold">
-                        Optional
-                      </span>
-                    </div>
-                    <input
-                      id="email"
-                      type="text"
-                      disabled={loading}
-                      value={form.email}
-                      onChange={(e) => {
-                        setForm({ ...form, email: e.target.value });
-                        if (error) setError(null);
-                      }}
-                      placeholder="e.g. name@hospital.com"
-                      className={`w-full h-11 px-3.5 rounded-hms text-sm bg-slate-50 border text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                        error && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
-                          ? "border-critical ring-2 ring-critical/10"
-                          : "border-slate-200 focus:border-primary"
-                      }`}
-                    />
-                  </div>
-
-                  {/* Row 3: Role and Account Status (Dropdown select elements) */}
-                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 overflow-visible">
-                    
-                    {/* Role Dropdown */}
-                    <div className="flex flex-col gap-1.5 relative overflow-visible">
-                      <label className="text-xs font-bold text-neutral-900">
-                        Role <span className="text-critical font-bold">*</span>
-                      </label>
-                      
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          setShowRoleDropdown(!showRoleDropdown);
-                          setShowStatusDropdown(false);
-                        }}
-                        className={`w-full h-11 px-3.5 rounded-hms text-sm bg-slate-50 border text-neutral-900 flex items-center justify-between outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                          error && !form.role
-                            ? "border-critical ring-2 ring-critical/10"
-                            : "border-slate-200 focus:border-primary"
-                        }`}
-                      >
-                        <span className={form.role ? "text-neutral-900 font-medium" : "text-slate-400"}>
-                          {form.role === "clinical" ? "Clinical Staff" :
-                           form.role === "research" ? "Researcher" :
-                           form.role === "administration" ? "Administrator" :
-                           form.role === "super_admin" ? "Super Admin" : "Select account role"}
-                        </span>
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                      </button>
-
-                      {showRoleDropdown && (
-                        <div className="absolute top-[4.5rem] inset-x-0 bg-white border border-slate-200 rounded-hms shadow-lg z-50 overflow-hidden py-1 animate-[fadeIn_0.15s_ease-out]">
-                          <button
-                            type="button"
-                            onClick={() => selectRole("clinical")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Clinical Staff
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => selectRole("research")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Researcher
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => selectRole("administration")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Administrator
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => selectRole("super_admin")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Super Admin
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Account Status Dropdown */}
-                    <div className="flex flex-col gap-1.5 relative overflow-visible">
-                      <label className="text-xs font-bold text-neutral-900">
-                        Account Status <span className="text-critical font-bold">*</span>
-                      </label>
-                      
-                      <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => {
-                          setShowStatusDropdown(!showStatusDropdown);
-                          setShowRoleDropdown(false);
-                        }}
-                        className={`w-full h-11 px-3.5 rounded-hms text-sm bg-slate-50 border text-neutral-900 flex items-center justify-between outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                          error && !form.status
-                            ? "border-critical ring-2 ring-critical/10"
-                            : "border-slate-200 focus:border-primary"
-                        }`}
-                      >
-                        <span className={form.status ? "text-neutral-900 font-medium" : "text-slate-400"}>
-                          {form.status === "active" ? "Active" :
-                           form.status === "pending" ? "Pending SMS Activation" :
-                           form.status === "suspended" ? "Suspended" : "Select account status"}
-                        </span>
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                      </button>
-
-                      {showStatusDropdown && (
-                        <div className="absolute top-[4.5rem] inset-x-0 bg-white border border-slate-200 rounded-hms shadow-lg z-50 overflow-hidden py-1 animate-[fadeIn_0.15s_ease-out]">
-                          <button
-                            type="button"
-                            onClick={() => selectStatus("active")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Active
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => selectStatus("pending")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Pending SMS Activation
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => selectStatus("suspended")}
-                            className="w-full text-left px-4 py-2.5 text-sm text-neutral-900 hover:bg-slate-50 font-medium transition-colors"
-                          >
-                            Suspended
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Warning Info Box */}
-                  <div className="flex gap-2.5 rounded-hms bg-sky-50 border border-sky-100 p-4 text-xs text-slate-600 leading-relaxed font-medium mt-2">
-                    <Info className="h-4.5 w-4.5 text-primary shrink-0 mt-0.5" />
-                    <span>
-                      A system-generated Staff ID and temporary password will be sent to the user's phone number via SMS. The user must change their password on first login.
-                    </span>
-                  </div>
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck size={13} strokeWidth={2} className="text-[#F59E0B]" />
+                  <span className="text-[11px] font-medium text-[#92400E]">Clinical View — Restricted</span>
                 </div>
               </div>
 
-              {/* Form Validation Alert Box */}
-              {error && (
-                <div className="flex items-start gap-2.5 rounded-hms bg-critical/5 p-3 border border-critical/10 text-xs text-critical font-medium animate-[fadeIn_0.2s_ease-out]">
-                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>{error}</span>
+              <div className="px-7 py-6 flex flex-col gap-8">
+
+                {/* ══════ SECTION 1: Account & Role ══════ */}
+                <div>
+                  <SectionHeader num="01" title="Account & Role" sub="Login credentials, system role, and access status" />
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+
+                    <Field label="Full Name" required error={errors.fullName}>
+                      <input type="text" value={fullName}
+                        onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: "" })); }}
+                        placeholder="e.g. Nguyễn Thị Lan"
+                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.fullName ? "#EF4444" : undefined }} />
+                    </Field>
+
+                    <Field label="Phone Number" required hint="+84 or 0 + 9 digits" error={errors.phone}>
+                      <input type="tel" value={phone}
+                        onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, "").slice(0, 14)); setErrors((p) => ({ ...p, phone: "" })); }}
+                        placeholder="e.g. 0912345678 or +84912345678"
+                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.phone ? "#EF4444" : undefined }} />
+                    </Field>
+
+                    <Field label="Email Address" optional error={errors.email} className="col-span-2">
+                      <input type="email" value={email}
+                        onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: "" })); }}
+                        placeholder="e.g. name@hospital.com"
+                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.email ? "#EF4444" : undefined }} />
+                    </Field>
+
+                    <Field label="Role" required error={errors.role}>
+                      <div className="relative">
+                        <select value={role}
+                          onChange={(e) => { setRole(e.target.value as Role); setErrors((p) => ({ ...p, role: "", license: "" })); }}
+                          className={SELECT} style={{ borderRadius: "8px", borderColor: errors.role ? "#EF4444" : undefined }}>
+                          <option value="">Select a role…</option>
+                          {["Admin", "Doctor", "Staff", "Researcher", "Patient"].map((r) => <option key={r}>{r}</option>)}
+                        </select>
+                        <ChevronDown size={13} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+                      </div>
+                      {role && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                            role === "Admin" ? "bg-[#EF4444]" : role === "Doctor" ? "bg-[#0EA5E9]" :
+                            role === "Researcher" ? "bg-[#8B5CF6]" : role === "Patient" ? "bg-[#D946EF]" : "bg-[#10B981]"
+                          }`} />
+                          <p className="text-[11px] text-[#64748B]">
+                            {role === "Admin" ? "Full system access." : role === "Doctor" ? "Clinical records & diagnoses." :
+                             role === "Researcher" ? "AI datasets & anonymized records." : role === "Patient" ? "Patient portal access & medical records." : "Scheduling & patient intake."}
+                          </p>
+                        </div>
+                      )}
+                    </Field>
+
+                    <Field label="Account Status" required error={errors.status}>
+                      <div className="relative">
+                        <select value={status}
+                          onChange={(e) => { setStatus(e.target.value as Status); setErrors((p) => ({ ...p, status: "" })); }}
+                          className={SELECT} style={{ borderRadius: "8px", borderColor: errors.status ? "#EF4444" : undefined }}>
+                          <option value="">Select status…</option>
+                          {["Active", "Inactive"].map((s) => <option key={s}>{s}</option>)}
+                        </select>
+                        <ChevronDown size={13} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+                      </div>
+                      {status && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${status === "Active" ? "bg-[#10B981]" : "bg-[#94A3B8]"}`} />
+                          <p className="text-[11px] text-[#64748B]">
+                            {status === "Active" ? "User can log in immediately." : "Account disabled until activated."}
+                          </p>
+                        </div>
+                      )}
+                    </Field>
+                  </div>
                 </div>
-              )}
 
-              {/* Footer Layout buttons row */}
-              <div className="flex flex-col gap-4 justify-between pt-2 border-t border-slate-200 sm:flex-row sm:items-center">
-                <span className="text-[11px] font-medium text-slate-400">
-                  All user creation events are logged and audited.
-                </span>
+                <div className="h-px bg-[#F1F5F9]" />
 
-                <div className="flex items-center gap-3 self-end sm:self-auto">
-                  {/* Cancel Button */}
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={handleCancel}
-                    className="flex h-10 items-center justify-center gap-1.5 rounded-hms border border-slate-200 bg-white font-semibold text-slate-600 px-4 transition-all hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50 disabled:pointer-events-none text-xs"
-                  >
-                    <X className="h-4 w-4" />
-                    Cancel
+                {/* ══════ SECTION 2: Personal Information ══════ */}
+                <div>
+                  <SectionHeader num="02" title="Personal Information" sub="Demographic details for patient record linkage" />
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+
+                    <Field label="Date of Birth" required error={errors.dob}>
+                      <input type="date" value={dob}
+                        onChange={(e) => { setDob(e.target.value); setErrors((p) => ({ ...p, dob: "" })); }}
+                        max={new Date().toISOString().split("T")[0]}
+                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.dob ? "#EF4444" : undefined }} />
+                    </Field>
+
+                    <Field label="Gender" required error={errors.gender}>
+                      <div className="relative">
+                        <select value={gender}
+                          onChange={(e) => { setGender(e.target.value as Gender); setErrors((p) => ({ ...p, gender: "" })); }}
+                          className={SELECT} style={{ borderRadius: "8px", borderColor: errors.gender ? "#EF4444" : undefined }}>
+                          <option value="">Select gender…</option>
+                          {["Male", "Female", "Other"].map((g) => <option key={g}>{g}</option>)}
+                        </select>
+                        <ChevronDown size={13} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+                      </div>
+                    </Field>
+
+                    <Field label="Permanent Address" required error={errors.address} className="col-span-2">
+                      <textarea value={address}
+                        onChange={(e) => { setAddress(e.target.value); setErrors((p) => ({ ...p, address: "" })); }}
+                        placeholder="Street, Ward, District, Province/City"
+                        rows={3}
+                        className="w-full px-3 py-2 text-[13px] text-[#0F172A] placeholder:text-[#CBD5E1] bg-white border border-[#E2E8F0] outline-none resize-none leading-relaxed transition-all focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10"
+                        style={{ borderRadius: "8px", borderColor: errors.address ? "#EF4444" : undefined }} />
+                    </Field>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#F1F5F9]" />
+
+                {/* ══════ SECTION 3: Identification ══════ */}
+                <div>
+                  <SectionHeader num="03" title="Identification Numbers" sub="Optional — leave blank if not yet issued" />
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+
+                    <Field label="National ID Number (CCCD)" hint="12-digit citizen ID — nullable">
+                      <input type="text" value={cccd}
+                        onChange={(e) => setCccd(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                        placeholder="e.g. 079085012345"
+                        className={INPUT}
+                        style={{ borderRadius: "8px", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }} />
+                    </Field>
+
+                    <Field label="Health Insurance Number (Mã BHYT)" hint="15-character code — nullable">
+                      <input type="text" value={bhyt}
+                        onChange={(e) => setBhyt(e.target.value.toUpperCase().slice(0, 15))}
+                        placeholder="e.g. HS4680123456789"
+                        className={INPUT}
+                        style={{ borderRadius: "8px", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }} />
+                    </Field>
+                  </div>
+                </div>
+
+                {/* ══════ CONDITIONAL: Doctor License ══════ */}
+                {role === "Doctor" && (
+                  <>
+                    <div className="h-px bg-[#F1F5F9]" />
+                    <div>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/10 border border-[#BAE6FD] flex items-center justify-center flex-shrink-0">
+                          <FileCheck size={14} strokeWidth={1.75} className="text-[#0EA5E9]" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-bold text-[#0F172A] leading-none flex items-center gap-2">
+                            Doctor Professional License
+                            <span className="text-[10px] font-semibold text-[#EF4444] bg-red-50 border border-red-100 px-1.5 py-0.5 rounded">
+                              REQUIRED
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-[#94A3B8] leading-none mt-0.5">
+                            Required for Doctor role — Ministry of Health certified license
+                          </p>
+                        </div>
+                      </div>
+
+                      {licenseFile ? (
+                        /* Uploaded state */
+                        <div className="flex items-center gap-4 p-4 bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl">
+                          <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 flex items-center justify-center flex-shrink-0">
+                            <FileCheck size={18} strokeWidth={1.75} className="text-[#10B981]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-[#0F172A] truncate">{licenseFile.name}</p>
+                            <p className="text-[11px] text-[#64748B]">
+                              {(licenseFile.size / 1024).toFixed(1)} KB · Uploaded successfully
+                            </p>
+                          </div>
+                          <button onClick={() => setLicenseFile(null)}
+                            className="w-7 h-7 rounded-lg border border-[#E2E8F0] flex items-center justify-center text-[#94A3B8] hover:text-[#EF4444] hover:border-[#EF4444] transition-all">
+                            <X size={13} strokeWidth={2} />
+                          </button>
+                        </div>
+                      ) : (
+                        /* Drop zone */
+                        <div
+                          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                          onDragLeave={() => setDragOver(false)}
+                          onDrop={handleDrop}
+                          onClick={() => fileRef.current?.click()}
+                          className="flex flex-col items-center justify-center gap-3 py-8 px-6 cursor-pointer transition-all duration-150 rounded-xl"
+                          style={{
+                            border: `2px dashed ${errors.license ? "#EF4444" : dragOver ? "#0EA5E9" : "#CBD5E1"}`,
+                            background: dragOver ? "#F0F9FF" : errors.license ? "#FFF1F2" : "#FAFAFA",
+                          }}
+                        >
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                            dragOver ? "bg-[#0EA5E9]/10" : "bg-[#F1F5F9]"
+                          }`}>
+                            <Upload size={20} strokeWidth={1.75} className={dragOver ? "text-[#0EA5E9]" : "text-[#94A3B8]"} />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[13px] font-semibold text-[#0F172A]">
+                              {dragOver ? "Drop to upload" : "Upload Doctor Professional License"}
+                            </p>
+                            <p className="text-[11px] text-[#94A3B8] mt-1">
+                              Drag & drop or <span className="text-[#0EA5E9] font-medium">browse files</span> · PDF, JPG, PNG up to 10 MB
+                            </p>
+                            <p className="text-[10px] text-[#CBD5E1] mt-1.5 italic">Required for Doctors only</p>
+                          </div>
+                          <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFilePick} />
+                        </div>
+                      )}
+
+                      {errors.license && (
+                        <p className="flex items-center gap-1 text-[11px] text-[#EF4444] mt-1.5">
+                          <AlertCircle size={10} strokeWidth={2} />{errors.license}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Info notice */}
+                <div className="flex items-start gap-2.5 bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg px-4 py-3">
+                  <div className="w-4 h-4 rounded-full bg-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-[#0EA5E9] text-[9px] font-bold">i</span>
+                  </div>
+                  <p className="text-[12px] text-[#0369A1] leading-relaxed">
+                    A system-generated Staff ID and temporary password will be sent via SMS.
+                    The user must change their password on first login. All events are logged per{" "}
+                    <span className="font-semibold">Decree 13/2023/NĐ-CP</span>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Sticky footer buttons */}
+              <div className="sticky bottom-0 flex items-center justify-between px-7 py-4 bg-white border-t border-[#F1F5F9] shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
+                <p className="text-[11px] text-[#CBD5E1]">HMS Admin Console · v2.4.1 · All creation events are audited</p>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={handleCancel}
+                    className="flex items-center gap-1.5 h-10 px-5 rounded-lg border border-[#E2E8F0] text-[13px] font-medium text-[#64748B] hover:bg-[#F8FAFC] hover:border-[#94A3B8] transition-all">
+                    <X size={13} strokeWidth={2} /> Cancel
                   </button>
-
-                  {/* Create Account Button */}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex h-10 items-center justify-center gap-1.5 rounded-hms bg-primary font-semibold text-white px-5 shadow-sm shadow-primary/20 transition-all hover:bg-primary/95 disabled:opacity-60 disabled:pointer-events-none text-xs"
-                  >
-                    {loading ? (
+                  <button type="button" onClick={handleCreate} disabled={isSubmitting}
+                    className="flex items-center gap-2 h-10 px-6 rounded-lg bg-[#0EA5E9] hover:bg-[#0284C7] active:scale-[0.98] text-white text-[13px] font-semibold transition-all shadow-sm shadow-sky-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                    {isSubmitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Creating Account...
+                        <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Creating…
                       </>
                     ) : (
-                      <>
-                        <UserPlus className="h-4 w-4" />
-                        Create Account
-                      </>
+                      <><UserPlus size={13} strokeWidth={2} /> Create Account</>
                     )}
                   </button>
                 </div>
               </div>
-            </form>
+            </div>
           )}
-        </div>
-
-        {/* Bottom audit notes */}
-        <div className="text-[11px] text-slate-400 font-medium text-center sm:text-left mt-6 border-t border-slate-100 pt-4">
-          © 2026 HMS NextGen Operations Admin Portal · Secure Audit Active
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
