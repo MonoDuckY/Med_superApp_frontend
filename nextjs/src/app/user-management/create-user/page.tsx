@@ -94,6 +94,7 @@ export default function CreateUserPage() {
   const [errors, setErrors]         = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
+  const [createdId, setCreatedId]   = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -120,13 +121,75 @@ export default function CreateUserPage() {
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});
     setIsSubmitting(true);
-    setTimeout(() => { setIsSubmitting(false); setSubmitted(true); }, 1800);
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const token = localStorage.getItem("authToken");
+
+    // Map frontend roles to backend UserRole enum
+    const backendRole =
+      role === "Admin" ? "ADMIN" :
+      role === "Doctor" ? "DOCTOR" :
+      role === "Staff" ? "STAFF" :
+      role === "Researcher" ? "RESEARCHER" : "PATIENT";
+
+    // Generate a default temporary password
+    const generatedPassword = "Hms1234@";
+
+    const payload = {
+      password: generatedPassword,
+      role: backendRole,
+      fullName: fullName.trim(),
+      gender: gender,
+      dateOfBirth: dob,
+      phoneNumber: phone.replace(/\s/g, ""),
+      address: address.trim(),
+      email: email.trim() || null,
+      citizenIdentificationCode: cccd || null,
+      healthInsuranceCode: bhyt || null,
+      certificate: (role === "Doctor" && licenseFile) ? licenseFile.name : null
+    };
+
+    fetch(`${apiUrl}/api/admin/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const result = await res.json();
+          if (!result.success) {
+            throw new Error(result.message || "Failed to create user account.");
+          }
+          return result.data;
+        } else {
+          if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}: Could not create user account.`);
+          }
+          throw new Error("Invalid response format received from server.");
+        }
+      })
+      .then((data) => {
+        if (data && data.id) {
+          setCreatedId(data.id);
+        }
+        setSubmitted(true);
+      })
+      .catch((err) => {
+        setErrors({ general: err.message || "Could not connect to the user management API." });
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   const handleReset = () => {
     setFullName(""); setPhone(""); setEmail(""); setRole(""); setStatus("");
     setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
-    setLicenseFile(null); setErrors({}); setSubmitted(false);
+    setLicenseFile(null); setErrors({}); setSubmitted(false); setCreatedId("");
   };
 
   const handleCancel = () => {
@@ -277,8 +340,10 @@ export default function CreateUserPage() {
               <div className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4 mb-6 text-left">
                 <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider font-semibold mb-1.5">Generated User ID</p>
                 <p className="font-mono font-bold text-[#0EA5E9] text-lg tracking-widest">
-                  {role === "Admin" ? "ADM" : role === "Doctor" ? "DR" : role === "Researcher" ? "RES" : role === "Patient" ? "PAT" : "STF"}
-                  -{Date.now().toString().slice(-8)}
+                  {createdId || (
+                    (role === "Admin" ? "ADM" : role === "Doctor" ? "DR" : role === "Researcher" ? "RES" : role === "Patient" ? "PAT" : "STF") +
+                    "-" + Date.now().toString().slice(-8)
+                  )}
                 </p>
               </div>
               <div className="flex gap-3 w-full">
@@ -309,6 +374,12 @@ export default function CreateUserPage() {
               </div>
 
               <div className="px-7 py-6 flex flex-col gap-8">
+                {errors.general && (
+                  <div className="p-4 bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-[13px] rounded-xl flex items-start gap-2.5">
+                    <AlertCircle size={16} className="mt-0.5 text-[#EF4444] flex-shrink-0" />
+                    <p className="leading-relaxed">{errors.general}</p>
+                  </div>
+                )}
 
                 {/* ══════ SECTION 1: Account & Role ══════ */}
                 <div>

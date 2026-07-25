@@ -118,8 +118,8 @@ export default function LoginPage() {
         }
       })
       .then((data) => {
-        if (data && data.token) {
-          localStorage.setItem("authToken", data.token);
+        if (data && data.accessToken) {
+          localStorage.setItem("authToken", data.accessToken);
         }
         if (data && data.user) {
           localStorage.setItem("user", JSON.stringify(data.user));
@@ -231,74 +231,8 @@ export default function LoginPage() {
                 <h1 className="text-2xl font-bold text-neutral-900 tracking-tight sm:text-3xl">
                   Staff Portal Access
                 </h1>
-                <p className="text-sm text-neutral-500 mt-2">
-                  Please select your department to login.
-                </p>
               </div>
-
-              {/* Segmented Control / Department Tabs */}
-              <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                  Department
-                </span>
-                
-                <div className="grid grid-cols-3 rounded-hms border border-slate-200 bg-slate-50 p-1">
-                  {/* Tab 1: Clinical */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveDept("clinical");
-                      setError(null);
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-hms transition-all ${
-                      activeDept === "clinical"
-                        ? "bg-primary text-white shadow-sm shadow-primary/10"
-                        : "text-neutral-500 hover:bg-slate-100 hover:text-neutral-900"
-                    }`}
-                  >
-                    <Activity className={`h-4 w-4 ${activeDept === "clinical" ? "text-white" : "text-slate-400"}`} />
-                    <span className="text-xs font-bold leading-none">Clinical</span>
-                    <span className={`text-[9px] ${activeDept === "clinical" ? "text-sky-100/90" : "text-slate-400"}`}>Doctor / Staff</span>
-                  </button>
-
-                  {/* Tab 2: Research */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveDept("research");
-                      setError(null);
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-hms transition-all ${
-                      activeDept === "research"
-                        ? "bg-primary text-white shadow-sm shadow-primary/10"
-                        : "text-neutral-500 hover:bg-slate-100 hover:text-neutral-900"
-                    }`}
-                  >
-                    <FlaskConical className={`h-4 w-4 ${activeDept === "research" ? "text-white" : "text-slate-400"}`} />
-                    <span className="text-xs font-bold leading-none">Research</span>
-                    <span className={`text-[9px] ${activeDept === "research" ? "text-sky-100/90" : "text-slate-400"}`}>Lab / Science</span>
-                  </button>
-
-                  {/* Tab 3: Administration */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveDept("administration");
-                      setError(null);
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-hms transition-all ${
-                      activeDept === "administration"
-                        ? "bg-primary text-white shadow-sm shadow-primary/10"
-                        : "text-neutral-500 hover:bg-slate-100 hover:text-neutral-900"
-                    }`}
-                  >
-                    <LayoutDashboard className={`h-4 w-4 ${activeDept === "administration" ? "text-white" : "text-slate-400"}`} />
-                    <span className="text-xs font-bold leading-none">Administration</span>
-                    <span className={`text-[9px] ${activeDept === "administration" ? "text-sky-100/90" : "text-slate-400"}`}>Management</span>
-                  </button>
-                </div>
-              </div>
-
+            
               {/* Form Fields container */}
               <div className="flex flex-col gap-4">
                 {/* Username / Staff ID Input */}
