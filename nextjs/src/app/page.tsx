@@ -118,6 +118,12 @@ export default function LoginPage() {
         }
       })
       .then((data) => {
+        if (data && data.user) {
+          const userStatus = data.user.status;
+          if (userStatus === "Disabled" || userStatus === "DISABLED" || data.user.isActive === false) {
+            throw new Error("This account is disabled. Please contact an administrator.");
+          }
+        }
         if (data && data.accessToken) {
           localStorage.setItem("authToken", data.accessToken);
         }
@@ -127,7 +133,15 @@ export default function LoginPage() {
         router.push("/user-management/create-user");
       })
       .catch((err) => {
-        setError(err.message || "Could not connect to the authentication server.");
+        let errMsg = err.message || "Could not connect to the authentication server.";
+        if (
+          errMsg.toLowerCase().includes("disabled") ||
+          errMsg.toLowerCase().includes("inactive") ||
+          errMsg.toLowerCase().includes("locked")
+        ) {
+          errMsg = "This account is disabled. Please contact an administrator.";
+        }
+        setError(errMsg);
       })
       .finally(() => {
         setLoading(false);
