@@ -3,9 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
+import '../services/abstract/auth_service_abstract.dart';
+import '../services/mock/mock_auth_service.dart';
+import '../services/remote/auth_service.dart';
 
 class OtpViewModel extends ChangeNotifier {
   final String phoneNumber;
+  final AuthServiceAbstract _authService = AppConstants.useMockServices 
+      ? MockAuthService() 
+      : RemoteAuthService();
 
   OtpViewModel({required this.phoneNumber}) {
     _startResendTimer();
@@ -15,7 +21,7 @@ class OtpViewModel extends ChangeNotifier {
   final List<String> digits = List.filled(6, '');
 
   String get otp => digits.join();
-  bool get isComplete => otp.length == 6 && !otp.contains('');
+  bool get isComplete => otp.length == 6 && !digits.contains('');
 
   void setDigit(int index, String value) {
     digits[index] = value;
@@ -58,11 +64,18 @@ class OtpViewModel extends ChangeNotifier {
     return '$m:$s';
   }
 
-  void resendOtp() {
+  Future<void> resendOtp() async {
     if (!canResend) return;
-    // TODO: Gọi API gửi lại OTP khi backend hỗ trợ
+    
     clearOtp();
     errorMessage = null;
+    notifyListeners();
+
+    final response = await _authService.requestOtp(phoneNumber);
+    if (!response.success) {
+      errorMessage = response.message;
+    }
+    
     _startResendTimer();
     notifyListeners();
   }
@@ -89,20 +102,23 @@ class OtpViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    // TODO: Thay bằng lời gọi API xác thực OTP thật khi backend hỗ trợ
-    // final result = await authService.verifyOtp(phoneNumber, otp);
-    await Future.delayed(const Duration(milliseconds: 800));
+    final response = await _authService.verifyOtp(phoneNumber, otp);
 
-    // Mock: bất kỳ 6 chữ số đều pass (sẽ thay bằng API response)
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString(AppConstants.keyUserData, phoneNumber);
+    if (response.success) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString(AppConstants.keyUserData, phoneNumber);
 
-    isLoading = false;
-    notifyListeners();
+      isLoading = false;
+      notifyListeners();
 
-    if (context.mounted) {
-      context.go('/home');
+      if (context.mounted) {
+        context.go('/home');
+      }
+    } else {
+      isLoading = false;
+      errorMessage = response.message;
+      notifyListeners();
     }
   }
 

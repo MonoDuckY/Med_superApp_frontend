@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../core/constants/app_constants.dart';
+import '../services/abstract/auth_service_abstract.dart';
+import '../services/mock/mock_auth_service.dart';
+import '../services/remote/auth_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
   String phoneNumber = '';
   bool isLoading = false;
   String? errorMessage;
+
+  final AuthServiceAbstract _authService = AppConstants.useMockServices 
+      ? MockAuthService() 
+      : RemoteAuthService();
 
   bool get isValidPhone {
     // Chấp nhận 10 chữ số bắt đầu bằng 0, hoặc định dạng +84
@@ -29,17 +37,20 @@ class LoginViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    // TODO: Gọi API gửi OTP qua SMS khi backend hỗ trợ
-    // final result = await authService.sendOtp(phoneNumber);
-    await Future.delayed(const Duration(milliseconds: 600)); // Giả latency
+    final response = await _authService.requestOtp(phoneNumber);
 
     isLoading = false;
     notifyListeners();
 
-    if (context.mounted) {
-      // Encode số điện thoại vào path parameter
-      final encoded = Uri.encodeComponent(phoneNumber.trim());
-      context.push('/otp/$encoded');
+    if (response.success) {
+      if (context.mounted) {
+        // Encode số điện thoại vào path parameter
+        final encoded = Uri.encodeComponent(phoneNumber.trim());
+        context.push('/otp/$encoded');
+      }
+    } else {
+      errorMessage = response.message;
+      notifyListeners();
     }
   }
 }

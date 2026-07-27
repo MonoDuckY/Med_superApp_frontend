@@ -38,7 +38,7 @@ class _LoginBody extends StatelessWidget {
                 children: [
                   const SizedBox(width: 38), // balance placeholder
                   const Spacer(),
-                  _StepIndicator(currentStep: 0, totalSteps: 3),
+                  _StepIndicator(currentStep: 0, totalSteps: 2),
                   const Spacer(),
                   const SizedBox(width: 38),
                 ],

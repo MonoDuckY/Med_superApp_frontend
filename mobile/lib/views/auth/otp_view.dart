@@ -96,7 +96,7 @@ class _OtpBodyState extends State<_OtpBody> {
                     ),
                   ),
                   const Spacer(),
-                  _StepIndicator(currentStep: 1, totalSteps: 3),
+                  _StepIndicator(currentStep: 1, totalSteps: 2),
                   const Spacer(),
                   const SizedBox(width: 38), // balance
                 ],

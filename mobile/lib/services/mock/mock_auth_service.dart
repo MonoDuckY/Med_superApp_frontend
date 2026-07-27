@@ -69,4 +69,32 @@ class MockAuthService implements AuthServiceAbstract {
     }
     return ApiResponse.failure('Chưa đăng nhập', errorCode: 'AUTH_UNAUTHORIZED');
   }
+
+  @override
+  Future<ApiResponse<void>> requestOtp(String phoneNumber) async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    // Giả lập thành công
+    return ApiResponse.success(null, message: 'Đã gửi OTP');
+  }
+
+  @override
+  Future<ApiResponse<UserModel>> verifyOtp(String phoneNumber, String code, {String? deviceId}) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+    // Fake verify logic: accept if code is 123456
+    if (code == '123456') {
+      final user = _fakeUsers.containsKey(phoneNumber) 
+          ? _fakeUsers[phoneNumber]! 
+          : UserModel(
+              id: 'usr_mock_new',
+              username: phoneNumber,
+              fullName: 'Bệnh nhân mới',
+              role: 'PATIENT',
+              status: 'ACTIVE',
+              phoneNumber: phoneNumber,
+            );
+      _currentUser = user;
+      return ApiResponse.success(user, message: 'Xác thực OTP thành công');
+    }
+    return ApiResponse.failure('Mã OTP không hợp lệ', errorCode: 'AUTH_INVALID_OTP');
+  }
 }

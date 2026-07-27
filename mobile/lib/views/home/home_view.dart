@@ -46,7 +46,7 @@ class HomeView extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Admin User',
+                    'Bệnh nhân',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Colors.white,
                     ),

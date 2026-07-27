@@ -3,7 +3,7 @@
 //         dateOfBirth, phoneNumber, createdAt, updatedAt, lastLoginAt.
 class UserModel {
   final String id;
-  final String username;
+  final String? username;
   final String role; // 'DOCTOR' | 'PATIENT' | 'ADMIN' | 'RESEARCHER'
   final String status; // 'ACTIVE' | 'DISABLED'
   final String? patientId;
@@ -17,7 +17,7 @@ class UserModel {
 
   const UserModel({
     required this.id,
-    required this.username,
+    this.username,
     required this.role,
     required this.status,
     this.patientId,
@@ -33,7 +33,7 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id:          json['id'] as String,
-      username:    json['username'] as String,
+      username:    json['username'] as String?,
       role:        (json['role'] as String?) ?? 'PATIENT',
       status:      (json['status'] as String?) ?? 'ACTIVE',
       patientId:   json['patientId'] as String?,

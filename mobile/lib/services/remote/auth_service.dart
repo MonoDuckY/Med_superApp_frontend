@@ -68,4 +68,52 @@ class RemoteAuthService implements AuthServiceAbstract {
       );
     }
   }
+  
+  @override
+  Future<ApiResponse<void>> requestOtp(String phoneNumber) async {
+    try {
+      final response = await _dio.post('/api/auth/patient-otp/request', data: {
+        'phoneNumber': phoneNumber,
+      });
+      return ApiResponse.fromJson(response.data, null);
+    } on DioException catch (e) {
+      return ApiResponse.failure(
+        e.response?.data?['message'] ?? 'Lỗi kết nối',
+        errorCode: e.response?.data?['errorCode'],
+      );
+    }
+  }
+
+  @override
+  Future<ApiResponse<UserModel>> verifyOtp(String phoneNumber, String code, {String? deviceId}) async {
+    try {
+      final data = {
+        'phoneNumber': phoneNumber,
+        'code': code,
+      };
+      if (deviceId != null) {
+        data['deviceId'] = deviceId;
+      }
+      
+      final response = await _dio.post('/api/auth/patient-otp/verify', data: data);
+      
+      final apiResp = ApiResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) {
+          final map = json as Map<String, dynamic>;
+          ApiClient.saveTokens(
+            accessToken:  map['accessToken'] as String,
+            refreshToken: map['refreshToken'] as String,
+          );
+          return UserModel.fromJson(map['user'] as Map<String, dynamic>);
+        },
+      );
+      return apiResp;
+    } on DioException catch (e) {
+      return ApiResponse.failure(
+        e.response?.data?['message'] ?? 'Lỗi kết nối',
+        errorCode: e.response?.data?['errorCode'],
+      );
+    }
+  }
 }
