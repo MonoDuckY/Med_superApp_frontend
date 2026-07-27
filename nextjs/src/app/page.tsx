@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { validateLoginForm } from "@/lib/validation";
+import { loginApiCall } from "@/lib/auth";
 import { 
   Activity, 
   FlaskConical, 
@@ -65,87 +67,41 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Empty State Check
-    if (!username.trim() || !password.trim()) {
-      setError("Please fill in both Phonenumber and Password.");
-      return;
-    }
-
-    // Pattern format check for active department
     const deptInfo = DEPARTMENTS[activeDept];
-    if (!deptInfo.pattern.test(username.trim())) {
-      setError(deptInfo.patternDescription);
+    const validationError = validateLoginForm(username, password, deptInfo.pattern, deptInfo.patternDescription);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    // Passwords must be at least 6 characters
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    // Real API login call to the backend
     setLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    
-    fetch(`${apiUrl}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        phoneNumber: username.trim(),
-        password: password,
-      }),
-    })
-      .then(async (res) => {
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const result = await res.json();
-          if (!result.success) {
-            throw new Error(result.message || "Login failed. Please check your credentials.");
-          }
-          return result.data;
-        } else {
-          if (!res.ok) {
-            throw new Error("HTTP connection error. Server returned " + res.status);
-          }
-          throw new Error("Invalid response format from server.");
-        }
-      })
-      .then((data) => {
-        if (data && data.user) {
-          const userStatus = data.user.status;
-          if (userStatus === "Disabled" || userStatus === "DISABLED" || data.user.isActive === false) {
-            throw new Error("This account is disabled. Please contact an administrator.");
-          }
-        }
-        if (data && data.accessToken) {
-          localStorage.setItem("authToken", data.accessToken);
-        }
-        if (data && data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
-        router.push("/user-management/create-user");
-      })
-      .catch((err) => {
-        let errMsg = err.message || "Could not connect to the authentication server.";
-        if (
-          errMsg.toLowerCase().includes("disabled") ||
-          errMsg.toLowerCase().includes("inactive") ||
-          errMsg.toLowerCase().includes("locked")
-        ) {
-          errMsg = "This account is disabled. Please contact an administrator.";
-        }
-        setError(errMsg);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const data = await loginApiCall(username.trim(), password);
+      if (data.accessToken) {
+        localStorage.setItem("authToken", data.accessToken);
+      }
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
+      router.push("/user-management/create-user");
+    } catch (err) {
+      const errorVal = err as Error;
+      let errMsg = errorVal.message || "Could not connect to the authentication server.";
+      if (
+        errMsg.toLowerCase().includes("disabled") ||
+        errMsg.toLowerCase().includes("inactive") ||
+        errMsg.toLowerCase().includes("locked")
+      ) {
+        errMsg = "This account is disabled. Please contact an administrator.";
+      }
+      setError(errMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
