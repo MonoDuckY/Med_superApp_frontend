@@ -70,12 +70,29 @@ class RemoteAuthService implements AuthServiceAbstract {
   }
   
   @override
-  Future<ApiResponse<void>> requestOtp(String phoneNumber) async {
+  Future<ApiResponse<UserModel?>> requestOtp(String phoneNumber, {String? deviceId}) async {
     try {
-      final response = await _dio.post('/api/auth/patient-otp/request', data: {
+      final data = {
         'phoneNumber': phoneNumber,
-      });
-      return ApiResponse.fromJson(response.data, null);
+      };
+      if (deviceId != null) {
+        data['deviceId'] = deviceId;
+      }
+      final response = await _dio.post('/api/auth/patient-otp/request', data: data);
+      
+      final apiResp = ApiResponse<UserModel?>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) {
+          if (json == null) return null;
+          final map = json as Map<String, dynamic>;
+          ApiClient.saveTokens(
+            accessToken:  map['accessToken'] as String,
+            refreshToken: map['refreshToken'] as String,
+          );
+          return UserModel.fromJson(map['user'] as Map<String, dynamic>);
+        },
+      );
+      return apiResp;
     } on DioException catch (e) {
       return ApiResponse.failure(
         e.response?.data?['message'] ?? 'Lỗi kết nối',

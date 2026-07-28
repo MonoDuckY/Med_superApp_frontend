@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
+import '../core/utils/device_utils.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
@@ -71,7 +72,8 @@ class OtpViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    final response = await _authService.requestOtp(phoneNumber);
+    final deviceId = await DeviceUtils.getDeviceId();
+    final response = await _authService.requestOtp(phoneNumber, deviceId: deviceId);
     if (!response.success) {
       errorMessage = response.message;
     }
@@ -102,7 +104,8 @@ class OtpViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    final response = await _authService.verifyOtp(phoneNumber, otp);
+    final deviceId = await DeviceUtils.getDeviceId();
+    final response = await _authService.verifyOtp(phoneNumber, otp, deviceId: deviceId);
 
     if (response.success) {
       final prefs = await SharedPreferences.getInstance();

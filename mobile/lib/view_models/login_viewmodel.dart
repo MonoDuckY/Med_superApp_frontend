@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
+import '../core/utils/device_utils.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
@@ -37,16 +39,27 @@ class LoginViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    final response = await _authService.requestOtp(phoneNumber);
+    final deviceId = await DeviceUtils.getDeviceId();
+    final response = await _authService.requestOtp(phoneNumber, deviceId: deviceId);
 
     isLoading = false;
     notifyListeners();
 
     if (response.success) {
-      if (context.mounted) {
-        // Encode số điện thoại vào path parameter
-        final encoded = Uri.encodeComponent(phoneNumber.trim());
-        context.push('/otp/$encoded');
+      if (response.data != null) {
+        // Thiết bị đã được tin cậy, đăng nhập thành công luôn
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString(AppConstants.keyUserData, phoneNumber);
+        if (context.mounted) {
+          context.go('/home');
+        }
+      } else {
+        if (context.mounted) {
+          // Encode số điện thoại vào path parameter
+          final encoded = Uri.encodeComponent(phoneNumber.trim());
+          context.push('/otp/$encoded');
+        }
       }
     } else {
       errorMessage = response.message;

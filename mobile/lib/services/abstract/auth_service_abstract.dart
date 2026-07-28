@@ -7,6 +7,6 @@ abstract class AuthServiceAbstract {
   Future<ApiResponse<UserModel>> login(String username, String password);
   Future<ApiResponse<void>> logout();
   Future<ApiResponse<UserModel>> getProfile();
-  Future<ApiResponse<void>> requestOtp(String phoneNumber);
+  Future<ApiResponse<UserModel?>> requestOtp(String phoneNumber, {String? deviceId});
   Future<ApiResponse<UserModel>> verifyOtp(String phoneNumber, String code, {String? deviceId});
 }

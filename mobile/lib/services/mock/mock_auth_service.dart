@@ -71,7 +71,7 @@ class MockAuthService implements AuthServiceAbstract {
   }
 
   @override
-  Future<ApiResponse<void>> requestOtp(String phoneNumber) async {
+  Future<ApiResponse<UserModel?>> requestOtp(String phoneNumber, {String? deviceId}) async {
     await Future.delayed(const Duration(milliseconds: 600));
     // Giả lập thành công
     return ApiResponse.success(null, message: 'Đã gửi OTP');
