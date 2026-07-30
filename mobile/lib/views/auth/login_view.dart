@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -201,6 +202,42 @@ class _LoginBody extends StatelessWidget {
               ),
 
                const SizedBox(height: 24),
+
+              // ── [DEV] Bypass banner — hidden in release builds ──────────────
+              if (kDebugMode) ...[  
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => vm.devBypassLogin(context),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: const Color(0xFFFED7AA)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.bolt,
+                            size: 16, color: Color(0xFFF97316)),
+                        const SizedBox(width: 8),
+                        Text(
+                          '[DEV]  Bỏ qua đăng nhập',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFC2410C),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
             ],
           ),
         ),

@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../views/auth/login_view.dart';
 import '../views/auth/otp_view.dart';
 import '../views/home/home_view.dart';
+import '../views/appointment/appointment_booking_view.dart';
+import '../views/appointments_list/appointments_list_view.dart';
 
 class AppRouter {
   AppRouter._();
@@ -42,6 +44,14 @@ class AppRouter {
       GoRoute(
         path: '/home',
         builder: (context, state) => const HomeView(),
+      ),
+      GoRoute(
+        path: '/appointments',
+        builder: (context, state) => const AppointmentsListView(),
+      ),
+      GoRoute(
+        path: '/appointment/book',
+        builder: (context, state) => const AppointmentBookingView(),
       ),
     ],
   );
