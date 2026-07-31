@@ -66,6 +66,35 @@ export default function LoginPage() {
   // Validation & Loading States
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const savedUser = localStorage.getItem("user");
+    if (token && savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        const primaryRole = parsedUser.role || (parsedUser.roles && parsedUser.roles[0]) || "";
+        const upperRole = primaryRole.toUpperCase();
+        if (upperRole === "ADMIN") {
+          router.push("/user-management/create-user");
+          return;
+        } else if (upperRole === "DOCTOR") {
+          router.push("/doctor");
+          return;
+        } else if (upperRole === "STAFF") {
+          router.push("/staff");
+          return;
+        } else if (upperRole === "RESEARCHER") {
+          router.push("/researcher");
+          return;
+        }
+      } catch (e) {
+        console.error("Error parsing saved user from session", e);
+      }
+    }
+    setCheckingAuth(false);
+  }, [router]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +145,15 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0B1528] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="animate-spin text-[#0EA5E9] h-8 w-8" />
+        <p className="text-slate-400 text-xs font-medium">Verifying secure session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full select-none bg-surface font-inter text-neutral-500">
