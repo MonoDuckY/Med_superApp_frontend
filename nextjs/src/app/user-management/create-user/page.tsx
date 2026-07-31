@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
@@ -82,7 +82,8 @@ export default function CreateUserPage() {
   const [fullName, setFullName]     = useState("");
   const [phone, setPhone]           = useState("");
   const [email, setEmail]           = useState("");
-  const [role, setRole]             = useState<Role>("");
+  const [roles, setRoles]           = useState<string[]>([]);
+  const [isOpen, setIsOpen]         = useState(false);
   const [status, setStatus]         = useState<Status>("");
   const [dob, setDob]               = useState("");
   const [gender, setGender]         = useState<Gender>("");
@@ -96,7 +97,18 @@ export default function CreateUserPage() {
   const [submitted, setSubmitted]   = useState(false);
   const [createdId, setCreatedId]   = useState("");
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -106,12 +118,12 @@ export default function CreateUserPage() {
       e.phone = "Enter a valid Vietnamese phone number.";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       e.email = "Enter a valid email address.";
-    if (!role)   e.role   = "Please select a role.";
+    if (roles.length === 0) e.roles   = "Please select at least one role.";
     if (!status) e.status = "Please select a status.";
     if (!dob)    e.dob    = "Date of birth is required.";
     if (!gender) e.gender = "Please select a gender.";
     if (!address.trim()) e.address = "Permanent address is required.";
-    if (role === "Doctor" && !licenseFile)
+    if (roles.includes("DOCTOR") && !licenseFile)
       e.license = "Professional license is required for Doctors.";
     return e;
   };
@@ -125,19 +137,16 @@ export default function CreateUserPage() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const token = localStorage.getItem("authToken");
 
-    // Map frontend roles to backend UserRole enum
-    const backendRole =
-      role === "Admin" ? "ADMIN" :
-      role === "Doctor" ? "DOCTOR" :
-      role === "Staff" ? "STAFF" :
-      role === "Researcher" ? "RESEARCHER" : "PATIENT";
+    // Primary role (first element or fallback)
+    const primaryRole = roles[0] || "PATIENT";
 
     // Generate a default temporary password
     const generatedPassword = "Hms1234@";
 
     const payload = {
       password: generatedPassword,
-      role: backendRole,
+      roles: roles,
+      role: primaryRole,
       fullName: fullName.trim(),
       gender: gender,
       dateOfBirth: dob,
@@ -146,7 +155,7 @@ export default function CreateUserPage() {
       email: email.trim() || null,
       citizenIdentificationCode: cccd || null,
       healthInsuranceCode: bhyt || null,
-      certificate: (role === "Doctor" && licenseFile) ? licenseFile.name : null
+      certificate: (roles.includes("DOCTOR") && licenseFile) ? licenseFile.name : null
     };
 
     fetch(`${apiUrl}/api/admin/users`, {
@@ -187,7 +196,7 @@ export default function CreateUserPage() {
   };
 
   const handleReset = () => {
-    setFullName(""); setPhone(""); setEmail(""); setRole(""); setStatus("");
+    setFullName(""); setPhone(""); setEmail(""); setRoles([]); setIsOpen(false); setStatus("");
     setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
     setLicenseFile(null); setErrors({}); setSubmitted(false); setCreatedId("");
   };
@@ -334,14 +343,16 @@ export default function CreateUserPage() {
               </div>
               <h2 className="text-[#0F172A] font-bold text-xl mb-2">Account Created</h2>
               <p className="text-[#64748B] text-sm leading-relaxed mb-6">
-                <span className="font-semibold text-[#0F172A]">{fullName}</span> has been added as{" "}
-                <span className="font-semibold text-[#0EA5E9]">{role}</span>.
+                <span className="font-semibold text-[#0F172A]">{fullName}</span> has been added with roles{" "}
+                <span className="font-semibold text-[#0EA5E9]">
+                  {roles.map(r => r === "ADMIN" ? "Admin" : r === "DOCTOR" ? "Doctor" : r === "STAFF" ? "Staff" : r === "RESEARCHER" ? "Researcher" : "Patient").join(", ")}
+                </span>.
               </p>
               <div className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4 mb-6 text-left">
                 <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider font-semibold mb-1.5">Generated User ID</p>
                 <p className="font-mono font-bold text-[#0EA5E9] text-lg tracking-widest">
                   {createdId || (
-                    (role === "Admin" ? "ADM" : role === "Doctor" ? "DR" : role === "Researcher" ? "RES" : role === "Patient" ? "PAT" : "STF") +
+                    ((roles[0] === "ADMIN" ? "ADM" : roles[0] === "DOCTOR" ? "DR" : roles[0] === "RESEARCHER" ? "RES" : roles[0] === "PATIENT" ? "PAT" : "STF")) +
                     "-" + Date.now().toString().slice(-8)
                   )}
                 </p>
@@ -407,28 +418,65 @@ export default function CreateUserPage() {
                         className={INPUT} style={{ borderRadius: "8px", borderColor: errors.email ? "#EF4444" : undefined }} />
                     </Field>
 
-                    <Field label="Role" required error={errors.role}>
-                      <div className="relative">
-                        <select value={role}
-                          onChange={(e) => { setRole(e.target.value as Role); setErrors((p) => ({ ...p, role: "", license: "" })); }}
-                          className={SELECT} style={{ borderRadius: "8px", borderColor: errors.role ? "#EF4444" : undefined }}>
-                          <option value="">Select a role…</option>
-                          {["Admin", "Doctor", "Staff", "Researcher", "Patient"].map((r) => <option key={r}>{r}</option>)}
-                        </select>
-                        <ChevronDown size={13} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+                    <Field label="Roles" required error={errors.roles}>
+                      <div ref={dropdownRef} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsOpen(!isOpen)}
+                          className={`${INPUT} flex items-center justify-between text-left pr-3`}
+                          style={{ borderRadius: "8px", borderColor: errors.roles ? "#EF4444" : undefined }}
+                        >
+                          <span className={roles.length === 0 ? "text-[#CBD5E1]" : "text-[#0F172A]"}>
+                            {roles.length > 0 
+                              ? roles.map(r => r === "ADMIN" ? "Admin" : r === "DOCTOR" ? "Doctor" : r === "STAFF" ? "Staff" : r === "RESEARCHER" ? "Researcher" : "Patient").join(", ")
+                              : "Select roles..."}
+                          </span>
+                          <ChevronDown size={14} className="text-[#94A3B8] transition-transform duration-200" style={{ transform: isOpen ? "rotate(180deg)" : undefined }} />
+                        </button>
+                        
+                        {isOpen && (
+                          <div className="absolute left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 max-h-60 overflow-y-auto">
+                            {[
+                              { value: "ADMIN", label: "Admin", desc: "Full system access.", color: "bg-[#EF4444]" },
+                              { value: "DOCTOR", label: "Doctor", desc: "Clinical records & diagnoses.", color: "bg-[#0EA5E9]" },
+                              { value: "STAFF", label: "Staff", desc: "Scheduling & patient intake.", color: "bg-[#10B981]" },
+                              { value: "RESEARCHER", label: "Researcher", desc: "AI datasets & anonymized records.", color: "bg-[#8B5CF6]" },
+                              { value: "PATIENT", label: "Patient", desc: "Patient portal access & medical records.", color: "bg-[#D946EF]" },
+                            ].map((opt) => {
+                              const isChecked = roles.includes(opt.value);
+                              return (
+                                <label
+                                  key={opt.value}
+                                  className="flex items-start gap-3 px-3 py-2 hover:bg-[#F8FAFC] cursor-pointer transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      let nextRoles;
+                                      if (isChecked) {
+                                        nextRoles = roles.filter(r => r !== opt.value);
+                                      } else {
+                                        nextRoles = [...roles, opt.value];
+                                      }
+                                      setRoles(nextRoles);
+                                      setErrors((p) => ({ ...p, roles: "", license: "" }));
+                                    }}
+                                    className="mt-0.5 rounded border-[#E2E8F0] text-[#0EA5E9] focus:ring-[#0EA5E9]/20"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className={`w-1.5 h-1.5 rounded-full ${opt.color}`} />
+                                      <span className="text-[12px] font-semibold text-[#0F172A]">{opt.label}</span>
+                                    </div>
+                                    <p className="text-[10px] text-[#64748B] mt-0.5 leading-tight">{opt.desc}</p>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                      {role && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                            role === "Admin" ? "bg-[#EF4444]" : role === "Doctor" ? "bg-[#0EA5E9]" :
-                            role === "Researcher" ? "bg-[#8B5CF6]" : role === "Patient" ? "bg-[#D946EF]" : "bg-[#10B981]"
-                          }`} />
-                          <p className="text-[11px] text-[#64748B]">
-                            {role === "Admin" ? "Full system access." : role === "Doctor" ? "Clinical records & diagnoses." :
-                             role === "Researcher" ? "AI datasets & anonymized records." : role === "Patient" ? "Patient portal access & medical records." : "Scheduling & patient intake."}
-                          </p>
-                        </div>
-                      )}
                     </Field>
 
                     <Field label="Account Status" required error={errors.status}>
@@ -516,7 +564,7 @@ export default function CreateUserPage() {
                 </div>
 
                 {/* ══════ CONDITIONAL: Doctor License ══════ */}
-                {role === "Doctor" && (
+                {roles.includes("DOCTOR") && (
                   <>
                     <div className="h-px bg-[#F1F5F9]" />
                     <div>
