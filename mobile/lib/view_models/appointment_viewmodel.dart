@@ -10,6 +10,10 @@ enum BookingMode { byTime, byDoctor }
 class AppointmentViewModel extends ChangeNotifier {
   final _service = RemoteAppointmentService();
 
+  AppointmentViewModel() {
+    _fetchDoctors();
+  }
+
   // ── Mode Selection ────────────────────────────────────────────────────────
   BookingMode _mode = BookingMode.byTime;
   BookingMode get mode => _mode;
@@ -18,9 +22,6 @@ class AppointmentViewModel extends ChangeNotifier {
     if (_mode == newMode) return;
     _mode = newMode;
     _resetState();
-    if (_mode == BookingMode.byDoctor && _allDoctors.isEmpty) {
-      _fetchDoctors();
-    }
     notifyListeners();
   }
 
@@ -145,11 +146,17 @@ class AppointmentViewModel extends ChangeNotifier {
     final matchedSlots = _availableSlotsResponse.where((s) => 
         _parseTimeToHHmm(s.startAt) == _selectedTimeSlotByTime!.id);
         
-    return matchedSlots.map((s) => DoctorModel(
-      id: s.doctorWorkSlotId, // using work slot ID as the unique identifier for booking
-      name: s.doctorName,
-      initials: _getInitials(s.doctorName),
-    )).toList();
+    return matchedSlots.map((s) {
+      // Find the doctor in _allDoctors to get the phone number
+      final doctorInfo = _allDoctors.where((d) => d.id == s.doctorId).firstOrNull;
+      
+      return DoctorModel(
+        id: s.doctorWorkSlotId, // using work slot ID as the unique identifier for booking
+        name: s.doctorName,
+        initials: _getInitials(s.doctorName),
+        phoneNumber: doctorInfo?.phoneNumber,
+      );
+    }).toList();
   }
 
   // ── Actions: By Doctor ────────────────────────────────────────────────────

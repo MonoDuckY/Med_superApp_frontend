@@ -23,10 +23,7 @@ class DoctorModel {
   final String name;
   final String initials;
   final String specialty;
-  final int experienceYears;
-  final double rating;
-  final int reviewCount;
-  final String hospital;
+  final String? phoneNumber;
   final Color avatarColor;
   final Color specialtyColor;
 
@@ -34,11 +31,8 @@ class DoctorModel {
     required this.id,
     required this.name,
     required this.initials,
-    this.specialty = 'Đa khoa', // Default fallback
-    this.experienceYears = 5,
-    this.rating = 5.0,
-    this.reviewCount = 100,
-    this.hospital = 'Phòng khám',
+    this.specialty = 'Khám bệnh', // Default fallback
+    this.phoneNumber,
     this.avatarColor = const Color(0xFF0EA5E9),
     this.specialtyColor = const Color(0xFF0EA5E9),
   });

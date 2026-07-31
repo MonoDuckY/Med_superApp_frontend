@@ -25,7 +25,7 @@ class _BookingScaffold extends StatelessWidget {
     final vm = context.watch<AppointmentViewModel>();
 
     return Scaffold(
-      backgroundColor: AppColors.canvasColor,
+      backgroundColor: Colors.white,
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -36,13 +36,15 @@ class _BookingScaffold extends StatelessWidget {
               mode: vm.mode,
               onChanged: (mode) => vm.setMode(mode),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: vm.mode == BookingMode.byTime
                   ? const _ByTimeFlow()
                   : const _ByDoctorFlow(),
             ),
+            const SizedBox(height: 24),
+            const Divider(color: Color(0xFFE2E8F0), height: 1),
             const SizedBox(height: 24),
             const _AdditionalInfoSection(),
             const SizedBox(height: 16),
@@ -54,58 +56,71 @@ class _BookingScaffold extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton(
-            onPressed: vm.canConfirm && !vm.isSubmitting
-                ? () async {
-                    final success = await vm.confirmBooking();
-                    if (success && context.mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AppointmentSuccessView(
-                            date: vm.selectedDate!,
-                            time: vm.mode == BookingMode.byTime
-                                ? vm.selectedTimeSlotByTime!.time
-                                : vm.selectedTimeSlotByDoctor!.time,
-                            doctorName: vm.mode == BookingMode.byTime
-                                ? vm.selectedDoctorByTime!.name
-                                : vm.selectedDoctorByDoctorMode!.fullName,
-                          ),
-                        ),
-                      );
-                    } else if (!success && vm.errorMessage != null && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(vm.errorMessage!)),
-                      );
-                    }
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0EA5E9),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: vm.isSubmitting
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.calendar_today, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Xác nhận đặt lịch',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: vm.canConfirm && !vm.isSubmitting
+                      ? () async {
+                          final success = await vm.confirmBooking();
+                          if (success && context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AppointmentSuccessView(
+                                  date: vm.selectedDate!,
+                                  time: vm.mode == BookingMode.byTime
+                                      ? vm.selectedTimeSlotByTime!.time
+                                      : vm.selectedTimeSlotByDoctor!.time,
+                                  doctorName: vm.mode == BookingMode.byTime
+                                      ? vm.selectedDoctorByTime!.name
+                                      : vm.selectedDoctorByDoctorMode!.fullName,
+                                ),
+                              ),
+                            );
+                          } else if (!success && vm.errorMessage != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(vm.errorMessage!)),
+                            );
+                          }
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0EA5E9),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
+                  child: vm.isSubmitting
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Xác nhận đặt lịch',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Thông báo xác nhận sẽ được gửi sau khi bạn nhấn đặt lịch',
+                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
+            ],
           ),
         ),
       ),
@@ -118,14 +133,14 @@ class _BookingScaffold extends StatelessWidget {
       elevation: 0,
       centerTitle: false,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 20),
+        icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 24),
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Đặt lịch khám',
+            'Đặt lịch khám mới',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -133,7 +148,7 @@ class _BookingScaffold extends StatelessWidget {
             ),
           ),
           Text(
-            'Hẹn khám trực tuyến',
+            'Quản lý lịch khám',
             style: GoogleFonts.inter(
               fontSize: 12,
               color: AppColors.textSecondary,
@@ -161,15 +176,16 @@ class _SegmentedControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: [
           Expanded(
             child: _Segment(
-              title: 'Đặt theo giờ',
+              title: 'Theo giờ',
               subtitle: 'Chọn khung giờ trước',
               isSelected: mode == BookingMode.byTime,
               onTap: () => onChanged(BookingMode.byTime),
@@ -177,7 +193,7 @@ class _SegmentedControl extends StatelessWidget {
           ),
           Expanded(
             child: _Segment(
-              title: 'Đặt theo bác sĩ',
+              title: 'Theo bác sĩ',
               subtitle: 'Chọn bác sĩ trước',
               isSelected: mode == BookingMode.byDoctor,
               onTap: () => onChanged(BookingMode.byDoctor),
@@ -210,9 +226,9 @@ class _Segment extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))]
               : [],
         ),
         child: Column(
@@ -220,19 +236,29 @@ class _Segment extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isSelected ? const Color(0xFF0EA5E9) : AppColors.textSecondary,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFF94A3B8),
                 fontSize: 14,
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 10,
-                color: isSelected ? AppColors.textSecondary : const Color(0xFF94A3B8),
+            if (isSelected)
+              Container(
+                width: 24,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0EA5E9),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              )
+            else
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFFCBD5E1),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -253,25 +279,25 @@ class _ByTimeFlow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionTitle(number: '1', title: 'CHỌN NGÀY KHÁM'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         const _DateSelectorRow(byDoctorMode: false),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
         _SectionTitle(number: '2', title: 'CHỌN KHUNG GIỜ'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (vm.isLoadingSlotsByTime)
           const Center(child: CircularProgressIndicator())
         else if (vm.timeSlotsForSelectedDate.isEmpty)
           const Text('Không có ca khám nào.', style: TextStyle(color: Colors.grey))
         else
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 12,
+            runSpacing: 12,
             children: vm.timeSlotsForSelectedDate.map((slot) {
               final isSelected = vm.selectedTimeSlotByTime?.id == slot.id;
               return _TimeSlotChip(
                 time: slot.time,
-                subtitle: '${slot.availableDoctors} BS',
+                availableCount: slot.availableDoctors,
                 isSelected: isSelected,
                 isAvailable: slot.isAvailable,
                 onTap: () => vm.selectTimeSlotByTime(slot),
@@ -279,15 +305,25 @@ class _ByTimeFlow extends StatelessWidget {
             }).toList(),
           ),
         
-        const SizedBox(height: 24),
+        if (!vm.isLoadingSlotsByTime && vm.timeSlotsForSelectedDate.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 16.0),
+            child: _TimeLegend(),
+          ),
+        
+        const SizedBox(height: 32),
         if (vm.selectedTimeSlotByTime != null) ...[
-          _SectionTitle(number: '3', title: 'CHỌN BÁC SĨ'),
-          const SizedBox(height: 12),
+          _SectionTitle(
+            number: '3', 
+            title: 'BÁC SĨ SẴN SÀNG', 
+            trailingText: '${vm.availableDoctorsForSelectedTime.length} bác sĩ'
+          ),
+          const SizedBox(height: 16),
           ...vm.availableDoctorsForSelectedTime.map((doc) => _DoctorCard(
                 name: doc.name,
                 specialty: doc.specialty,
-                rating: doc.rating,
-                experience: doc.experienceYears,
+                phoneNumber: doc.phoneNumber,
+                avatarColor: doc.avatarColor,
                 isSelected: vm.selectedDoctorByTime?.id == doc.id,
                 onTap: () => vm.selectDoctorByTime(doc),
               )),
@@ -309,47 +345,57 @@ class _ByDoctorFlow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(number: '1', title: 'CHỌN BÁC SĨ'),
-        const SizedBox(height: 12),
+        _SectionTitle(
+          number: '1', 
+          title: 'CHỌN BÁC SĨ',
+          trailingText: '${vm.allDoctors.length} bác sĩ'
+        ),
+        const SizedBox(height: 16),
         if (vm.isLoadingDoctors)
           const Center(child: CircularProgressIndicator())
         else
           ...vm.allDoctors.map((doc) => _DoctorCard(
                 name: doc.fullName,
                 specialty: 'Khám bệnh', // Default mapping
-                rating: 5.0,
-                experience: 5,
+                phoneNumber: doc.phoneNumber,
+                avatarColor: const Color(0xFF0EA5E9),
                 isSelected: vm.selectedDoctorByDoctorMode?.id == doc.id,
                 onTap: () => vm.selectDoctorByDoctorMode(doc),
               )),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         if (vm.selectedDoctorByDoctorMode != null) ...[
           _SectionTitle(number: '2', title: 'CHỌN NGÀY KHÁM'),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (vm.isLoadingSlotsByDoctor)
             const Center(child: CircularProgressIndicator())
           else
             const _DateSelectorRow(byDoctorMode: true),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           if (vm.selectedDate != null) ...[
-            _SectionTitle(number: '3', title: 'CHỌN GIỜ KHÁM'),
-            const SizedBox(height: 12),
+            _SectionTitle(number: '3', title: 'CHỌN KHUNG GIỜ'),
+            const SizedBox(height: 16),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 12,
+              runSpacing: 12,
               children: vm.timeSlotsForDoctorAndDate.map((slot) {
                 final isSelected = vm.selectedTimeSlotByDoctor?.id == slot.id;
                 return _TimeSlotChip(
                   time: slot.time,
-                  subtitle: '',
+                  availableCount: slot.availableDoctors,
                   isSelected: isSelected,
                   isAvailable: slot.isAvailable,
+                  showAvailableCount: false,
                   onTap: () => vm.selectTimeSlotByDoctor(slot),
                 );
               }).toList(),
             ),
+            if (vm.timeSlotsForDoctorAndDate.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 16.0),
+                child: _TimeLegend(),
+              ),
           ]
         ]
       ],
@@ -362,22 +408,23 @@ class _ByDoctorFlow extends StatelessWidget {
 class _SectionTitle extends StatelessWidget {
   final String number;
   final String title;
+  final String? trailingText;
 
-  const _SectionTitle({required this.number, required this.title});
+  const _SectionTitle({required this.number, required this.title, this.trailingText});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
+          width: 24,
+          height: 24,
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFF94A3B8)),
+            color: Color(0xFF0EA5E9),
           ),
           alignment: Alignment.center,
-          child: Text(number, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          child: Text(number, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
         ),
         const SizedBox(width: 8),
         Text(
@@ -388,6 +435,17 @@ class _SectionTitle extends StatelessWidget {
             color: Color(0xFF64748B),
           ),
         ),
+        if (trailingText != null) ...[
+          const Spacer(),
+          Text(
+            trailingText!,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF0EA5E9),
+            ),
+          )
+        ]
       ],
     );
   }
@@ -396,6 +454,23 @@ class _SectionTitle extends StatelessWidget {
 class _DateSelectorRow extends StatelessWidget {
   final bool byDoctorMode;
   const _DateSelectorRow({required this.byDoctorMode});
+
+  String _getWeekdayString(DateTime date) {
+    final now = DateTime.now();
+    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+      return 'NAY';
+    }
+    switch (date.weekday) {
+      case 1: return 'T2';
+      case 2: return 'T3';
+      case 3: return 'T4';
+      case 4: return 'T5';
+      case 5: return 'T6';
+      case 6: return 'T7';
+      case 7: return 'CN';
+      default: return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -434,12 +509,12 @@ class _DateSelectorRow extends StatelessWidget {
               }
             },
             child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              width: 56,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              margin: const EdgeInsets.only(right: 12),
+              width: 64,
+              padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
                 color: isSelected ? const Color(0xFF0EA5E9) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
                 ),
@@ -447,19 +522,28 @@ class _DateSelectorRow extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'Th${date.month}', // Dummy month text
+                    _getWeekdayString(date),
                     style: TextStyle(
                       fontSize: 12,
-                      color: isSelected ? Colors.white70 : AppColors.textSecondary,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${date.day}',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
                       color: isSelected ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Th${date.month}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isSelected ? Colors.white70 : const Color(0xFFCBD5E1),
                     ),
                   ),
                 ],
@@ -474,51 +558,99 @@ class _DateSelectorRow extends StatelessWidget {
 
 class _TimeSlotChip extends StatelessWidget {
   final String time;
-  final String subtitle;
+  final int availableCount;
   final bool isSelected;
   final bool isAvailable;
+  final bool showAvailableCount;
   final VoidCallback onTap;
 
   const _TimeSlotChip({
     required this.time,
-    required this.subtitle,
+    required this.availableCount,
     required this.isSelected,
     required this.isAvailable,
+    this.showAvailableCount = true,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Calculate end time
+    String endTimeStr = '';
+    try {
+      final parts = time.split(':');
+      if (parts.length == 2) {
+        final dt = DateTime(2020, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+        final endDt = dt.add(const Duration(minutes: 30));
+        endTimeStr = '${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {}
+
+    final timeRange = endTimeStr.isNotEmpty ? '$time - $endTimeStr' : time;
+
     return GestureDetector(
       onTap: isAvailable ? onTap : null,
       child: Container(
-        width: 80,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        width: (MediaQuery.of(context).size.width - 32 - 12) / 2, // 2 columns
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0EA5E9) : (isAvailable ? Colors.white : const Color(0xFFF8FAFC)),
+          color: isSelected ? const Color(0xFF0EA5E9) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0EA5E9) : (isAvailable ? const Color(0xFFE2E8F0) : const Color(0xFFF1F5F9)),
+            color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
           ),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Text(
-              time,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: isSelected ? Colors.white : (isAvailable ? AppColors.textPrimary : const Color(0xFFCBD5E1)),
-              ),
+            Icon(
+              Icons.access_time, 
+              size: 14, 
+              color: isSelected ? Colors.white : (isAvailable ? const Color(0xFF0EA5E9) : const Color(0xFFCBD5E1))
             ),
-            if (subtitle.isNotEmpty)
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isSelected ? Colors.white70 : (isAvailable ? AppColors.textSecondary : const Color(0xFFCBD5E1)),
+            const SizedBox(width: 4),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  timeRange,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: isSelected ? Colors.white : (isAvailable ? AppColors.textPrimary : const Color(0xFFCBD5E1)),
+                  ),
                 ),
               ),
+            ),
+            const SizedBox(width: 4),
+            if (showAvailableCount) ...[
+              if (isAvailable)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '$availableCount BS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : const Color(0xFF0EA5E9),
+                    ),
+                  ),
+                )
+              else
+                const Text(
+                  'Đầy',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                )
+            ] else if (!isAvailable) ...[
+              const Text(
+                'Đầy',
+                style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+              )
+            ]
           ],
         ),
       ),
@@ -526,73 +658,133 @@ class _TimeSlotChip extends StatelessWidget {
   }
 }
 
+class _TimeLegend extends StatelessWidget {
+  const _TimeLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _buildLegendItem(const Color(0xFF0EA5E9), 'Đã chọn'),
+        const SizedBox(width: 16),
+        _buildLegendItem(const Color(0xFFCBD5E1), 'Còn trống'),
+        const SizedBox(width: 16),
+        _buildLegendItem(const Color(0xFFF1F5F9), 'Đã đầy'),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+        const SizedBox(width: 6),
+        Text(text, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+      ],
+    );
+  }
+}
+
 class _DoctorCard extends StatelessWidget {
   final String name;
   final String specialty;
-  final double rating;
-  final int experience;
+  final String? phoneNumber;
+  final Color avatarColor;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _DoctorCard({
     required this.name,
     required this.specialty,
-    required this.rating,
-    required this.experience,
+    this.phoneNumber,
+    required this.avatarColor,
     required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Determine theme color for selection. Let's use red if the avatar is red (e.g., NK -> Red)
+    // To keep it simple, if it's selected we use a consistent color or the avatar's color.
+    // For now we will use the avatarColor as the border color when selected.
+    Color borderColor = isSelected ? avatarColor : const Color(0xFFE2E8F0);
+    
+    // Fallback if avatarColor is too light, but normally it's fine.
+    if (avatarColor == Colors.white || avatarColor == Colors.transparent) {
+      borderColor = const Color(0xFFEF4444); 
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
-            width: isSelected ? 2 : 1,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1),
         ),
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                color: Color(0xFF0EA5E9),
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: avatarColor,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
-                name.isNotEmpty ? name[0] : 'BS',
+                name.isNotEmpty ? name.split(' ').last[0].toUpperCase() : 'BS',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text(specialty, style: const TextStyle(color: Color(0xFF0EA5E9), fontSize: 12)),
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 14),
-                      const SizedBox(width: 4),
-                      Text('$rating · $experience năm', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    ],
-                  ),
+                  if (phoneNumber != null && phoneNumber!.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, color: AppColors.textSecondary, size: 14),
+                        const SizedBox(width: 4),
+                        Text(phoneNumber!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(specialty, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                 ],
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle, color: Color(0xFF0EA5E9)),
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: borderColor),
+                ),
+                child: Icon(Icons.check, color: borderColor, size: 16),
+              )
+            else
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+              ),
           ],
         ),
       ),
@@ -609,26 +801,39 @@ class _AdditionalInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('THÔNG TIN BỔ SUNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF94A3B8))),
+        const Center(
+          child: Text('THÔNG TIN BỔ SUNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF94A3B8))),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Lý do khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+            Text('(Tùy chọn)', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+          ],
+        ),
         const SizedBox(height: 12),
         TextField(
           onChanged: vm.setReason,
-          maxLines: 3,
+          maxLines: 4,
+          maxLength: 300,
           decoration: InputDecoration(
-            hintText: 'Mô tả triệu chứng hoặc lý do khám để bác sĩ chuẩn bị trước...',
+            hintText: 'Mô tả triệu chứng để bác sĩ chuẩn bị trước...',
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: Color(0xFF0EA5E9)),
             ),
+            counterText: '${vm.reason.length}/300',
+            counterStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
           ),
         ),
       ],
@@ -649,9 +854,23 @@ class _SummaryCard extends StatelessWidget {
       dateStr = '${vm.selectedDate!.day}/${vm.selectedDate!.month}/${vm.selectedDate!.year}';
     }
     
-    final timeStr = vm.mode == BookingMode.byTime
-        ? vm.selectedTimeSlotByTime?.time ?? ''
-        : vm.selectedTimeSlotByDoctor?.time ?? '';
+    String timeStr = '';
+    if (vm.mode == BookingMode.byTime && vm.selectedTimeSlotByTime != null) {
+      timeStr = vm.selectedTimeSlotByTime!.time;
+    } else if (vm.mode == BookingMode.byDoctor && vm.selectedTimeSlotByDoctor != null) {
+      timeStr = vm.selectedTimeSlotByDoctor!.time;
+    }
+    
+    // Add end time to summary
+    if (timeStr.isNotEmpty) {
+      try {
+        final parts = timeStr.split(':');
+        final dt = DateTime(2020, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+        final endDt = dt.add(const Duration(minutes: 30));
+        final endTimeStr = '${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}';
+        timeStr = '$timeStr - $endTimeStr';
+      } catch (_) {}
+    }
         
     final docName = vm.mode == BookingMode.byTime
         ? vm.selectedDoctorByTime?.name ?? ''
@@ -659,33 +878,61 @@ class _SummaryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Tóm tắt lịch hẹn', style: TextStyle(fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(4),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.receipt_long, size: 16, color: Color(0xFF0EA5E9)),
+                        SizedBox(width: 8),
+                        Text('Tóm tắt lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text('Chờ xác nhận', style: TextStyle(color: Color(0xFF16A34A), fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
-                child: const Text('Chờ xác nhận', style: TextStyle(color: Color(0xFF16A34A), fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-            ],
+                const SizedBox(height: 24),
+                _SummaryRow(icon: Icons.calendar_today, label: 'Ngày khám', value: dateStr),
+                const SizedBox(height: 16),
+                _SummaryRow(icon: Icons.access_time, label: 'Khung giờ', value: timeStr),
+                const SizedBox(height: 16),
+                _SummaryRow(icon: Icons.person_outline, label: 'Bác sĩ', value: docName),
+                const SizedBox(height: 16),
+                const _SummaryRow(icon: Icons.business, label: 'Phòng khám', value: 'Phòng N3'), // Hardcoded based on screenshot
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _SummaryRow(icon: Icons.calendar_today, label: 'Ngày khám', value: dateStr),
-          const SizedBox(height: 12),
-          _SummaryRow(icon: Icons.access_time, label: 'Giờ khám', value: timeStr),
-          const SizedBox(height: 12),
-          _SummaryRow(icon: Icons.person_outline, label: 'Bác sĩ', value: docName),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEF9C3),
+              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.notifications_active_outlined, size: 14, color: Color(0xFFD97706)),
+                SizedBox(width: 8),
+                Expanded(child: Text('Thông báo sẽ được gửi qua SMS sau khi đặt lịch thành công.', style: TextStyle(fontSize: 11, color: Color(0xFFD97706)))),
+              ],
+            ),
+          )
         ],
       ),
     );
@@ -703,11 +950,11 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF94A3B8)),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+        Icon(icon, size: 18, color: const Color(0xFF0EA5E9)),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
         const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
       ],
     );
   }
