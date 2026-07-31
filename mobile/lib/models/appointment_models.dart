@@ -29,51 +29,36 @@ class DoctorModel {
   final String hospital;
   final Color avatarColor;
   final Color specialtyColor;
-  final double depositAmount; // Tiền tạm ứng — dynamic per doctor
 
   const DoctorModel({
     required this.id,
     required this.name,
     required this.initials,
-    required this.specialty,
-    required this.experienceYears,
-    required this.rating,
-    required this.reviewCount,
-    required this.hospital,
-    required this.avatarColor,
-    required this.specialtyColor,
-    required this.depositAmount,
+    this.specialty = 'Đa khoa', // Default fallback
+    this.experienceYears = 5,
+    this.rating = 5.0,
+    this.reviewCount = 100,
+    this.hospital = 'Phòng khám',
+    this.avatarColor = const Color(0xFF0EA5E9),
+    this.specialtyColor = const Color(0xFF0EA5E9),
   });
 }
 
-// ── Payment Method ────────────────────────────────────────────────────────────
-
-enum PaymentMethod {
-  qrCode('QR Code / VietQR', 'Quét mã QR ngân hàng'),
-  momo('Ví MoMo', 'Thanh toán qua ví điện tử'),
-  bankTransfer('Chuyển khoản', 'Internet Banking / ATM'),
-  visaMaster('Thẻ Visa / Master', 'Thanh toán thẻ quốc tế');
-
-  final String label;
-  final String subtitle;
-  const PaymentMethod(this.label, this.subtitle);
-}
-
-// ── Appointment Draft (transient booking state across 3 steps) ────────────────
+// ── Appointment Draft (transient booking state) ───────────────────────────────
 
 class AppointmentDraft {
   DateTime? selectedDate;
   TimeSlot? selectedSlot;
   DoctorModel? selectedDoctor;
   String reason;
-  PaymentMethod? paymentMethod;
+  String? doctorWorkSlotId; // The ID required by backend for booking
 
   AppointmentDraft({
     this.selectedDate,
     this.selectedSlot,
     this.selectedDoctor,
     this.reason = '',
-    this.paymentMethod,
+    this.doctorWorkSlotId,
   });
 }
 
@@ -99,9 +84,9 @@ class AppointmentRecord {
 
   const AppointmentRecord({
     required this.id,
-    required this.specialty,
+    this.specialty = 'Khám bệnh',
     required this.doctorName,
-    required this.location,
+    this.location = 'Phòng khám',
     required this.dateTime,
     required this.status,
   });

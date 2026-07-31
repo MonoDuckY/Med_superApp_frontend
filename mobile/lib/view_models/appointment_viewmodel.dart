@@ -1,53 +1,39 @@
 import 'package:flutter/material.dart';
 import '../models/appointment_models.dart';
-import '../services/mock/mock_appointment_service.dart';
+import '../models/dto/available_appointment_slot_response.dart';
+import '../models/dto/book_appointment_request.dart';
+import '../models/dto/patient_doctor_response.dart';
+import '../services/remote/remote_appointment_service.dart';
 
-/// Manages the 3-step appointment booking flow.
-/// Step 1 → pick date & time slot
-/// Step 2 → pick doctor (loaded from selected slot)
-/// Step 3 → confirm reason & payment method
+enum BookingMode { byTime, byDoctor }
+
 class AppointmentViewModel extends ChangeNotifier {
-  // Always use mock for now; replace factory line to swap to remote later.
-  final _service = MockAppointmentService();
+  final _service = RemoteAppointmentService();
 
-  // ── Step navigation ────────────────────────────────────────────────────────
-  int _currentStep = 1;
-  int get currentStep => _currentStep;
+  // ── Mode Selection ────────────────────────────────────────────────────────
+  BookingMode _mode = BookingMode.byTime;
+  BookingMode get mode => _mode;
 
-  // ── Step 1 state ───────────────────────────────────────────────────────────
+  void setMode(BookingMode newMode) {
+    if (_mode == newMode) return;
+    _mode = newMode;
+    _resetState();
+    if (_mode == BookingMode.byDoctor && _allDoctors.isEmpty) {
+      _fetchDoctors();
+    }
+    notifyListeners();
+  }
+
+  // ── Common State ──────────────────────────────────────────────────────────
   DateTime _focusedMonth = DateTime.now();
   DateTime get focusedMonth => _focusedMonth;
 
   DateTime? _selectedDate;
   DateTime? get selectedDate => _selectedDate;
 
-  List<TimeSlot> _timeSlots = [];
-  List<TimeSlot> get timeSlots => _timeSlots;
-
-  TimeSlot? _selectedSlot;
-  TimeSlot? get selectedSlot => _selectedSlot;
-
-  bool _isLoadingSlots = false;
-  bool get isLoadingSlots => _isLoadingSlots;
-
-  // ── Step 2 state ───────────────────────────────────────────────────────────
-  List<DoctorModel> _availableDoctors = [];
-  List<DoctorModel> get availableDoctors => _availableDoctors;
-
-  DoctorModel? _selectedDoctor;
-  DoctorModel? get selectedDoctor => _selectedDoctor;
-
-  bool _isLoadingDoctors = false;
-  bool get isLoadingDoctors => _isLoadingDoctors;
-
-  // ── Step 3 state ───────────────────────────────────────────────────────────
   String _reason = '';
   String get reason => _reason;
 
-  PaymentMethod? _selectedPaymentMethod;
-  PaymentMethod? get selectedPaymentMethod => _selectedPaymentMethod;
-
-  // ── Shared state ───────────────────────────────────────────────────────────
   bool _isSubmitting = false;
   bool get isSubmitting => _isSubmitting;
 
@@ -57,7 +43,36 @@ class AppointmentViewModel extends ChangeNotifier {
   bool _bookingSuccess = false;
   bool get bookingSuccess => _bookingSuccess;
 
-  // ── Calendar navigation ────────────────────────────────────────────────────
+  // Raw API responses
+  List<AvailableAppointmentSlotResponse> _availableSlotsResponse = [];
+
+  // ── Tab 1: By Time State ──────────────────────────────────────────────────
+  bool _isLoadingSlotsByTime = false;
+  bool get isLoadingSlotsByTime => _isLoadingSlotsByTime;
+
+  TimeSlot? _selectedTimeSlotByTime;
+  TimeSlot? get selectedTimeSlotByTime => _selectedTimeSlotByTime;
+
+  DoctorModel? _selectedDoctorByTime;
+  DoctorModel? get selectedDoctorByTime => _selectedDoctorByTime;
+
+  // ── Tab 2: By Doctor State ────────────────────────────────────────────────
+  List<PatientDoctorResponse> _allDoctors = [];
+  List<PatientDoctorResponse> get allDoctors => _allDoctors;
+
+  bool _isLoadingDoctors = false;
+  bool get isLoadingDoctors => _isLoadingDoctors;
+
+  PatientDoctorResponse? _selectedDoctorByDoctorMode;
+  PatientDoctorResponse? get selectedDoctorByDoctorMode => _selectedDoctorByDoctorMode;
+
+  TimeSlot? _selectedTimeSlotByDoctor;
+  TimeSlot? get selectedTimeSlotByDoctor => _selectedTimeSlotByDoctor;
+
+  bool _isLoadingSlotsByDoctor = false;
+  bool get isLoadingSlotsByDoctor => _isLoadingSlotsByDoctor;
+
+  // ── Calendar Helpers ──────────────────────────────────────────────────────
   void previousMonth() {
     _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
     notifyListeners();
@@ -68,72 +83,148 @@ class AppointmentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Step 1 actions ─────────────────────────────────────────────────────────
-  Future<void> selectDate(DateTime date) async {
+  // ── Actions: By Time ──────────────────────────────────────────────────────
+  Future<void> selectDateByTime(DateTime date) async {
     final today = DateTime.now();
     final todayNormalized = DateTime(today.year, today.month, today.day);
     if (date.isBefore(todayNormalized)) return;
 
     _selectedDate = date;
-    _selectedSlot = null;
-    _availableDoctors = [];
-    _selectedDoctor = null;
-    _isLoadingSlots = true;
+    _selectedTimeSlotByTime = null;
+    _selectedDoctorByTime = null;
+    _isLoadingSlotsByTime = true;
     notifyListeners();
 
-    _timeSlots = await _service.getAvailableSlots(date);
-    _isLoadingSlots = false;
+    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    _availableSlotsResponse = await _service.getAvailableSlots(date: dateStr);
+    
+    _isLoadingSlotsByTime = false;
     notifyListeners();
   }
 
-  void selectSlot(TimeSlot slot) {
+  void selectTimeSlotByTime(TimeSlot slot) {
     if (!slot.isAvailable) return;
-    _selectedSlot = slot;
+    _selectedTimeSlotByTime = slot;
+    _selectedDoctorByTime = null; // reset doctor
     notifyListeners();
   }
 
-  bool get canProceedStep1 =>
-      _selectedDate != null && _selectedSlot != null;
+  void selectDoctorByTime(DoctorModel doctor) {
+    _selectedDoctorByTime = doctor;
+    notifyListeners();
+  }
 
-  Future<void> goToStep2() async {
-    if (!canProceedStep1) return;
+  // Derived getters for By Time
+  List<TimeSlot> get timeSlotsForSelectedDate {
+    if (_selectedDate == null) return [];
+    
+    // Group raw responses by startAt
+    final map = <String, List<AvailableAppointmentSlotResponse>>{};
+    for (var slot in _availableSlotsResponse) {
+      map.putIfAbsent(slot.startAt, () => []).add(slot);
+    }
+    
+    // Create UI TimeSlot objects
+    final list = map.entries.map((e) {
+      final timeStr = _parseTimeToHHmm(e.key);
+      return TimeSlot(
+        id: timeStr,
+        time: timeStr,
+        availableDoctors: e.value.length,
+        isAvailable: e.value.isNotEmpty,
+      );
+    }).toList();
+    
+    list.sort((a, b) => a.time.compareTo(b.time));
+    return list;
+  }
 
+  List<DoctorModel> get availableDoctorsForSelectedTime {
+    if (_selectedTimeSlotByTime == null) return [];
+    // Filter raw response where startAt matches selected time
+    final matchedSlots = _availableSlotsResponse.where((s) => 
+        _parseTimeToHHmm(s.startAt) == _selectedTimeSlotByTime!.id);
+        
+    return matchedSlots.map((s) => DoctorModel(
+      id: s.doctorWorkSlotId, // using work slot ID as the unique identifier for booking
+      name: s.doctorName,
+      initials: _getInitials(s.doctorName),
+    )).toList();
+  }
+
+  // ── Actions: By Doctor ────────────────────────────────────────────────────
+  Future<void> _fetchDoctors() async {
     _isLoadingDoctors = true;
     notifyListeners();
-
-    _availableDoctors =
-        await _service.getDoctorsForSlot(_selectedDate!, _selectedSlot!.id);
+    _allDoctors = await _service.getDoctors();
     _isLoadingDoctors = false;
-    _currentStep = 2;
     notifyListeners();
   }
 
-  // ── Step 2 actions ─────────────────────────────────────────────────────────
-  void selectDoctor(DoctorModel doctor) {
-    _selectedDoctor = doctor;
+  Future<void> selectDoctorByDoctorMode(PatientDoctorResponse doctor) async {
+    _selectedDoctorByDoctorMode = doctor;
+    _selectedDate = null;
+    _selectedTimeSlotByDoctor = null;
+    _isLoadingSlotsByDoctor = true;
+    notifyListeners();
+
+    _availableSlotsResponse = await _service.getAvailableSlots(doctorName: doctor.fullName);
+    
+    _isLoadingSlotsByDoctor = false;
     notifyListeners();
   }
 
-  bool get canProceedStep2 => _selectedDoctor != null;
-
-  void goToStep3() {
-    if (!canProceedStep2) return;
-    _currentStep = 3;
+  void selectDateByDoctor(DateTime date) {
+    _selectedDate = date;
+    _selectedTimeSlotByDoctor = null;
     notifyListeners();
   }
 
-  // ── Step 3 actions ─────────────────────────────────────────────────────────
+  void selectTimeSlotByDoctor(TimeSlot slot) {
+    if (!slot.isAvailable) return;
+    _selectedTimeSlotByDoctor = slot;
+    notifyListeners();
+  }
+
+  // Derived getters for By Doctor
+  List<DateTime> get availableDatesForSelectedDoctor {
+    if (_selectedDoctorByDoctorMode == null) return [];
+    final dates = _availableSlotsResponse.map((s) => DateTime.parse(s.workDate)).toSet().toList();
+    dates.sort();
+    return dates;
+  }
+
+  List<TimeSlot> get timeSlotsForDoctorAndDate {
+    if (_selectedDoctorByDoctorMode == null || _selectedDate == null) return [];
+    
+    final dateStr = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+    
+    final matchedSlots = _availableSlotsResponse.where((s) => s.workDate == dateStr);
+    
+    return matchedSlots.map((s) {
+      final timeStr = _parseTimeToHHmm(s.startAt);
+      return TimeSlot(
+        id: s.doctorWorkSlotId, // use work slot ID here
+        time: timeStr,
+        availableDoctors: 1,
+        isAvailable: true,
+      );
+    }).toList();
+  }
+
+  // ── Finalization ──────────────────────────────────────────────────────────
   void setReason(String value) {
     _reason = value;
     notifyListeners();
   }
 
-  void selectPaymentMethod(PaymentMethod method) {
-    _selectedPaymentMethod = method;
-    notifyListeners();
+  bool get canConfirm {
+    if (_mode == BookingMode.byTime) {
+      return _selectedDate != null && _selectedTimeSlotByTime != null && _selectedDoctorByTime != null;
+    } else {
+      return _selectedDoctorByDoctorMode != null && _selectedDate != null && _selectedTimeSlotByDoctor != null;
+    }
   }
-
-  bool get canConfirm => _selectedPaymentMethod != null;
 
   Future<bool> confirmBooking() async {
     if (!canConfirm) return false;
@@ -141,56 +232,59 @@ class AppointmentViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final draft = AppointmentDraft(
-      selectedDate: _selectedDate,
-      selectedSlot: _selectedSlot,
-      selectedDoctor: _selectedDoctor,
-      reason: _reason,
-      paymentMethod: _selectedPaymentMethod,
+    String workSlotIdToBook = '';
+    
+    if (_mode == BookingMode.byTime) {
+      workSlotIdToBook = _selectedDoctorByTime!.id;
+    } else {
+      workSlotIdToBook = _selectedTimeSlotByDoctor!.id;
+    }
+
+    final request = BookAppointmentRequest(
+      doctorWorkSlotId: workSlotIdToBook,
+      note: _reason,
     );
 
-    final success = await _service.createAppointment(draft);
+    try {
+      final result = await _service.bookAppointment(request);
+      _bookingSuccess = true;
+    } catch (e) {
+      _bookingSuccess = false;
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    }
 
     _isSubmitting = false;
-    _bookingSuccess = success;
-    if (!success) {
-      _errorMessage = 'Đặt lịch thất bại. Vui lòng thử lại.';
-    }
     notifyListeners();
-    return success;
+    return _bookingSuccess;
   }
 
-  // ── Back navigation ────────────────────────────────────────────────────────
-  /// Returns true if we navigated back within the flow,
-  /// false if we're already on step 1 (caller should pop the route).
-  bool goBack() {
-    if (_currentStep > 1) {
-      _currentStep--;
-      notifyListeners();
-      return true;
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  void _resetState() {
+    _selectedDate = null;
+    _selectedTimeSlotByTime = null;
+    _selectedDoctorByTime = null;
+    _selectedDoctorByDoctorMode = null;
+    _selectedTimeSlotByDoctor = null;
+    _availableSlotsResponse = [];
+    _reason = '';
+    _bookingSuccess = false;
+    _errorMessage = null;
+  }
+
+  String _parseTimeToHHmm(String isoString) {
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '00:00';
     }
-    return false;
   }
 
-  // ── Summary bar helpers ────────────────────────────────────────────────────
-  String get summaryDate {
-    if (_selectedDate == null) return '--/--/----';
-    return '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}';
-  }
-
-  String get summaryTime => _selectedSlot?.time ?? '--:--';
-
-  String get summaryDoctorName => _selectedDoctor?.name ?? '';
-
-  // ── Currency helper ────────────────────────────────────────────────────────
-  static String formatCurrency(double amount) {
-    final intAmount = amount.toInt();
-    final s = intAmount.toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(s[i]);
+  String _getInitials(String name) {
+    final parts = name.split(' ');
+    if (parts.length > 1) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     }
-    return '${buffer.toString()}đ';
+    return name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
   }
 }

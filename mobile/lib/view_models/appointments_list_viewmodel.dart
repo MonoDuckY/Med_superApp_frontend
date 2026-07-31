@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/appointment_models.dart';
-import '../services/mock/mock_appointment_service.dart';
+import '../services/remote/remote_appointment_service.dart';
 
 /// Manages the Appointments List screen state.
-/// Shares the [MockAppointmentService] singleton so newly booked
-/// appointments from [AppointmentViewModel] appear here immediately.
 class AppointmentsListViewModel extends ChangeNotifier {
-  final _service = MockAppointmentService();
+  final _service = RemoteAppointmentService();
 
   DateTime _focusedMonth = DateTime.now();
   DateTime get focusedMonth => _focusedMonth;
@@ -55,7 +53,48 @@ class AppointmentsListViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    _allAppointments = await _service.getMyAppointments();
+    final responses = await _service.getPatientAppointments();
+    
+    // Map DTO to UI model
+    _allAppointments = responses.map((res) {
+      DateTime dt = DateTime.now();
+      if (res.doctorWorkSlot != null && res.slot != null) {
+        final dateStr = res.doctorWorkSlot!.workDate;
+        final timeStr = res.slot!.startTime; // Assuming HH:mm format
+        try {
+          dt = DateTime.parse('${dateStr}T$timeStr:00');
+        } catch (e) {
+          // fallback
+        }
+      } else if (res.requestedAt != null) {
+        dt = DateTime.parse(res.requestedAt!);
+      }
+
+      AppointmentStatus mappedStatus;
+      switch (res.status) {
+        case 'CONFIRMED':
+          mappedStatus = AppointmentStatus.confirmed;
+          break;
+        case 'COMPLETED':
+          mappedStatus = AppointmentStatus.completed;
+          break;
+        case 'CANCELLED':
+          mappedStatus = AppointmentStatus.cancelled;
+          break;
+        default:
+          mappedStatus = AppointmentStatus.pending;
+      }
+
+      return AppointmentRecord(
+        id: res.id,
+        specialty: 'Khám bệnh', // Defaults for UI since backend doesn't provide
+        doctorName: res.doctor?.fullName ?? 'Bác sĩ',
+        location: res.room?.roomName ?? 'Phòng khám',
+        dateTime: dt,
+        status: mappedStatus,
+      );
+    }).toList();
+
     _selectedDate = DateTime.now();
 
     _isLoading = false;
