@@ -6,6 +6,7 @@ export interface LoginResponseData {
     fullName?: string;
     phoneNumber?: string;
     role?: string;
+    roles?: string[];
   };
 }
 

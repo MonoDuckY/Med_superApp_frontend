@@ -137,16 +137,12 @@ export default function CreateUserPage() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const token = localStorage.getItem("authToken");
 
-    // Primary role (first element or fallback)
-    const primaryRole = roles[0] || "PATIENT";
-
     // Generate a default temporary password
     const generatedPassword = "Hms1234@";
 
     const payload = {
       password: generatedPassword,
       roles: roles,
-      role: primaryRole,
       fullName: fullName.trim(),
       gender: gender,
       dateOfBirth: dob,
@@ -157,6 +153,8 @@ export default function CreateUserPage() {
       healthInsuranceCode: bhyt || null,
       certificate: (roles.includes("DOCTOR") && licenseFile) ? licenseFile.name : null
     };
+
+    console.log("HMS Frontend Sending Payload:", JSON.stringify(payload, null, 2));
 
     fetch(`${apiUrl}/api/admin/users`, {
       method: "POST",
@@ -445,24 +443,25 @@ export default function CreateUserPage() {
                             ].map((opt) => {
                               const isChecked = roles.includes(opt.value);
                               return (
-                                <label
+                                <div
                                   key={opt.value}
-                                  className="flex items-start gap-3 px-3 py-2 hover:bg-[#F8FAFC] cursor-pointer transition-colors"
+                                  onClick={() => {
+                                    let nextRoles;
+                                    if (isChecked) {
+                                      nextRoles = roles.filter(r => r !== opt.value);
+                                    } else {
+                                      nextRoles = [...roles, opt.value];
+                                    }
+                                    setRoles(nextRoles);
+                                    setErrors((p) => ({ ...p, roles: "", license: "" }));
+                                  }}
+                                  className="flex items-start gap-3 px-3 py-2 hover:bg-[#F8FAFC] cursor-pointer transition-colors select-none"
                                 >
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
-                                    onChange={() => {
-                                      let nextRoles;
-                                      if (isChecked) {
-                                        nextRoles = roles.filter(r => r !== opt.value);
-                                      } else {
-                                        nextRoles = [...roles, opt.value];
-                                      }
-                                      setRoles(nextRoles);
-                                      setErrors((p) => ({ ...p, roles: "", license: "" }));
-                                    }}
-                                    className="mt-0.5 rounded border-[#E2E8F0] text-[#0EA5E9] focus:ring-[#0EA5E9]/20"
+                                    onChange={() => {}} // event is handled by parent div onClick
+                                    className="mt-0.5 rounded border-[#E2E8F0] text-[#0EA5E9] focus:ring-[#0EA5E9]/20 pointer-events-none"
                                   />
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5">
@@ -471,7 +470,7 @@ export default function CreateUserPage() {
                                     </div>
                                     <p className="text-[10px] text-[#64748B] mt-0.5 leading-tight">{opt.desc}</p>
                                   </div>
-                                </label>
+                                </div>
                               );
                             })}
                           </div>

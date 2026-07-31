@@ -87,7 +87,20 @@ export default function LoginPage() {
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
-      router.push("/user-management/create-user");
+      // Redirect based on role
+      const primaryRole = data.user.role || (data.user.roles && data.user.roles[0]) || "";
+      const upperRole = primaryRole.toUpperCase();
+      if (upperRole === "ADMIN") {
+        router.push("/user-management/create-user");
+      } else if (upperRole === "DOCTOR") {
+        router.push("/doctor");
+      } else if (upperRole === "STAFF") {
+        router.push("/staff");
+      } else if (upperRole === "RESEARCHER") {
+        router.push("/researcher");
+      } else {
+        router.push("/user-management/create-user"); // Admin is the default safe fallback
+      }
     } catch (err) {
       const errorVal = err as Error;
       let errMsg = errorVal.message || "Could not connect to the authentication server.";
