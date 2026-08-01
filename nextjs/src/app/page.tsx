@@ -32,27 +32,27 @@ interface DepartmentDetails {
 const DEPARTMENTS: Record<DepartmentType, DepartmentDetails> = {
   clinical: {
     id: "clinical",
-    name: "Clinical",
-    subtext: "Doctor / Staff",
-    placeholder: "e.g. 0123456789 or +84123456789",
+    name: "Lâm sàng",
+    subtext: "Bác sĩ / Nhân viên",
+    placeholder: "ví dụ: 0912345678",
     pattern: /^(\+84|0)\d{9}$/,
-    patternDescription: "Must be a valid phone number starting with 0 or +84 (e.g. 0123456789 or +84123456789).",
+    patternDescription: "Số điện thoại lâm sàng không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và gồm 9 chữ số tiếp theo).",
   },
   research: {
     id: "research",
-    name: "Research",
-    subtext: "Lab / Science",
-    placeholder: "e.g. 0123456789 or +84123456789",
+    name: "Nghiên cứu",
+    subtext: "Phòng Lab / Khoa học",
+    placeholder: "ví dụ: 0912345678",
     pattern: /^(\+84|0)\d{9}$/,
-    patternDescription: "Must be a valid phone number starting with 0 or +84 (e.g. 0123456789 or +84123456789).",
+    patternDescription: "Số điện thoại nghiên cứu không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và gồm 9 chữ số tiếp theo).",
   },
   administration: {
     id: "administration",
-    name: "Administration",
-    subtext: "Management",
-    placeholder: "e.g. 0123456789 or +84123456789",
+    name: "Quản trị",
+    subtext: "Quản lý Hệ thống",
+    placeholder: "ví dụ: 0912345678",
     pattern: /^(\+84|0)\d{9}$/,
-    patternDescription: "Must be a valid phone number starting with 0 or +84 (e.g. 0123456789 or +84123456789).",
+    patternDescription: "Số điện thoại quản trị không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và gồm 9 chữ số tiếp theo).",
   },
 };
 
@@ -132,13 +132,21 @@ export default function LoginPage() {
       }
     } catch (err) {
       const errorVal = err as Error;
-      let errMsg = errorVal.message || "Could not connect to the authentication server.";
+      let errMsg = errorVal.message || "Không thể kết nối đến máy chủ xác thực.";
+      const lowerMsg = errMsg.toLowerCase();
       if (
-        errMsg.toLowerCase().includes("disabled") ||
-        errMsg.toLowerCase().includes("inactive") ||
-        errMsg.toLowerCase().includes("locked")
+        lowerMsg.includes("disabled") ||
+        lowerMsg.includes("inactive") ||
+        lowerMsg.includes("locked")
       ) {
-        errMsg = "This account is disabled. Please contact an administrator.";
+        errMsg = "Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Quản trị viên.";
+      } else if (
+        lowerMsg.includes("login failed") ||
+        lowerMsg.includes("credentials") ||
+        lowerMsg.includes("unauthorized") ||
+        lowerMsg.includes("bad credentials")
+      ) {
+        errMsg = "Số điện thoại hoặc mật khẩu không chính xác.";
       }
       setError(errMsg);
     } finally {
@@ -150,7 +158,7 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen bg-[#0B1528] flex flex-col items-center justify-center gap-3">
         <Loader2 className="animate-spin text-[#0EA5E9] h-8 w-8" />
-        <p className="text-slate-400 text-xs font-medium">Verifying secure session...</p>
+        <p className="text-slate-400 text-xs font-medium">Đang xác thực phiên đăng nhập bảo mật...</p>
       </div>
     );
   }
@@ -182,18 +190,18 @@ export default function LoginPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
             </span>
-            System Online · All Services Operational
+            Hệ thống Trực tuyến · Đang hoạt động
           </div>
 
           {/* Heading */}
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-white lg:text-5xl">
-            Advanced Intelligence <br />
-            <span className="text-primary font-extrabold">for Better</span> Healthcare
+            Trí tuệ Nhân tạo <br />
+            <span className="text-primary font-extrabold">Vì Sức khỏe</span> Việt
           </h1>
 
           {/* Description */}
           <p className="text-slate-400 text-sm leading-relaxed">
-            Integrated clinical workflows, AI-powered diagnostics, and real-time patient data — unified in one secure platform.
+            Quy trình lâm sàng tích hợp, chẩn đoán bằng trí tuệ nhân tạo và dữ liệu bệnh nhân thời gian thực — tất cả trên một nền tảng bảo mật.
           </p>
 
           {/* Core Metrics & SVG ECG Heartbeat Wave */}
@@ -213,16 +221,16 @@ export default function LoginPage() {
             {/* Statistics Cards */}
             <div className="relative z-10 grid grid-cols-3 gap-4">
               <div className="flex flex-col justify-center rounded-hms-lg border border-slate-800 bg-[#0F1D36]/80 p-4 backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-primary/50 hover:bg-[#122442]/80">
-                <span className="text-xl font-bold text-white tracking-tight">48,231</span>
-                <span className="text-[11px] font-medium text-slate-400 mt-1">Patient Records</span>
+                <span className="text-xl font-bold text-white tracking-tight">48.231</span>
+                <span className="text-[11px] font-medium text-slate-400 mt-1">Hồ sơ Bệnh nhân</span>
               </div>
               <div className="flex flex-col justify-center rounded-hms-lg border border-slate-800 bg-[#0F1D36]/80 p-4 backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-primary/50 hover:bg-[#122442]/80">
-                <span className="text-xl font-bold text-white tracking-tight">99.97%</span>
-                <span className="text-[11px] font-medium text-slate-400 mt-1">Uptime SLA</span>
+                <span className="text-xl font-bold text-white tracking-tight">99,97%</span>
+                <span className="text-[11px] font-medium text-slate-400 mt-1">Cam kết Hoạt động</span>
               </div>
               <div className="flex flex-col justify-center rounded-hms-lg border border-slate-800 bg-[#0F1D36]/80 p-4 backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-primary/50 hover:bg-[#122442]/80">
                 <span className="text-xl font-bold text-white tracking-tight">ISO 27001</span>
-                <span className="text-[11px] font-medium text-slate-400 mt-1">Certified</span>
+                <span className="text-[11px] font-medium text-slate-400 mt-1">Đã kiểm định</span>
               </div>
             </div>
           </div>
@@ -230,7 +238,7 @@ export default function LoginPage() {
 
         {/* Footer (Left) */}
         <div className="relative z-10 text-xs text-slate-500 font-medium">
-          © 2026 HMS — NextGen Healthcare Ecosystem. All rights reserved.
+          © 2026 HMS — Hệ sinh thái Chăm sóc Sức khỏe NextGen. Bảo lưu mọi quyền.
         </div>
       </div>
 
@@ -250,8 +258,11 @@ export default function LoginPage() {
             <form onSubmit={handleLoginSubmit} className="flex flex-col gap-6">
               <div>
                 <h1 className="text-2xl font-bold text-neutral-900 tracking-tight sm:text-3xl">
-                  Staff Portal Access
+                  Cổng Đăng Nhập Nhân Viên
                 </h1>
+                <p className="text-[#64748B] text-xs mt-1">
+                  Vui lòng chọn phân hệ và nhập số điện thoại để tiếp tục.
+                </p>
               </div>
             
               {/* Form Fields container */}
@@ -259,7 +270,7 @@ export default function LoginPage() {
                 {/* Username / Staff ID Input */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="phone-number" className="text-xs font-bold text-neutral-900">
-                    Phonenumber
+                    Số điện thoại
                   </label>
                   <input
                     id="phone-number"
@@ -283,17 +294,17 @@ export default function LoginPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <label htmlFor="password" className="text-xs font-bold text-neutral-900">
-                      Password
+                      Mật khẩu
                     </label>
                     <a
                       href="#forgot"
                       onClick={(e) => {
                         e.preventDefault();
-                        alert("Password recovery coordinates must be handled by hospital IT operations.");
+                        alert("Yêu cầu khôi phục mật khẩu cần được liên hệ và xử lý bởi bộ phận IT bệnh viện.");
                       }}
                       className="text-xs font-semibold text-primary hover:underline"
                     >
-                      Forgot password?
+                      Quên mật khẩu?
                     </a>
                   </div>
                   
@@ -307,7 +318,7 @@ export default function LoginPage() {
                         setPassword(e.target.value);
                         if (error) setError(null);
                       }}
-                      placeholder="Enter your password"
+                      placeholder="Nhập mật khẩu của bạn"
                       className={`w-full h-11 pl-3.5 pr-10 rounded-hms text-sm bg-slate-50 border text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
                         error && password.length < 6
                           ? "border-critical ring-2 ring-critical/10"
@@ -319,7 +330,7 @@ export default function LoginPage() {
                       disabled={loading}
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -344,10 +355,10 @@ export default function LoginPage() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Logging in...
+                    Đang đăng nhập...
                   </span>
                 ) : (
-                  "Login"
+                  "Đăng nhập"
                 )}
               </button>
             </form>
@@ -358,18 +369,18 @@ export default function LoginPage() {
         <div className="flex flex-col gap-3 justify-between border-t border-slate-100 pt-6 text-[11px] font-medium text-slate-400 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-3.5 w-3.5 text-warning shrink-0" />
-            <span>Authorized Personnel Only — Unauthorized access is prohibited.</span>
+            <span>Chỉ dành cho nhân sự được ủy quyền — Nghiêm cấm truy cập trái phép.</span>
           </div>
           <a
             href="#support"
             onClick={(e) => {
               e.preventDefault();
-              alert("Contact support at helpdesk@nextgen-hms.org or dial ext: 8899.");
+              alert("Liên hệ hỗ trợ qua helpdesk@nextgen-hms.org hoặc gọi số máy lẻ nội bộ: 8899.");
             }}
             className="flex items-center gap-1.5 text-primary hover:underline self-start sm:self-auto"
           >
             <Headphones className="h-3.5 w-3.5" />
-            <span>IT Support</span>
+            <span>Hỗ trợ kỹ thuật (IT)</span>
           </a>
         </div>
       </div>
