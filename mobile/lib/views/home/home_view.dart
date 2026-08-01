@@ -8,14 +8,6 @@ import '../../core/app_colors.dart';
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
 
-  Future<void> _logout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', false);
-    if (context.mounted) {
-      context.go('/login');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,9 +24,28 @@ class HomeView extends StatelessWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.textSecondary),
-            onPressed: () => _logout(context),
+          // UC-10: Notification bell (placeholder — đang phát triển)
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.textSecondary),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '🔔 Thông báo sắp ra mắt!',
+                        style: GoogleFonts.inter(fontSize: 13),
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -44,37 +55,51 @@ class HomeView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── [DEV] Hint banner ─────────────────────────────────────────────
-            if (kDebugMode) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFFED7AA)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.bolt,
-                        size: 14, color: Color(0xFFF97316)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'DEV MODE  ·  Mock OTP: 123456  ·  Phone: 0123456789',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFFC2410C),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+            if (kDebugMode)
+              FutureBuilder<SharedPreferences>(
+                future: SharedPreferences.getInstance(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final isDevLogin = snapshot.data!.getBool('is_dev_login') ?? false;
+                    if (isDevLogin) {
+                      return Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFFED7AA)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.bolt,
+                                    size: 14, color: Color(0xFFF97316)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'DEV MODE  ·  Mock OTP: 123456  ·  Phone: 0123456789',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFFC2410C),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      );
+                    }
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
-              const SizedBox(height: 20),
-            ],
 
             // ── Section: UC-03 Đặt lịch khám ─────────────────────────────────
             Text(
@@ -93,7 +118,7 @@ class HomeView extends StatelessWidget {
               color: AppColors.primary,
               title: 'Lịch khám của tôi',
               subtitle: 'Xem danh sách lịch hẹn sắp tới',
-              onTap: () => context.push('/appointments'),
+              onTap: () => context.go('/schedule'),
             ),
             const SizedBox(height: 10),
             _NavCard(
@@ -101,7 +126,29 @@ class HomeView extends StatelessWidget {
               color: AppColors.success,
               title: 'Đặt lịch mới',
               subtitle: 'Chọn thời gian → Bác sĩ → Thanh toán',
-              onTap: () => context.push('/appointment/book'),
+              onTap: () => context.push('/schedule/book'),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Section: UC-12 Góp ý & Phản hồi ─────────────────────────────
+            Text(
+              'UC-12 · Góp ý & Phản hồi',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            _NavCard(
+              icon: Icons.rate_review_outlined,
+              color: AppColors.teal,
+              title: 'Góp ý & Phản hồi',
+              subtitle: 'Đánh giá chất lượng dịch vụ sau khám',
+              onTap: () => context.push('/schedule/feedback'),
             ),
 
             const SizedBox(height: 32),
@@ -121,17 +168,26 @@ class HomeView extends StatelessWidget {
             _NavCard(
               icon: Icons.person_outline,
               color: AppColors.purple,
-              title: 'Hồ sơ bệnh nhân',
+              title: 'Hồ sơ bệnh án',
               subtitle: 'Xem thông tin cá nhân và lịch sử khám',
               onTap: null,
               disabled: true,
             ),
             const SizedBox(height: 10),
             _NavCard(
-              icon: Icons.description_outlined,
-              color: AppColors.warning,
-              title: 'Kết quả xét nghiệm',
-              subtitle: 'Hình ảnh chẩn đoán và AI analysis',
+              icon: Icons.medication_outlined,
+              color: AppColors.primary,
+              title: 'Lịch uống thuốc',
+              subtitle: 'Nhắc nhở uống thuốc đúng giờ',
+              onTap: null,
+              disabled: true,
+            ),
+            const SizedBox(height: 10),
+            _NavCard(
+              icon: Icons.newspaper_outlined,
+              color: const Color(0xFF0D9488),
+              title: 'Tin tức sức khỏe',
+              subtitle: 'Bài viết y tế và lời khuyên sức khỏe',
               onTap: null,
               disabled: true,
             ),

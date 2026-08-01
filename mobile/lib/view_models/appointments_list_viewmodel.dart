@@ -60,14 +60,24 @@ class AppointmentsListViewModel extends ChangeNotifier {
       DateTime dt = DateTime.now();
       if (res.doctorWorkSlot != null && res.slot != null) {
         final dateStr = res.doctorWorkSlot!.workDate;
-        final timeStr = res.slot!.startTime; // Assuming HH:mm format
+        String timeStr = res.slot!.startTime;
+        
+        // If the backend returns 'HH:mm', add ':00'. If it already has ':00', leave it.
+        if (timeStr.length == 5) {
+          timeStr = '$timeStr:00';
+        }
+        
         try {
-          dt = DateTime.parse('${dateStr}T$timeStr:00');
+          dt = DateTime.parse('${dateStr}T$timeStr');
         } catch (e) {
           // fallback
         }
       } else if (res.requestedAt != null) {
-        dt = DateTime.parse(res.requestedAt!);
+        try {
+          dt = DateTime.parse(res.requestedAt!);
+        } catch (e) {
+          // fallback
+        }
       }
 
       AppointmentStatus mappedStatus;
@@ -79,6 +89,7 @@ class AppointmentsListViewModel extends ChangeNotifier {
           mappedStatus = AppointmentStatus.completed;
           break;
         case 'CANCELLED':
+        case 'REJECTED':
           mappedStatus = AppointmentStatus.cancelled;
           break;
         default:
@@ -89,7 +100,9 @@ class AppointmentsListViewModel extends ChangeNotifier {
         id: res.id,
         specialty: 'Khám bệnh', // Defaults for UI since backend doesn't provide
         doctorName: res.doctor?.fullName ?? 'Bác sĩ',
-        location: res.room?.roomName ?? 'Phòng khám',
+        location: (res.room?.roomName != null && res.room!.roomName.isNotEmpty) 
+            ? '${res.room!.id} - ${res.room!.roomName}' 
+            : 'Phòng khám',
         dateTime: dt,
         status: mappedStatus,
       );

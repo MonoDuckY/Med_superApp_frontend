@@ -82,7 +82,7 @@ class ClinicRoomResponse {
   factory ClinicRoomResponse.fromJson(Map<String, dynamic> json) {
     return ClinicRoomResponse(
       id:       json['id'] as String? ?? '',
-      roomName: json['roomName'] as String? ?? '',
+      roomName: json['name'] as String? ?? '',
     );
   }
 }

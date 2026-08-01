@@ -110,6 +110,7 @@ class OtpViewModel extends ChangeNotifier {
     if (response.success) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', true);
+      await prefs.setBool('is_dev_login', false);
       await prefs.setString(AppConstants.keyUserData, phoneNumber);
 
       isLoading = false;

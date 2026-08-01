@@ -68,7 +68,7 @@ class _AppointmentsListScaffold extends StatelessWidget {
       // ── FAB ────────────────────────────────────────────────────────────────
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          context.push('/appointment/book');
+          context.push('/schedule/book');
         },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
