@@ -137,11 +137,12 @@ export default function CreateUserPage() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const token = localStorage.getItem("authToken");
 
-    // Generate a default temporary password
+    // Exclude password if the account only has the PATIENT role (logs in via OTP)
+    const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
     const generatedPassword = "Hms1234@";
 
     const payload = {
-      password: generatedPassword,
+      ...(isOnlyPatient ? {} : { password: generatedPassword }),
       roles: roles,
       fullName: fullName.trim(),
       gender: gender,
