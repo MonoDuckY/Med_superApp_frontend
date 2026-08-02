@@ -2,37 +2,26 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-function Ico({ d, cls = "" }: { d: string; cls?: string }) {
-  return (
-    <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d={d} />
-    </svg>
-  );
-}
-
-const ic = {
-  plus:       "M12 5v14M5 12h14",
-  calendar:   "M3 4h18v18H3V4zM3 10h18M8 2v4M16 2v4",
-  check:      "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3",
-  xCircle:    "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zM15 9l-6 6M9 9l6 6",
-  clock:      "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zM12 6v6l4 2",
-  search:     "M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z",
-  chevDown:   "m6 9 6 6 6-6",
-  chevRight:  "m9 18 6-6-6-6",
-  bell:       "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0",
-  logout:     "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
-  refresh:    "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5",
-  x:          "M18 6 6 18M6 6l12 12",
-  msg:        "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
-  dashboard:  "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10",
-  stethoscope:"M4.5 4.5a3 3 0 0 0-3 3v1a7.5 7.5 0 0 0 15 0v-1a3 3 0 0 0-3-3M8 4.5v2M16 4.5v2M21 17a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM15 14v3",
-  clipboard:  "M9 2h6v4H9zM5 4h2v16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM17 4h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7M12 11h4M12 15h4M8 11h.01M8 15h.01",
-  filetext:   "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8",
-  settings:   "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
-};
+import {
+  Plus,
+  Calendar,
+  Check,
+  XCircle,
+  Clock,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Bell,
+  LogOut,
+  RefreshCw,
+  X,
+  MessageSquare,
+  LayoutDashboard,
+  Stethoscope,
+  ClipboardList,
+  FileText,
+  Settings
+} from "lucide-react";
 
 // ─── Data Types ───────────────────────────────────────────────────────────────
 
@@ -71,7 +60,7 @@ const statusMap: Record<Status, { bg: string; text: string }> = {
 export default function StaffDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("appointments");
-  const [user, setUser] = useState<{ fullName?: string; phoneNumber?: string } | null>(null);
+  const [user, setUser] = useState<{ fullName?: string; phoneNumber?: string; roles?: string[]; role?: string } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Profile Menu States & Ref
@@ -189,11 +178,29 @@ export default function StaffDashboard() {
     }
     try {
       const parsedUser = JSON.parse(savedUser);
+      const roles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+      const upperRoles = roles.map((r: string) => r.toUpperCase());
+      
+      if (!upperRoles.includes("STAFF")) {
+        if (upperRoles.includes("ADMIN")) {
+          router.push("/user-management/create-user");
+        } else if (upperRoles.includes("DOCTOR")) {
+          router.push("/doctor");
+        } else if (upperRoles.includes("RESEARCHER")) {
+          router.push("/researcher");
+        } else {
+          router.push("/");
+        }
+        return;
+      }
+      
       setUser(parsedUser);
+      setCheckingAuth(false);
     } catch (e) {
       console.error(e);
+      router.push("/");
+      return;
     }
-    setCheckingAuth(false);
 
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -648,6 +655,8 @@ export default function StaffDashboard() {
   });
 
   const uniqueDoctors = Array.from(new Set(appointments.map((a) => a.doctor)));
+  const rawRoles = user?.roles || (user?.role ? [user.role] : []);
+  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
 
   if (checkingAuth) {
     return (
@@ -663,12 +672,12 @@ export default function StaffDashboard() {
 
   // Sidebar components listing
   const sidebarItems = [
-    { label: "Bảng điều khiển",      icon: ic.dashboard,   id: "dashboard" },
-    { label: "Tiếp đón & Lâm sinh",  icon: ic.stethoscope, id: "intake" },
-    { label: "Quản lý Lịch hẹn",     icon: ic.calendar,    id: "appointments"  },
-    { label: "Phê duyệt Lịch Bác sĩ",icon: ic.clipboard,   id: "schedules" },
-    { label: "Báo cáo",              icon: ic.filetext,    id: "reports" },
-    { label: "Cấu hình",             icon: ic.settings,    id: "settings" },
+    { label: "Bảng điều khiển",      icon: LayoutDashboard,   id: "dashboard" },
+    { label: "Tiếp đón & Lâm sinh",  icon: Stethoscope, id: "intake" },
+    { label: "Quản lý Lịch hẹn",     icon: Calendar,    id: "appointments"  },
+    { label: "Phê duyệt Lịch Bác sĩ",icon: ClipboardList,   id: "schedules" },
+    { label: "Báo cáo",              icon: FileText,    id: "reports" },
+    { label: "Cấu hình",             icon: Settings,    id: "settings" },
   ];
 
   return (
@@ -698,6 +707,7 @@ export default function StaffDashboard() {
         <nav className="flex-1 px-4 py-4 flex flex-col gap-0.5 overflow-y-auto">
           {sidebarItems.map(item => {
             const isActive = activeTab === item.id;
+            const Icon = item.icon;
             return (
               <button
                 key={item.id}
@@ -710,7 +720,7 @@ export default function StaffDashboard() {
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#94A3B8"; } }}
                 onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748B"; } }}
               >
-                <Ico d={item.icon} cls="w-4 h-4 shrink-0" />
+                <Icon size={16} className="shrink-0" />
                 <span className={`text-xs ${isActive ? "font-semibold" : ""} truncate`}>{item.label}</span>
               </button>
             );
@@ -739,7 +749,7 @@ export default function StaffDashboard() {
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-xs">
             <span style={{ color: "#64748B" }}>Nhân viên y tế</span>
-            <Ico d={ic.chevRight} cls="w-3 h-3 text-slate-300" />
+            <ChevronRight size={12} strokeWidth={2} className="text-slate-300" />
             <span className="font-semibold" style={{ color: "#0F172A" }}>
               {activeTab === "appointments"
                 ? "Quản lý lịch hẹn"
@@ -759,7 +769,7 @@ export default function StaffDashboard() {
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative">
-              <Ico d={ic.search} cls="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <Search size={13} strokeWidth={2} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
               <input
                 className="h-8 pl-8 pr-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all"
                 style={{ width: 180, background: "#F8FAFC" }}
@@ -769,7 +779,7 @@ export default function StaffDashboard() {
 
             {/* Notification Bell */}
             <button className="relative p-2 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none">
-              <Ico d={ic.bell} cls="w-4 h-4" />
+              <Bell size={14} strokeWidth={1.75} />
               <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 9 }}>3</span>
             </button>
 
@@ -787,11 +797,54 @@ export default function StaffDashboard() {
                     <p className="text-[12px] font-semibold text-[#0F172A] truncate">{user?.fullName || "Trần Thị B"}</p>
                     <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "0912345678"}</p>
                   </div>
+                  
+                  {/* Role switcher for multi-role accounts */}
+                  {userRoles.length > 1 && (
+                    <div className="px-2 py-1.5 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                      <p className="px-2 text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Chuyển vai trò</p>
+                      <div className="flex flex-col gap-0.5">
+                        {userRoles.includes("ADMIN") && (
+                          <button
+                            onClick={() => router.push("/user-management/create-user")}
+                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#64748B] hover:bg-white hover:text-[#0F172A] cursor-pointer border-none outline-none"
+                          >
+                            <span>🛡️ Quản trị viên</span>
+                          </button>
+                        )}
+                        {userRoles.includes("DOCTOR") && (
+                          <button
+                            onClick={() => router.push("/doctor")}
+                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#64748B] hover:bg-white hover:text-[#0F172A] cursor-pointer border-none outline-none"
+                          >
+                            <span>🩺 Bác sĩ</span>
+                          </button>
+                        )}
+                        {userRoles.includes("STAFF") && (
+                          <button
+                            onClick={() => router.push("/staff")}
+                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#0EA5E9] font-bold bg-[#0EA5E9]/10 cursor-pointer border-none outline-none"
+                          >
+                            <span>🏥 Nhân viên y tế</span>
+                            <Check size={10} />
+                          </button>
+                        )}
+                        {userRoles.includes("RESEARCHER") && (
+                          <button
+                            onClick={() => router.push("/researcher")}
+                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#64748B] hover:bg-white hover:text-[#0F172A] cursor-pointer border-none outline-none"
+                          >
+                            <span>🧪 Nghiên cứu sinh</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold"
                   >
-                    <Ico d={ic.logout} cls="w-3.5 h-3.5" /> Đăng xuất
+                    <LogOut size={13} /> Đăng xuất
                   </button>
                 </div>
               )}
@@ -820,7 +873,7 @@ export default function StaffDashboard() {
                     className="flex items-center gap-2 h-9 px-4 text-xs font-semibold text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm cursor-pointer outline-none active:scale-[0.98]"
                     style={{ background: "#0EA5E9", boxShadow: "0 1px 4px rgba(14,165,233,0.3)" }}
                   >
-                    <Ico d={ic.plus} cls="w-4 h-4 text-white" />
+                    <Plus size={14} strokeWidth={2} className="text-white" />
                     Thêm lịch hẹn mới
                   </button>
                 </div>
@@ -830,7 +883,7 @@ export default function StaffDashboard() {
               <div className="grid grid-cols-4 gap-5">
                 <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                    <Ico d={ic.calendar} cls="w-5 h-5 text-slate-500" />
+                    <Calendar size={18} strokeWidth={1.75} className="text-slate-500" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-[#0F172A]">42</p>
@@ -840,7 +893,7 @@ export default function StaffDashboard() {
 
                 <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Ico d={ic.check} cls="w-5 h-5 text-sky-500" />
+                    <Check size={18} strokeWidth={2} className="text-sky-500" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-[#0EA5E9]">28</p>
@@ -850,7 +903,7 @@ export default function StaffDashboard() {
 
                 <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Ico d={ic.xCircle} cls="w-5 h-5 text-rose-500" />
+                    <XCircle size={18} strokeWidth={1.75} className="text-rose-500" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-[#EF4444]">4</p>
@@ -860,7 +913,7 @@ export default function StaffDashboard() {
 
                 <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Ico d={ic.clock} cls="w-5 h-5 text-amber-500" />
+                    <Clock size={18} strokeWidth={1.75} className="text-amber-500" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-[#F59E0B]">10</p>
@@ -873,7 +926,7 @@ export default function StaffDashboard() {
               <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center gap-3 flex-wrap">
                   <div className="relative" style={{ minWidth: 220, flex: 1 }}>
-                    <Ico d={ic.search} cls="absolute left-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <Search size={14} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
                     <input
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
@@ -888,7 +941,7 @@ export default function StaffDashboard() {
                         <option key={doc} value={doc}>{doc}</option>
                       ))}
                     </select>
-                    <Ico d={ic.chevDown} cls="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                   <div className="relative">
                     <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 text-[#64748B] bg-white appearance-none cursor-pointer">
@@ -898,7 +951,7 @@ export default function StaffDashboard() {
                       <option value="Chờ xác nhận">Chờ xác nhận</option>
                       <option value="No-show">No-show</option>
                     </select>
-                    <Ico d={ic.chevDown} cls="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                   <div className="flex gap-2 ml-auto">
                     <button
@@ -906,7 +959,7 @@ export default function StaffDashboard() {
                       onClick={handleAutoScanNoShow}
                       className="h-9 px-4 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap active:scale-[0.98]"
                     >
-                      <Ico d={ic.refresh} cls="w-3.5 h-3.5 text-slate-500" />
+                      <RefreshCw size={13} className="text-slate-500" />
                       Tự động quét No-show
                     </button>
                   </div>
@@ -1078,7 +1131,7 @@ export default function StaffDashboard() {
           {activeTab !== "appointments" && activeTab !== "schedules" && (
             <div className="min-h-[400px] bg-white border border-[#E2E8F0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-sm">
               <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4 text-[#64748B]">
-                <Ico d={ic.clipboard} cls="w-6 h-6" />
+                <ClipboardList size={24} className="text-slate-400" />
               </div>
               <h3 className="text-slate-800 font-bold text-sm">Chuyên mục đang phát triển</h3>
               <p className="text-slate-400 text-xs mt-1.5 max-w-sm leading-relaxed">
@@ -1094,7 +1147,7 @@ export default function StaffDashboard() {
         <div className="fixed bottom-5 right-5 z-40 rounded-xl shadow-2xl overflow-hidden flex items-stretch max-w-xs" style={{ background: "#0F172A" }}>
           <div className="w-1 shrink-0" style={{ background: "#0EA5E9" }} />
           <div className="px-4 py-3 flex items-start gap-3 flex-1">
-            <Ico d={ic.msg} cls="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+            <MessageSquare size={16} className="text-sky-400 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0 text-left">
               <p className="text-xs font-semibold text-sky-400 mb-0.5">{smsToast.title}</p>
               <p className="text-xs leading-relaxed" style={{ color: "#94A3B8" }}>{smsToast.message}</p>
@@ -1109,7 +1162,7 @@ export default function StaffDashboard() {
               onClick={() => setSmsToast((prev) => ({ ...prev, visible: false }))}
               className="text-slate-600 hover:text-white transition-colors shrink-0 cursor-pointer mt-0.5"
             >
-              <Ico d={ic.x} cls="w-3.5 h-3.5" />
+              <X size={13} />
             </button>
           </div>
         </div>
@@ -1135,7 +1188,7 @@ export default function StaffDashboard() {
                 onClick={() => setIsAddDrawerOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none"
               >
-                <Ico d={ic.x} cls="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
@@ -1187,7 +1240,7 @@ export default function StaffDashboard() {
                     <option value="BS. Trần Quốc Tuấn (Phòng 105)">BS. Trần Quốc Tuấn (Phòng 105)</option>
                     <option value="BS. Phạm Thanh Hằng (Phòng 301)">BS. Phạm Thanh Hằng (Phòng 301)</option>
                   </select>
-                  <Ico d={ic.chevDown} cls="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
               </div>
 
@@ -1323,7 +1376,7 @@ export default function StaffDashboard() {
                 onClick={() => setIsRescheduleDrawerOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none"
               >
-                <Ico d={ic.x} cls="w-4 h-4" />
+                <X size={14} />
               </button>
             </div>
 
@@ -1347,7 +1400,7 @@ export default function StaffDashboard() {
                     <option value="BS. Trần Quốc Tuấn (Phòng 105)">BS. Trần Quốc Tuấn (Phòng 105)</option>
                     <option value="BS. Phạm Thanh Hằng (Phòng 301)">BS. Phạm Thanh Hằng (Phòng 301)</option>
                   </select>
-                  <Ico d={ic.chevDown} cls="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
               </div>
 
@@ -1437,7 +1490,7 @@ export default function StaffDashboard() {
           <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-left animate-[scaleIn_0.15s_ease-out]">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2 bg-rose-50 rounded-xl shrink-0">
-                <Ico d={ic.xCircle} cls="w-5 h-5 text-rose-500" />
+                <XCircle size={18} className="text-rose-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-base font-semibold text-[#0F172A]">Xác nhận Hủy lịch hẹn</h2>
@@ -1491,7 +1544,7 @@ export default function StaffDashboard() {
           <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-left animate-[scaleIn_0.15s_ease-out]">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2 bg-rose-50 rounded-xl shrink-0">
-                <Ico d={ic.xCircle} cls="w-5 h-5 text-rose-500" />
+                <XCircle size={18} className="text-rose-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-base font-semibold text-[#0F172A]">Từ chối lịch làm việc Bác sĩ</h2>

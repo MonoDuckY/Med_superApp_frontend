@@ -173,12 +173,16 @@ export default function LoginPage() {
         
         {/* Branding Header */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-hms bg-primary shadow-lg shadow-primary/30">
-            <Plus className="h-6 w-6 text-white stroke-[3px]" />
+          <div className="w-10 h-10 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0"
+            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
+            <div className="relative w-4.5 h-4.5 flex items-center justify-center">
+              <div className="absolute w-4.5 h-[5px] bg-white rounded-sm" />
+              <div className="absolute w-[5px] h-4.5 bg-white rounded-sm" />
+            </div>
           </div>
           <div>
-            <h2 className="font-mono text-lg font-bold leading-none tracking-tight">HMS</h2>
-            <p className="text-[10px] tracking-wider text-primary/80 font-semibold font-mono">NEXTGEN HEALTHCARE</p>
+            <h2 className="text-white font-bold text-[15px] leading-none tracking-wide">HMS</h2>
+            <p className="text-[#38BDF8] text-[9px] mt-1 tracking-wider font-bold uppercase">NextGen Healthcare</p>
           </div>
         </div>
 
