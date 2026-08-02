@@ -74,6 +74,18 @@ export default function StaffDashboard() {
   const [user, setUser] = useState<{ fullName?: string; phoneNumber?: string } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // Profile Menu States & Ref
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  const getInitials = (name?: string) => {
+    if (!name) return "TB";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0) return "TB";
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   // Core Data States
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
@@ -167,7 +179,7 @@ export default function StaffDashboard() {
     }, 60);
   };
 
-  // Auth Guard
+  // Auth Guard & Dropdown Click Outside
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     const savedUser = localStorage.getItem("user");
@@ -182,6 +194,14 @@ export default function StaffDashboard() {
       console.error(e);
     }
     setCheckingAuth(false);
+
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [router]);
 
   // Load Data
@@ -205,7 +225,7 @@ export default function StaffDashboard() {
       });
       if (res.ok) {
         const result = await res.json();
-        if (result.success && result.data && result.data.length > 0) {
+        if (result.success && result.data) {
           const mapped: Appointment[] = result.data.map((item: any) => {
             let apiStatus: Status = "Confirmed";
             if (item.status === "CANCELLED") apiStatus = "Cancelled";
@@ -231,7 +251,7 @@ export default function StaffDashboard() {
         }
       }
     } catch (err) {
-      console.warn(err);
+      console.warn("Failed to fetch appointments from backend, loading mock fallback.", err);
     }
 
     // Default design mock fallback
@@ -298,7 +318,7 @@ export default function StaffDashboard() {
       });
       if (res.ok) {
         const result = await res.json();
-        if (result.success && result.data && result.data.length > 0) {
+        if (result.success && result.data) {
           const mapped: DoctorSchedule[] = result.data.map((item: any) => ({
             id: item.id || `SUB-${Math.floor(1000 + Math.random() * 9000)}`,
             doctorName: item.doctorName || "BS. Bác Sĩ",
@@ -312,7 +332,7 @@ export default function StaffDashboard() {
         }
       }
     } catch (err) {
-      console.warn(err);
+      console.warn("Failed to fetch schedules from backend, loading mock fallback.", err);
     }
 
     const mockSchedules: DoctorSchedule[] = [
@@ -660,16 +680,17 @@ export default function StaffDashboard() {
         style={{ width: 220, background: "#0C1A2E" }}
       >
         {/* Logo Header */}
-        <div className="flex items-center gap-3 px-5 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div
-            className="flex items-center justify-center rounded-lg shrink-0"
-            style={{ width: 32, height: 32, background: "#0EA5E9", boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}
-          >
-            <Ico d={ic.plus} cls="w-4 h-4 text-white" />
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
+          <div className="w-8 h-8 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0"
+            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
+            <div className="relative w-3.5 h-3.5 flex items-center justify-center">
+              <div className="absolute w-3.5 h-[4px] bg-white rounded-sm" />
+              <div className="absolute w-[4px] h-3.5 bg-white rounded-sm" />
+            </div>
           </div>
           <div>
-            <p className="text-white font-bold leading-none animate-[fadeIn_0.2s_ease-out]" style={{ fontSize: 13 }}>HMS</p>
-            <p className="leading-none mt-1 tracking-wide" style={{ fontSize: 10, color: "#64748B" }}>Staff Portal</p>
+            <p className="text-white font-bold text-[13px] leading-none tracking-wide">HMS</p>
+            <p className="text-[#475569] text-[10px] mt-0.5 tracking-wide">Staff Portal</p>
           </div>
         </div>
 
@@ -697,25 +718,16 @@ export default function StaffDashboard() {
         </nav>
 
         {/* Profile Card Footer */}
-        <div className="px-4 py-4 flex flex-col gap-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center rounded-full shrink-0 font-bold text-xs"
-              style={{ width: 32, height: 32, background: "rgba(14,165,233,0.2)", border: "1px solid rgba(14,165,233,0.3)", color: "#38BDF8" }}
-            >
-              TB
+        <div className="border-t border-white/8 px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 flex items-center justify-center flex-shrink-0">
+              <span className="text-[11px] font-bold text-[#38BDF8]">{getInitials(user?.fullName)}</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold truncate text-white" style={{ fontSize: 11 }}>{user?.fullName || "Trần Thị B"}</p>
-              <p className="truncate mono text-[#475569]" style={{ fontSize: 10 }}>{user?.phoneNumber || "0912345678"}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-[#CBD5E1] truncate">{user?.fullName || "Trần Thị B"}</p>
+              <p className="text-[10px] text-[#475569] truncate">{user?.phoneNumber || "0912345678"}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center gap-2 h-7.5 w-full rounded-lg border border-slate-700 hover:border-red-500/30 text-[10px] font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all outline-none"
-          >
-            <Ico d={ic.logout} cls="w-3 h-3" /> Đăng xuất
-          </button>
         </div>
       </aside>
 
@@ -761,12 +773,28 @@ export default function StaffDashboard() {
               <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 9 }}>3</span>
             </button>
 
-            {/* Avatar circle */}
-            <div
-              className="flex items-center justify-center rounded-full font-bold text-white text-xs shrink-0 cursor-pointer"
-              style={{ width: 32, height: 32, background: "#0EA5E9" }}
-            >
-              TB
+            {/* Avatar circle with Dropdown */}
+            <div ref={profileRef} className="relative">
+              <div
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="w-8 h-8 rounded-full bg-[#0EA5E9] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+              >
+                <span className="text-white text-[11px] font-bold">{getInitials(user?.fullName)}</span>
+              </div>
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out] text-left">
+                  <div className="px-4 py-2 border-b border-[#F1F5F9]">
+                    <p className="text-[12px] font-semibold text-[#0F172A] truncate">{user?.fullName || "Trần Thị B"}</p>
+                    <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "0912345678"}</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold"
+                  >
+                    <Ico d={ic.logout} cls="w-3.5 h-3.5" /> Đăng xuất
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
