@@ -8,6 +8,8 @@ import '../views/appointment/appointment_booking_view.dart';
 import '../views/feedback/feedback_view.dart';
 import '../views/health/health_dashboard_view.dart';
 import '../views/profile/profile_placeholder_view.dart';
+import '../views/profile/medical_record_list_view.dart';
+import '../views/profile/medical_record_detail_view.dart';
 import '../views/shared/main_shell.dart';
 
 class AppRouter {
@@ -87,6 +89,21 @@ class AppRouter {
       GoRoute(
         path: '/schedule/feedback',
         builder: (context, state) => const FeedbackView(),
+      ),
+
+      // UC-06: Hồ sơ bệnh án — danh sách
+      GoRoute(
+        path: '/profile/medical-records',
+        builder: (context, state) => const MedicalRecordListView(),
+      ),
+
+      // UC-06: Hồ sơ bệnh án — chi tiết
+      GoRoute(
+        path: '/profile/medical-records/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return MedicalRecordDetailView(recordId: id);
+        },
       ),
     ],
   );

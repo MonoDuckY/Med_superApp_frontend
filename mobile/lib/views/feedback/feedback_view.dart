@@ -81,13 +81,7 @@ class _FeedbackHeader extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    Text(
-                      'UC-12 · Đánh giá dịch vụ khám chữa bệnh',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+
                   ],
                 ),
               ],

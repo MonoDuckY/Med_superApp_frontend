@@ -45,9 +45,7 @@ class ProfilePlaceholderView extends StatelessWidget {
                       iconColor: AppColors.primary,
                       title: 'Hồ sơ bệnh án',
                       subtitle: 'Lịch sử khám và chẩn đoán',
-                      badge: 'Sắp có',
-                      onTap: () => _showComingSoon(context,
-                          'Hồ sơ bệnh án đang được phát triển'),
+                      onTap: () => context.push('/profile/medical-records'),
                     ),
                     const SizedBox(height: 8),
                     _ProfileMenuItem(
