@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
   CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Check,
+  ClipboardList, Shield
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -397,40 +398,44 @@ export default function CreateUserPage() {
 
                   {/* Role switcher for multi-role accounts */}
                   {userRoles.length > 1 && (
-                    <div className="px-2 py-1.5 border-b border-[#F1F5F9] bg-[#F8FAFC]">
-                      <p className="px-2 text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">Chuyển vai trò</p>
+                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                      <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
                       <div className="flex flex-col gap-0.5">
                         {userRoles.includes("ADMIN") && (
                           <button
                             onClick={() => router.push("/user-management/create-user")}
-                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#0EA5E9] font-bold bg-[#0EA5E9]/10 cursor-pointer border-none outline-none"
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#0EA5E9] bg-sky-50/60 font-semibold cursor-pointer border-none outline-none"
                           >
-                            <span>🛡️ Quản trị viên</span>
-                            <Check size={10} />
+                            <Shield size={13} className="shrink-0 text-[#0EA5E9]" />
+                            <span className="flex-1">Quản trị viên</span>
+                            <Check size={11} className="text-[#0EA5E9] ml-auto" />
                           </button>
                         )}
                         {userRoles.includes("DOCTOR") && (
                           <button
                             onClick={() => router.push("/doctor")}
-                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#64748B] hover:bg-white hover:text-[#0F172A] cursor-pointer border-none outline-none"
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
                           >
-                            <span>🩺 Bác sĩ</span>
+                            <Stethoscope size={13} className="shrink-0 text-slate-400" />
+                            <span>Bác sĩ</span>
                           </button>
                         )}
                         {userRoles.includes("STAFF") && (
                           <button
                             onClick={() => router.push("/staff")}
-                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#64748B] hover:bg-white hover:text-[#0F172A] cursor-pointer border-none outline-none"
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
                           >
-                            <span>🏥 Nhân viên y tế</span>
+                            <ClipboardList size={13} className="shrink-0 text-slate-400" />
+                            <span>Nhân viên y tế</span>
                           </button>
                         )}
                         {userRoles.includes("RESEARCHER") && (
                           <button
                             onClick={() => router.push("/researcher")}
-                            className="w-full text-left text-[11px] px-2 py-1 rounded transition-colors flex items-center justify-between text-[#64748B] hover:bg-white hover:text-[#0F172A] cursor-pointer border-none outline-none"
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
                           >
-                            <span>🧪 Nghiên cứu sinh</span>
+                            <FlaskConical size={13} className="shrink-0 text-slate-400" />
+                            <span>Nghiên cứu sinh</span>
                           </button>
                         )}
                       </div>
