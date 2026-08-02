@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
-  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut,
+  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Check,
+  ClipboardList, Shield
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -99,8 +100,11 @@ export default function CreateUserPage() {
   const [submitted, setSubmitted]   = useState(false);
   const [createdId, setCreatedId]   = useState("");
 
-  const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string; roles?: string[] } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const rawRoles = currentUser?.roles || (currentUser?.role ? [currentUser.role] : []);
+  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -355,6 +359,53 @@ export default function CreateUserPage() {
                     <p className="text-[12px] font-semibold text-[#0F172A] truncate">{currentUser?.fullName || "Super Admin"}</p>
                     <p className="text-[10px] text-[#64748B] truncate mt-0.5">{currentUser?.phoneNumber || "ADM-20241105"}</p>
                   </div>
+
+                  {/* Role switcher for multi-role accounts */}
+                  {userRoles.length > 1 && (
+                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                      <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
+                      <div className="flex flex-col gap-0.5">
+                        {userRoles.includes("ADMIN") && (
+                          <button
+                            onClick={() => router.push("/user-management/create-user")}
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#0EA5E9] bg-sky-50/60 font-semibold cursor-pointer border-none outline-none"
+                          >
+                            <Shield size={13} className="shrink-0 text-[#0EA5E9]" />
+                            <span className="flex-1">Quản trị viên</span>
+                            <Check size={11} className="text-[#0EA5E9] ml-auto" />
+                          </button>
+                        )}
+                        {userRoles.includes("DOCTOR") && (
+                          <button
+                            onClick={() => router.push("/doctor")}
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
+                          >
+                            <Stethoscope size={13} className="shrink-0 text-slate-400" />
+                            <span>Bác sĩ</span>
+                          </button>
+                        )}
+                        {userRoles.includes("STAFF") && (
+                          <button
+                            onClick={() => router.push("/staff")}
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
+                          >
+                            <ClipboardList size={13} className="shrink-0 text-slate-400" />
+                            <span>Nhân viên y tế</span>
+                          </button>
+                        )}
+                        {userRoles.includes("RESEARCHER") && (
+                          <button
+                            onClick={() => router.push("/researcher")}
+                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
+                          >
+                            <FlaskConical size={13} className="shrink-0 text-slate-400" />
+                            <span>Nghiên cứu sinh</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors"
