@@ -1289,7 +1289,7 @@ export default function StaffDashboard() {
                     onChange={(e) => setFormFollowUp(e.target.checked)}
                     className="w-4 h-4 accent-sky-500 cursor-pointer"
                   />
-                  <span className="text-sm text-[#0F172A] font-medium">Hẹn tái khám</span>
+                  <span className="text-sm text-[#0F172A] font-medium">Lịch tái khám</span>
                 </label>
                 {formFollowUp && (
                   <div className="ml-6 animate-[fadeIn_0.15s_ease-out] text-left">
