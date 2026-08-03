@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { validateLoginForm } from "@/lib/validation";
-import { loginApiCall } from "@/lib/auth";
+import { loginApiCall, requestForgotPasswordApiCall, resetPasswordApiCall } from "@/lib/auth";
 import { 
   Eye, 
   EyeOff, 
@@ -72,16 +72,20 @@ export default function LoginPage() {
   // Forgot Password Flow States
   const [view, setView] = useState<"login" | "forgot-verify" | "forgot-reset">("login");
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-  const [timer, setTimer] = useState(31);
+  const [timer, setTimer] = useState(61);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const otpRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (view === "forgot-verify") {
-      setTimer(31);
+      setTimer(61);
       setOtp(["", "", "", "", "", ""]);
       setTimeout(() => {
         otpRefs.current[0]?.focus();
@@ -210,6 +214,101 @@ export default function LoginPage() {
       setError(errMsg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPasswordRequest = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setError(null);
+    setForgotError(null);
+
+    const deptInfo = DEPARTMENTS[activeDept];
+    if (!username.trim() || !deptInfo.pattern.test(username.trim())) {
+      setError("Vui lòng nhập số điện thoại hợp lệ ở trên trước khi yêu cầu cấp lại mật khẩu.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await requestForgotPasswordApiCall(username.trim());
+      setForgotPhone(username.trim());
+      setForgotError(null);
+      setTimer(60);
+      setView("forgot-verify");
+    } catch (err) {
+      const errorVal = err as Error;
+      setError(errorVal.message || "Không thể gửi mã OTP khôi phục mật khẩu.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setForgotError(null);
+    setForgotLoading(true);
+    try {
+      await requestForgotPasswordApiCall(forgotPhone);
+      setTimer(60);
+      alert("Đã gửi lại mã OTP mới đến số điện thoại của bạn.");
+    } catch (err) {
+      const errorVal = err as Error;
+      setForgotError(errorVal.message || "Gửi lại OTP thất bại.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    setForgotError(null);
+    const otpCode = otp.join("");
+    if (otpCode.length < 6) {
+      setForgotError("Vui lòng nhập đầy đủ mã OTP 6 chữ số.");
+      return;
+    }
+    setView("forgot-reset");
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+
+    if (newPassword.length < 8) {
+      setForgotError("Mật khẩu mới phải có tối thiểu 8 ký tự.");
+      return;
+    }
+    if (!/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      setForgotError("Mật khẩu mới phải chứa ít nhất 1 chữ cái và 1 chữ số.");
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      setForgotError("Mật khẩu mới phải chứa ít nhất 1 ký tự đặc biệt.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setForgotError("Xác nhận mật khẩu mới không khớp.");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const otpCode = otp.join("");
+      await resetPasswordApiCall({
+        phoneNumber: forgotPhone,
+        code: otpCode,
+        newPassword,
+        confirmPassword,
+      });
+      alert("Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.");
+      setUsername(forgotPhone);
+      setPassword("");
+      setForgotPhone("");
+      setOtp(["", "", "", "", "", ""]);
+      setView("login");
+    } catch (err) {
+      const errorVal = err as Error;
+      setForgotError(errorVal.message || "Đặt lại mật khẩu thất bại.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -415,10 +514,7 @@ export default function LoginPage() {
                     </label>
                     <a
                       href="#forgot"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setView("forgot-verify");
-                      }}
+                      onClick={handleForgotPasswordRequest}
                       className="text-xs font-semibold text-primary hover:underline"
                     >
                       Quên mật khẩu?
@@ -490,7 +586,7 @@ export default function LoginPage() {
                   Quên mật khẩu
                 </h1>
                 <p className="text-[#64748B] text-xs mt-2 leading-relaxed">
-                  Để đảm bảo an toàn, chúng tôi đã gửi mã xác minh gồm 6 chữ số đến số điện thoại đã đăng ký của bạn <span className="font-semibold text-neutral-900">+84 ••• ••• 5678</span>
+                  Để đảm bảo an toàn, chúng tôi đã gửi mã xác minh gồm 6 chữ số đến số điện thoại đã đăng ký của bạn <span className="font-semibold text-neutral-900">{forgotPhone}</span>
                 </p>
               </div>
 
@@ -515,20 +611,47 @@ export default function LoginPage() {
                 <p className="text-[11px] text-[#94A3B8] text-center mt-1">Nhập mã số được gửi đến số điện thoại của bạn</p>
               </div>
 
+              {/* Validation Warning Alert for Forgot Flow */}
+              {forgotError && (
+                <div className="flex items-start gap-2.5 rounded-hms bg-critical/5 p-3 border border-critical/10 text-xs text-critical font-medium animate-[fadeIn_0.2s_ease-out]">
+                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{forgotError}</span>
+                </div>
+              )}
+
               {/* Verify Button */}
               <button
                 type="button"
-                onClick={() => setView("forgot-reset")}
-                className="flex w-full h-11 items-center justify-center rounded-hms bg-[#0EA5E9] font-semibold text-white shadow-md shadow-sky-100 transition-all hover:bg-[#0284C7] active:scale-[0.98] focus:outline-none"
+                disabled={forgotLoading}
+                onClick={handleVerifyOtp}
+                className="flex w-full h-11 items-center justify-center rounded-hms bg-[#0EA5E9] font-semibold text-white shadow-md shadow-sky-100 transition-all hover:bg-[#0284C7] active:scale-[0.98] focus:outline-none disabled:opacity-60 disabled:pointer-events-none"
               >
-                Xác minh mã
+                {forgotLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang xác minh...
+                  </span>
+                ) : (
+                  "Xác minh mã"
+                )}
               </button>
 
               {/* Timer / Resend */}
               <div className="text-center text-xs">
-                <p className="text-[#64748B]">
-                  Gửi lại mã sau <span className="font-semibold text-neutral-900">{`00:${timer.toString().padStart(2, "0")}`}</span>
-                </p>
+                {timer > 0 ? (
+                  <p className="text-[#64748B]">
+                    Gửi lại mã sau <span className="font-semibold text-neutral-900">{`00:${timer.toString().padStart(2, "0")}`}</span>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={forgotLoading}
+                    onClick={handleResendOtp}
+                    className="text-xs font-semibold text-primary hover:underline cursor-pointer border-none bg-transparent outline-none"
+                  >
+                    Gửi lại mã OTP
+                  </button>
+                )}
                 <p className="text-[10px] text-[#94A3B8] mt-1.5 leading-relaxed">
                   Bạn không nhận được mã? Hãy kiểm tra Hộp thư SMS hoặc liên hệ bộ phận hỗ trợ IT.
                 </p>
@@ -553,7 +676,7 @@ export default function LoginPage() {
           )}
 
           {view === "forgot-reset" && (
-            <div className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
+            <form onSubmit={handleResetPassword} className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
               {/* Key Notice Badge */}
               <div className="flex items-center gap-2.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-3.5 py-2 text-[#1D4ED8] text-xs font-semibold">
                 <KeyRound className="h-4.5 w-4.5 shrink-0 text-primary" />
@@ -661,16 +784,28 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Validation Warning Alert for Forgot Flow */}
+              {forgotError && (
+                <div className="flex items-start gap-2.5 rounded-hms bg-critical/5 p-3 border border-critical/10 text-xs text-critical font-medium animate-[fadeIn_0.2s_ease-out]">
+                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{forgotError}</span>
+                </div>
+              )}
+
               {/* Submit / Save Password */}
               <button
-                type="button"
-                onClick={() => {
-                  alert("Mật khẩu của bạn đã được cập nhật thành công!");
-                  setView("login");
-                }}
-                className="flex w-full h-11 items-center justify-center rounded-hms bg-[#0EA5E9] font-semibold text-white shadow-md shadow-sky-100 hover:bg-[#0284C7] active:scale-[0.98] transition-all"
+                type="submit"
+                disabled={forgotLoading}
+                className="flex w-full h-11 items-center justify-center rounded-hms bg-[#0EA5E9] font-semibold text-white shadow-md shadow-sky-100 hover:bg-[#0284C7] active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
               >
-                Cập nhật mật khẩu
+                {forgotLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang cập nhật...
+                  </span>
+                ) : (
+                  "Cập nhật mật khẩu"
+                )}
               </button>
 
               {/* Back to Login */}
@@ -681,7 +816,7 @@ export default function LoginPage() {
               >
                 <ArrowLeft size={13} /> Quay lại Đăng nhập
               </button>
-            </div>
+            </form>
           )}
         </div>
 
