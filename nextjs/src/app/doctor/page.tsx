@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Stethoscope, LogOut, Shield, User, Phone, CheckCircle2, Check, ClipboardList, FlaskConical } from "lucide-react";
+import { logoutApiCall } from "@/lib/auth";
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -62,9 +63,8 @@ export default function DoctorDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await logoutApiCall();
     router.push("/");
   };
 

@@ -9,6 +9,8 @@ import {
   ClipboardList, Shield
 } from "lucide-react";
 
+import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
+
 /* ─── Types ─── */
 type Role = "Admin" | "Doctor" | "Staff" | "Researcher" | "Patient" | "";
 type Status = "Active" | "Inactive" | "";
@@ -153,9 +155,8 @@ export default function CreateUserPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await logoutApiCall();
     router.push("/");
   };
 
@@ -214,11 +215,10 @@ export default function CreateUserPage() {
 
     console.log("HMS Frontend Sending Payload:", JSON.stringify(payload, null, 2));
 
-    fetch(`${apiUrl}/api/admin/users`, {
+    fetchWithAuth(`${apiUrl}/api/admin/users`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
     })

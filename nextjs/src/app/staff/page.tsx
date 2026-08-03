@@ -25,6 +25,8 @@ import {
   FlaskConical
 } from "lucide-react";
 
+import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
+
 // ─── Data Types ───────────────────────────────────────────────────────────────
 
 type Status = "Confirmed" | "Cancelled" | "No-show" | "Completed" | "Chờ xác nhận";
@@ -224,14 +226,9 @@ export default function StaffDashboard() {
   const fetchAppointments = async () => {
     setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const token = localStorage.getItem("authToken");
 
     try {
-      const res = await fetch(`${apiUrl}/api/staff/scheduling/appointments`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -317,14 +314,9 @@ export default function StaffDashboard() {
   // Fetch Doctor Schedules
   const fetchDoctorSchedules = async () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const token = localStorage.getItem("authToken");
 
     try {
-      const res = await fetch(`${apiUrl}/api/staff/scheduling/work-schedules`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -391,7 +383,6 @@ export default function StaffDashboard() {
     const doctorPart = formDoctor.split(" (")[0];
     const roomPart = formDoctor.includes(" (") ? formDoctor.split(" (")[1].replace(")", "") : "Phòng khám";
 
-    const token = localStorage.getItem("authToken");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
     const newAppointmentObj: Appointment = {
@@ -407,11 +398,10 @@ export default function StaffDashboard() {
     };
 
     try {
-      await fetch(`${apiUrl}/api/staff/scheduling/appointments`, {
+      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           patientId: "new-patient",
@@ -451,15 +441,13 @@ export default function StaffDashboard() {
     const doctorPart = rescheduleDoctor.split(" (")[0];
     const roomPart = rescheduleDoctor.includes(" (") ? rescheduleDoctor.split(" (")[1].replace(")", "") : "Phòng khám";
 
-    const token = localStorage.getItem("authToken");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
     try {
-      await fetch(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointmentId.replace("#", "")}/reschedule`, {
+      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointmentId.replace("#", "")}/reschedule`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           doctorWorkSlotId: rescheduleSlotId,
@@ -503,15 +491,13 @@ export default function StaffDashboard() {
     const appointmentToModify = appointments.find((a) => a.id === selectedAppointmentId);
     if (!appointmentToModify) return;
 
-    const token = localStorage.getItem("authToken");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
     try {
-      await fetch(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointmentId.replace("#", "")}/cancel`, {
+      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointmentId.replace("#", "")}/cancel`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           cancellationReason: cancelReason
@@ -543,17 +529,15 @@ export default function StaffDashboard() {
 
   // Doctor Schedule Approvals
   const handleApproveSchedule = async (id: string) => {
-    const token = localStorage.getItem("authToken");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const targetSchedule = schedules.find((s) => s.id === id);
     if (!targetSchedule) return;
 
     try {
-      await fetch(`${apiUrl}/api/staff/scheduling/work-schedules/${id}/decision`, {
+      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules/${id}/decision`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           status: "APPROVED",
@@ -583,17 +567,15 @@ export default function StaffDashboard() {
     e.preventDefault();
     if (!selectedScheduleId || !rejectReason) return;
 
-    const token = localStorage.getItem("authToken");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const targetSchedule = schedules.find((s) => s.id === selectedScheduleId);
     if (!targetSchedule) return;
 
     try {
-      await fetch(`${apiUrl}/api/staff/scheduling/work-schedules/${selectedScheduleId}/decision`, {
+      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules/${selectedScheduleId}/decision`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           status: "REJECTED",
@@ -624,9 +606,8 @@ export default function StaffDashboard() {
 
 
   // Logout Handler
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await logoutApiCall();
     router.push("/");
   };
 
