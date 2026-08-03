@@ -621,18 +621,7 @@ export default function StaffDashboard() {
     );
   };
 
-  // Auto-Scan No-Show Simulation
-  const handleAutoScanNoShow = () => {
-    setAppointments((prev) =>
-      prev.map((app) =>
-        app.status === "Chờ xác nhận" ? { ...app, status: "No-show" } : app
-      )
-    );
-    triggerSmsToast(
-      "SMS Gateway — Đang xử lý",
-      "Hệ thống đang quét các lịch hẹn trễ giờ. Gửi tin nhắn SMS tự động tới bệnh nhân quá hạn (No-show)..."
-    );
-  };
+
 
   // Logout Handler
   const handleLogout = () => {
@@ -958,16 +947,6 @@ export default function StaffDashboard() {
                       <option value="No-show">No-show</option>
                     </select>
                     <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
-                  <div className="flex gap-2 ml-auto">
-                    <button
-                      type="button"
-                      onClick={handleAutoScanNoShow}
-                      className="h-9 px-4 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap active:scale-[0.98]"
-                    >
-                      <RefreshCw size={13} className="text-slate-500" />
-                      Tự động quét No-show
-                    </button>
                   </div>
                 </div>
 
@@ -1302,20 +1281,7 @@ export default function StaffDashboard() {
 
               {/* Checkboxes */}
               <div className="space-y-3 pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formDeposit}
-                    onChange={(e) => setFormDeposit(e.target.checked)}
-                    className="w-4 h-4 accent-emerald-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-[#0F172A] font-medium">Đã đóng tiền cọc</span>
-                  {formDeposit && (
-                    <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                      ✓ Xác nhận
-                    </span>
-                  )}
-                </label>
+                
                 <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
