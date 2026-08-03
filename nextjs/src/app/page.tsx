@@ -113,6 +113,9 @@ export default function LoginPage() {
       if (data.accessToken) {
         localStorage.setItem("authToken", data.accessToken);
       }
+      if (data.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
