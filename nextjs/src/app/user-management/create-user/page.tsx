@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
   CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Check,
-  ClipboardList, Shield
+  ClipboardList, Shield, Eye, EyeOff
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -93,6 +93,8 @@ export default function CreateUserPage() {
   const [address, setAddress]       = useState("");
   const [cccd, setCccd]             = useState("");
   const [bhyt, setBhyt]             = useState("");
+  const [password, setPassword]     = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [dragOver, setDragOver]     = useState(false);
   const [errors, setErrors]         = useState<Record<string, string>>({});
@@ -149,6 +151,8 @@ export default function CreateUserPage() {
 
   const validate = () => {
     const e: Record<string, string> = {};
+    const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
+
     if (!fullName.trim())  e.fullName = "Họ và tên là bắt buộc.";
     if (!phone.trim())     e.phone = "Số điện thoại là bắt buộc.";
     else if (!/^(\+?84|0)\d{9}$/.test(phone.replace(/\s/g, "")))
@@ -157,6 +161,11 @@ export default function CreateUserPage() {
       e.email = "Địa chỉ email không đúng định dạng.";
     if (roles.length === 0) e.roles   = "Vui lòng chọn ít nhất một vai trò.";
     if (!status) e.status = "Vui lòng chọn trạng thái tài khoản.";
+    if (!isOnlyPatient && !password.trim()) {
+      e.password = "Mật khẩu là bắt buộc.";
+    } else if (!isOnlyPatient && password.length < 6) {
+      e.password = "Mật khẩu phải dài ít nhất 6 ký tự.";
+    }
     if (!dob)    e.dob    = "Ngày sinh là bắt buộc.";
     if (!gender) e.gender = "Vui lòng chọn giới tính.";
     if (!address.trim()) e.address = "Địa chỉ thường trú là bắt buộc.";
@@ -176,10 +185,9 @@ export default function CreateUserPage() {
 
     // Exclude password if the account only has the PATIENT role (logs in via OTP)
     const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
-    const generatedPassword = "Hms1234@";
 
     const payload = {
-      ...(isOnlyPatient ? {} : { password: generatedPassword }),
+      ...(isOnlyPatient ? {} : { password: password.trim() }),
       roles: roles,
       fullName: fullName.trim(),
       gender: gender,
@@ -233,6 +241,7 @@ export default function CreateUserPage() {
   const handleReset = () => {
     setFullName(""); setPhone(""); setEmail(""); setRoles([]); setIsOpen(false); setStatus("");
     setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
+    setPassword(""); setShowPassword(false);
     setLicenseFile(null); setErrors({}); setSubmitted(false); setCreatedId("");
   };
 
@@ -323,6 +332,8 @@ export default function CreateUserPage() {
       </div>
     </aside>
   );
+
+  const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -601,6 +612,29 @@ export default function CreateUserPage() {
                         </div>
                       )}
                     </Field>
+
+                    {!isOnlyPatient && (
+                      <Field label="Mật khẩu" required error={errors.password} className="col-span-2">
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={password}
+                            onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: "" })); }}
+                            placeholder="Nhập mật khẩu..."
+                            className="w-full h-9 pl-3 pr-10 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all"
+                            style={{ borderRadius: "8px", borderColor: errors.password ? "#EF4444" : undefined }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2.5 top-2 p-0.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none outline-none"
+                          >
+                            {showPassword ? <EyeOff size={14} className="h-4 w-4" /> : <Eye size={14} className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        <p className="text-xs mt-1.5 text-[#94A3B8]">Mật khẩu phải dài ít nhất 6 ký tự và sẽ được mã hóa bảo mật.</p>
+                      </Field>
+                    )}
                   </div>
                 </div>
 
