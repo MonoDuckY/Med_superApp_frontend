@@ -138,19 +138,20 @@ export default function LoginPage() {
     if (token && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        const primaryRole = parsedUser.role || (parsedUser.roles && parsedUser.roles[0]) || "";
-        const upperRole = primaryRole.toUpperCase();
-        if (upperRole === "ADMIN") {
-          router.push("/user-management/create-user");
+        const roles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+        const upperRoles = roles.map((r: string) => r.toUpperCase());
+        
+        if (upperRoles.includes("ADMIN")) {
+          router.replace("/user-management/create-user");
           return;
-        } else if (upperRole === "DOCTOR") {
-          router.push("/doctor");
+        } else if (upperRoles.includes("DOCTOR")) {
+          router.replace("/doctor");
           return;
-        } else if (upperRole === "STAFF") {
-          router.push("/staff");
+        } else if (upperRoles.includes("STAFF")) {
+          router.replace("/staff");
           return;
-        } else if (upperRole === "RESEARCHER") {
-          router.push("/researcher");
+        } else if (upperRoles.includes("RESEARCHER")) {
+          router.replace("/researcher");
           return;
         }
       } catch (e) {
