@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { validateLoginForm } from "@/lib/validation";
-import { loginApiCall, requestForgotPasswordApiCall, resetPasswordApiCall } from "@/lib/auth";
+import { loginApiCall, requestForgotPasswordApiCall, resetPasswordApiCall, verifyForgotPasswordOtpApiCall } from "@/lib/auth";
 import { 
   Eye, 
   EyeOff, 
@@ -78,6 +78,7 @@ export default function LoginPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [forgotPhone, setForgotPhone] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
 
@@ -258,14 +259,25 @@ export default function LoginPage() {
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     setForgotError(null);
     const otpCode = otp.join("");
     if (otpCode.length < 6) {
       setForgotError("Vui lòng nhập đầy đủ mã OTP 6 chữ số.");
       return;
     }
-    setView("forgot-reset");
+
+    setForgotLoading(true);
+    try {
+      const data = await verifyForgotPasswordOtpApiCall(forgotPhone, otpCode);
+      setResetToken(data.resetToken);
+      setView("forgot-reset");
+    } catch (err) {
+      const errorVal = err as Error;
+      setForgotError(errorVal.message || "Xác minh mã OTP thất bại.");
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -291,10 +303,8 @@ export default function LoginPage() {
 
     setForgotLoading(true);
     try {
-      const otpCode = otp.join("");
       await resetPasswordApiCall({
-        phoneNumber: forgotPhone,
-        code: otpCode,
+        resetToken,
         newPassword,
         confirmPassword,
       });
@@ -302,7 +312,10 @@ export default function LoginPage() {
       setUsername(forgotPhone);
       setPassword("");
       setForgotPhone("");
+      setResetToken("");
       setOtp(["", "", "", "", "", ""]);
+      setNewPassword("");
+      setConfirmPassword("");
       setView("login");
     } catch (err) {
       const errorVal = err as Error;
