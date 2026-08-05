@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
   CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Check,
-  ClipboardList, Shield, Eye, EyeOff
+  ClipboardList, Shield
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -104,24 +104,45 @@ export default function CreateUserPage() {
 
   const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string; roles?: string[] } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-
-  const rawRoles = currentUser?.roles || (currentUser?.role ? [currentUser.role] : []);
-  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
     const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error("Error parsing current user", e);
-      }
+    if (!token || !savedUser) {
+      router.push("/");
+      return;
     }
-  }, []);
+
+    try {
+      const parsedUser = JSON.parse(savedUser);
+      const userRoles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+      const upperRoles = userRoles.map((r: string) => r.toUpperCase());
+      
+      if (!upperRoles.includes("ADMIN")) {
+        if (upperRoles.includes("DOCTOR")) {
+          router.push("/doctor");
+        } else if (upperRoles.includes("STAFF")) {
+          router.push("/staff");
+        } else if (upperRoles.includes("RESEARCHER")) {
+          router.push("/researcher");
+        } else {
+          router.push("/");
+        }
+        return;
+      }
+      
+      setCurrentUser(parsedUser);
+      setCheckingAuth(false);
+    } catch (e) {
+      console.error("Error parsing current user", e);
+      router.push("/");
+    }
+  }, [router]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -333,7 +354,20 @@ export default function CreateUserPage() {
     </aside>
   );
 
-  const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
+  const rawRoles = currentUser?.roles || (currentUser?.role ? [currentUser.role] : []);
+  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0C1A2E] flex flex-col items-center justify-center gap-3">
+        <svg className="animate-spin h-8 w-8 text-[#0EA5E9]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <p className="text-slate-400 text-xs font-medium">Đang kiểm tra bảo mật phân hệ quản trị...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -365,7 +399,7 @@ export default function CreateUserPage() {
                 <span className="text-white text-[11px] font-bold">{getInitials(currentUser?.fullName)}</span>
               </div>
               {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out]">
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out] text-left">
                   <div className="px-4 py-2 border-b border-[#F1F5F9]">
                     <p className="text-[12px] font-semibold text-[#0F172A] truncate">{currentUser?.fullName || "Super Admin"}</p>
                     <p className="text-[10px] text-[#64748B] truncate mt-0.5">{currentUser?.phoneNumber || "ADM-20241105"}</p>
@@ -419,7 +453,7 @@ export default function CreateUserPage() {
 
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold"
                   >
                     <LogOut size={13} /> Đăng xuất
                   </button>
