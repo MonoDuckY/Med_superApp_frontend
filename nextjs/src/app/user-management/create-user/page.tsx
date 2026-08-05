@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
-  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Check,
-  ClipboardList, Shield, Eye, EyeOff
+  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut,
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -102,49 +101,23 @@ export default function CreateUserPage() {
   const [submitted, setSubmitted]   = useState(false);
   const [createdId, setCreatedId]   = useState("");
 
-  const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
-
-  const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string; roles?: string[] } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
     const savedUser = localStorage.getItem("user");
-    if (!token || !savedUser) {
-      router.push("/");
-      return;
-    }
-
-    try {
-      const parsedUser = JSON.parse(savedUser);
-      const userRoles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
-      const upperRoles = userRoles.map((r: string) => r.toUpperCase());
-      
-      if (!upperRoles.includes("ADMIN")) {
-        if (upperRoles.includes("DOCTOR")) {
-          router.push("/doctor");
-        } else if (upperRoles.includes("STAFF")) {
-          router.push("/staff");
-        } else if (upperRoles.includes("RESEARCHER")) {
-          router.push("/researcher");
-        } else {
-          router.push("/");
-        }
-        return;
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error("Error parsing current user", e);
       }
-      
-      setCurrentUser(parsedUser);
-      setCheckingAuth(false);
-    } catch (e) {
-      console.error("Error parsing current user", e);
-      router.push("/");
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -159,8 +132,9 @@ export default function CreateUserPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    await logoutApiCall();
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
     router.push("/");
   };
 
@@ -174,8 +148,6 @@ export default function CreateUserPage() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
-
     if (!fullName.trim())  e.fullName = "Họ và tên là bắt buộc.";
     if (!phone.trim())     e.phone = "Số điện thoại là bắt buộc.";
     else if (!/^(\+?84|0)\d{9}$/.test(phone.replace(/\s/g, "")))
@@ -184,11 +156,6 @@ export default function CreateUserPage() {
       e.email = "Địa chỉ email không đúng định dạng.";
     if (roles.length === 0) e.roles   = "Vui lòng chọn ít nhất một vai trò.";
     if (!status) e.status = "Vui lòng chọn trạng thái tài khoản.";
-    if (!isOnlyPatient && !password.trim()) {
-      e.password = "Mật khẩu là bắt buộc.";
-    } else if (!isOnlyPatient && password.length < 6) {
-      e.password = "Mật khẩu phải dài ít nhất 6 ký tự.";
-    }
     if (!dob)    e.dob    = "Ngày sinh là bắt buộc.";
     if (!gender) e.gender = "Vui lòng chọn giới tính.";
     if (!address.trim()) e.address = "Địa chỉ thường trú là bắt buộc.";
@@ -401,61 +368,14 @@ export default function CreateUserPage() {
                 <span className="text-white text-[11px] font-bold">{getInitials(currentUser?.fullName)}</span>
               </div>
               {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out] text-left">
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out]">
                   <div className="px-4 py-2 border-b border-[#F1F5F9]">
                     <p className="text-[12px] font-semibold text-[#0F172A] truncate">{currentUser?.fullName || "Super Admin"}</p>
                     <p className="text-[10px] text-[#64748B] truncate mt-0.5">{currentUser?.phoneNumber || "ADM-20241105"}</p>
                   </div>
-
-                  {/* Role switcher for multi-role accounts */}
-                  {userRoles.length > 1 && (
-                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
-                      <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
-                      <div className="flex flex-col gap-0.5">
-                        {userRoles.includes("ADMIN") && (
-                          <button
-                            onClick={() => router.push("/user-management/create-user")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#0EA5E9] bg-sky-50/60 font-semibold cursor-pointer border-none outline-none"
-                          >
-                            <Shield size={13} className="shrink-0 text-[#0EA5E9]" />
-                            <span className="flex-1">Quản trị viên</span>
-                            <Check size={11} className="text-[#0EA5E9] ml-auto" />
-                          </button>
-                        )}
-                        {userRoles.includes("DOCTOR") && (
-                          <button
-                            onClick={() => router.push("/doctor")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <Stethoscope size={13} className="shrink-0 text-slate-400" />
-                            <span>Bác sĩ</span>
-                          </button>
-                        )}
-                        {userRoles.includes("STAFF") && (
-                          <button
-                            onClick={() => router.push("/staff")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <ClipboardList size={13} className="shrink-0 text-slate-400" />
-                            <span>Nhân viên y tế</span>
-                          </button>
-                        )}
-                        {userRoles.includes("RESEARCHER") && (
-                          <button
-                            onClick={() => router.push("/researcher")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <FlaskConical size={13} className="shrink-0 text-slate-400" />
-                            <span>Nghiên cứu sinh</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors"
                   >
                     <LogOut size={13} /> Đăng xuất
                   </button>
