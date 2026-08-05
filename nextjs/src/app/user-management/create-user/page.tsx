@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
   CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Check,
-  ClipboardList, Shield
+  ClipboardList, Shield, Eye, EyeOff
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -101,6 +101,8 @@ export default function CreateUserPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
   const [createdId, setCreatedId]   = useState("");
+
+  const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
 
   const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string; roles?: string[] } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
