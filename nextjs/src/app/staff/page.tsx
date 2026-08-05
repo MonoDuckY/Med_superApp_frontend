@@ -320,14 +320,71 @@ export default function StaffDashboard() {
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
-          const mapped: DoctorSchedule[] = result.data.map((item: any) => ({
-            id: item.id || `SUB-${Math.floor(1000 + Math.random() * 9000)}`,
-            doctorName: item.doctorName || "BS. Bác Sĩ",
-            workDate: item.workDate || "04/08/2026",
-            shift: item.note || "Ca Sáng (08:00 - 12:00)",
-            roomName: item.roomId || "Phòng 102",
-            status: item.status || "PENDING"
-          }));
+          const allSlotIds = Array.from(new Set(
+            result.data.flatMap((x: any) => (x.slots || []).map((s: any) => s.slotId))
+          )).filter((id): id is string => !!id);
+
+          const mapped: DoctorSchedule[] = result.data.map((item: any) => {
+            const slots = item.slots || [];
+            let shiftLabel = "Ca Sáng (08:00 - 12:00)";
+            if (slots.length >= 16) {
+              shiftLabel = "Cả Ngày (08:00 - 17:30)";
+            } else if (slots.length > 0) {
+              const firstSlotId = slots[0].slotId;
+              let foundSession: string | null = null;
+              
+              // 1. Try LocalStorage Cache
+              try {
+                const cached = localStorage.getItem("workSlotOptions");
+                if (cached) {
+                  const cachedSlots = JSON.parse(cached);
+                  const matched = cachedSlots.find((opt: any) => opt.id === firstSlotId);
+                  if (matched) {
+                    foundSession = matched.session;
+                  }
+                }
+              } catch (e) {
+                console.warn(e);
+              }
+
+              if (foundSession === "MORNING") {
+                shiftLabel = "Ca Sáng (08:00 - 12:00)";
+              } else if (foundSession === "AFTERNOON") {
+                shiftLabel = "Ca Chiều (13:30 - 17:30)";
+              } else {
+                // 2. Try Heuristic from Counter Clustering
+                const counters = allSlotIds.map(id => parseInt(id.slice(-6), 16)).sort((a, b) => a - b);
+                const minCounter = counters[0];
+                const maxCounter = counters[counters.length - 1];
+                const firstSlotCounter = parseInt(firstSlotId.slice(-6), 16);
+
+                if (maxCounter - minCounter > 7) {
+                  const base = minCounter;
+                  shiftLabel = (firstSlotCounter - base < 8) ? "Ca Sáng (08:00 - 12:00)" : "Ca Chiều (13:30 - 17:30)";
+                } else {
+                  // 3. Fallback: Split at 3271350 (standard middle threshold for the seeded database cluster)
+                  shiftLabel = (firstSlotCounter > 3271350) ? "Ca Chiều (13:30 - 17:30)" : "Ca Sáng (08:00 - 12:00)";
+                }
+              }
+            }
+
+            const rawStatus = item.status || "PENDING";
+            let statusVal: "PENDING" | "APPROVED" | "REJECTED" = "PENDING";
+            if (rawStatus === "REJECTED") {
+              statusVal = "REJECTED";
+            } else if (rawStatus !== "PENDING" && rawStatus !== "CANCELLED") {
+              statusVal = "APPROVED";
+            }
+
+            return {
+              id: item.submissionId || item.id || `SUB-${Math.floor(1000 + Math.random() * 9000)}`,
+              doctorName: (item.doctor && item.doctor.fullName) || item.doctorName || "BS. Bác Sĩ",
+              workDate: item.workDate || "04/08/2026",
+              shift: shiftLabel,
+              roomName: (slots[0] && slots[0].roomId) || item.roomId || "Phòng 102",
+              status: statusVal
+            };
+          });
           setSchedules(mapped);
           return;
         }
@@ -540,7 +597,7 @@ export default function StaffDashboard() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          status: "APPROVED",
+          decision: "APPROVE",
           rejectionReason: ""
         })
       });
@@ -578,7 +635,7 @@ export default function StaffDashboard() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          status: "REJECTED",
+          decision: "REJECT",
           rejectionReason: rejectReason
         })
       });

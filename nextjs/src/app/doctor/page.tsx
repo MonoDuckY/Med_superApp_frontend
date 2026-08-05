@@ -152,8 +152,12 @@ export default function DoctorDashboard() {
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
-          setAllSlots(result.data.slots || []);
-          setAllRooms(result.data.rooms || []);
+          const slots = result.data.slots || [];
+          const rooms = result.data.rooms || [];
+          setAllSlots(slots);
+          setAllRooms(rooms);
+          localStorage.setItem("workSlotOptions", JSON.stringify(slots));
+          localStorage.setItem("clinicRoomOptions", JSON.stringify(rooms));
         }
       }
     } catch (e) {
@@ -300,10 +304,18 @@ export default function DoctorDashboard() {
         setRoomId("");
         fetchSchedules();
       } else {
-        setErrorMsg(result.message || "Gửi đăng ký lịch thất bại.");
+        let msg = result.message || "Gửi đăng ký lịch thất bại.";
+        if (msg.includes("conflicts with existing slots")) {
+          msg = "Lịch làm việc này bị trùng với ca trực đã được duyệt hoặc đang chờ duyệt khác của bạn. Vui lòng chọn ngày, ca hoặc phòng khám khác.";
+        }
+        setErrorMsg(msg);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || "Đã xảy ra lỗi khi gửi đăng ký.");
+      let msg = err.message || "Đã xảy ra lỗi khi gửi đăng ký.";
+      if (msg.includes("conflicts with existing slots")) {
+        msg = "Lịch làm việc này bị trùng với ca trực đã được duyệt hoặc đang chờ duyệt khác của bạn. Vui lòng chọn ngày, ca hoặc phòng khám khác.";
+      }
+      setErrorMsg(msg);
     } finally {
       setFormLoading(false);
     }
