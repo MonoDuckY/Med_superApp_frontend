@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
-  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut,
+  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Eye, EyeOff
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -101,8 +101,11 @@ export default function CreateUserPage() {
   const [submitted, setSubmitted]   = useState(false);
   const [createdId, setCreatedId]   = useState("");
 
-  const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string; roles?: string[] } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -117,6 +120,7 @@ export default function CreateUserPage() {
         console.error("Error parsing current user", e);
       }
     }
+    setCheckingAuth(false);
   }, []);
 
   useEffect(() => {
@@ -199,7 +203,7 @@ export default function CreateUserPage() {
       },
       body: JSON.stringify(payload)
     })
-      .then(async (res) => {
+      .then(async (res: Response) => {
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           const result = await res.json();
@@ -214,13 +218,13 @@ export default function CreateUserPage() {
           throw new Error("Định dạng phản hồi từ máy chủ không hợp lệ.");
         }
       })
-      .then((data) => {
+      .then((data: any) => {
         if (data && data.id) {
           setCreatedId(data.id);
         }
         setSubmitted(true);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         setErrors({ general: err.message || "Không thể kết nối đến máy chủ quản lý người dùng." });
       })
       .finally(() => {
