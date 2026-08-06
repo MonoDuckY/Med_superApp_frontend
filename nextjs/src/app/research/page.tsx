@@ -14,8 +14,10 @@ export default function ResearchDashboard() {
     enable_srad: true,
     enable_augmentation: true
   });
-  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [progress, setProgress] = useState({ processed: 0, total: 0 });
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -38,7 +40,7 @@ export default function ResearchDashboard() {
     formData.append("file", file);
     formData.append("options", JSON.stringify(options));
     // Provide a dummy webhook URL for the local pipeline
-    formData.append("webhook_url", "http://localhost:8080/api/ai/webhook/dataset");
+    formData.append("webhook_url", "http://localhost:8080/api/webhooks/ai-job-completed");
 
     try {
       const response = await fetch("http://localhost:8080/api/ai/research/batch", {
@@ -48,8 +50,32 @@ export default function ResearchDashboard() {
 
       const result = await response.json();
       if (result.success) {
-        setStatus("success");
-        setMessage(`Đã gửi yêu cầu thành công! Job ID: ${result.data?.job_id}`);
+        const jobId = result.data?.job_id;
+        setStatus("processing");
+        setMessage(`Đang xử lý dữ liệu... Job ID: ${jobId}`);
+        setProgress({ processed: 0, total: 0 });
+        
+        // Bắt đầu vòng lặp polling
+        const intervalId = setInterval(async () => {
+          try {
+            const res = await fetch(`http://localhost:8080/api/ai/research/batch/${jobId}/status`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.status === "processing") {
+                setProgress({ processed: data.processed || 0, total: data.total || 0 });
+              } else if (data.status === "success") {
+                clearInterval(intervalId);
+                setStatus("success");
+                setMessage(`Đã xử lý xong! Job ID: ${jobId}`);
+                setDownloadUrl(data.download_url);
+                setProgress({ processed: data.processed_count || 0, total: data.processed_count || 0 });
+              }
+            }
+          } catch (e) {
+            console.error("Lỗi khi polling tiến độ:", e);
+          }
+        }, 2000);
+        
       } else {
         setStatus("error");
         setMessage(`Lỗi: ${result.message}`);
@@ -191,24 +217,51 @@ export default function ResearchDashboard() {
               <div className="mt-8 pt-6 border-t border-neutral-800">
                 {status !== "idle" && (
                   <div className={`p-4 rounded-xl mb-4 flex items-start space-x-3 text-sm ${
-                    status === "uploading" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                    (status === "uploading" || status === "processing") ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
                     status === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
                     "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                   }`}>
-                    {status === "uploading" && <RefreshCw size={18} className="animate-spin mt-0.5" />}
-                    {status === "success" && <CheckCircle size={18} className="mt-0.5" />}
-                    {status === "error" && <AlertTriangle size={18} className="mt-0.5" />}
-                    <span>{message}</span>
+                    {(status === "uploading" || status === "processing") && <RefreshCw size={18} className="animate-spin mt-0.5 flex-shrink-0" />}
+                    {status === "success" && <CheckCircle size={18} className="mt-0.5 flex-shrink-0" />}
+                    {status === "error" && <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />}
+                    
+                    <div className="flex-1">
+                      <span className="block mb-1">{message}</span>
+                      
+                      {/* Thanh Progress Bar */}
+                      {status === "processing" && progress.total > 0 && (
+                        <div className="w-full bg-neutral-900 rounded-full h-2 mt-3 border border-neutral-800">
+                          <div 
+                            className="bg-indigo-500 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${(progress.processed / progress.total) * 100}%` }}
+                          ></div>
+                          <div className="text-xs text-neutral-500 mt-1 text-right">
+                            {progress.processed} / {progress.total} ảnh ({(progress.processed/progress.total*100).toFixed(1)}%)
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={!file || status === "uploading"}
-                  className="w-full flex items-center justify-center py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl font-semibold transition-colors focus:ring-4 focus:ring-indigo-500/30 outline-none"
-                >
-                  {status === "uploading" ? "Đang xử lý..." : "Chạy Tiền xử lý (Execute)"}
-                </button>
+                {!downloadUrl ? (
+                  <button
+                    type="submit"
+                    disabled={!file || status === "uploading" || status === "processing"}
+                    className="w-full flex items-center justify-center py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl font-semibold transition-colors focus:ring-4 focus:ring-indigo-500/30 outline-none"
+                  >
+                    {status === "uploading" ? "Đang upload..." : status === "processing" ? "Đang xử lý..." : "Chạy Tiền xử lý (Execute)"}
+                  </button>
+                ) : (
+                  <a
+                    href={downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-colors focus:ring-4 focus:ring-emerald-500/30 outline-none"
+                  >
+                    Tải File Kết Quả (.zip)
+                  </a>
+                )}
               </div>
             </div>
           </div>
