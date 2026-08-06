@@ -1,75 +1,173 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { validateLoginForm } from "@/lib/validation";
-import { loginApiCall, requestForgotPasswordApiCall, resetPasswordApiCall, verifyForgotPasswordOtpApiCall } from "@/lib/auth";
 import { 
   Eye, 
   EyeOff, 
-  ShieldAlert, 
-  Headphones,
-  Plus,
-  Loader2,
-  Shield,
-  ArrowLeft,
-  KeyRound,
-  Lock,
-  Check,
+  Plus, 
+  Loader2, 
+  Lock, 
+  Check, 
+  Headphones, 
+  AlertCircle, 
+  KeyRound, 
+  ArrowLeft 
 } from "lucide-react";
 
-// Strict Types
-type DepartmentType = "clinical" | "research" | "administration";
+import { 
+  loginApiCall, 
+  requestForgotPasswordApiCall, 
+  resetPasswordApiCall, 
+  verifyForgotPasswordOtpApiCall 
+} from "@/lib/auth";
 
-interface DepartmentDetails {
-  id: DepartmentType;
-  name: string;
-  subtext: string;
-  placeholder: string;
-  pattern: RegExp;
-  patternDescription: string;
+/* ─── ECG wave SVG ───────────────────────────────────────────────────────────── */
+function EcgWave() {
+  return (
+    <svg
+      viewBox="0 0 700 80"
+      preserveAspectRatio="none"
+      className="absolute inset-0 w-full h-full"
+      style={{ opacity: 0.18 }}
+    >
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <polyline
+        filter="url(#glow)"
+        stroke="#0EA5E9"
+        strokeWidth="2"
+        fill="none"
+        points="
+          0,40 60,40 70,40 80,15 90,65 100,40 110,40
+          170,40 180,40 190,8  200,72 210,40 220,40
+          280,40 290,40 300,15 310,65 320,40 330,40
+          390,40 400,40 410,8  420,72 430,40 440,40
+          500,40 510,40 520,15 530,65 540,40 550,40
+          610,40 620,40 630,8  640,72 650,40 700,40
+        "
+      />
+    </svg>
+  );
 }
 
-const DEPARTMENTS: Record<DepartmentType, DepartmentDetails> = {
-  clinical: {
-    id: "clinical",
-    name: "Lâm sàng",
-    subtext: "Bác sĩ / Nhân viên",
-    placeholder: "ví dụ: 0912345678",
-    pattern: /^(\+84|0)\d{9}$/,
-    patternDescription: "Số điện thoại lâm sàng không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và gồm 9 chữ số tiếp theo).",
-  },
-  research: {
-    id: "research",
-    name: "Nghiên cứu",
-    subtext: "Phòng Lab / Khoa học",
-    placeholder: "ví dụ: 0912345678",
-    pattern: /^(\+84|0)\d{9}$/,
-    patternDescription: "Số điện thoại nghiên cứu không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và gồm 9 chữ số tiếp theo).",
-  },
-  administration: {
-    id: "administration",
-    name: "Quản trị",
-    subtext: "Quản lý Hệ thống",
-    placeholder: "ví dụ: 0912345678",
-    pattern: /^(\+84|0)\d{9}$/,
-    patternDescription: "Số điện thoại quản trị không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và gồm 9 chữ số tiếp theo).",
-  },
-};
+/* ─── Stat card ──────────────────────────────────────────────────────────────── */
+function StatCard({ value, label }: { value: string; label: string }) {
+  return (
+    <div
+      className="flex-1 rounded-xl px-5 py-4 flex flex-col gap-1"
+      style={{
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <p className="font-bold text-white text-base tracking-tight">{value}</p>
+      <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">{label}</p>
+    </div>
+  );
+}
+
+/* ─── Left branding panel ────────────────────────────────────────────────────── */
+function BrandPanel() {
+  return (
+    <div
+      className="relative hidden lg:flex flex-col justify-between overflow-hidden w-1/2 bg-[#0C1A2E]"
+      style={{ padding: "40px 48px" }}
+    >
+      {/* Ambient glow */}
+      <div className="absolute pointer-events-none" style={{
+        width: 500, height: 500,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(14,165,233,0.12) 0%, transparent 70%)",
+        top: -100, left: -100,
+      }} />
+      <div className="absolute pointer-events-none" style={{
+        width: 400, height: 400,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)",
+        bottom: 80, right: -80,
+      }} />
+
+      {/* Top: logo + status */}
+      <div className="relative z-10 flex flex-col gap-5">
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div
+            className="flex items-center justify-center rounded-lg shrink-0 w-9 h-9 bg-[#0EA5E9]"
+            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}
+          >
+            <Plus className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-white leading-none text-sm">HMS</p>
+            <p className="leading-none mt-1 tracking-widest font-semibold text-[10px] text-[#475569]">NEXTGEN HEALTHCARE</p>
+          </div>
+        </div>
+
+        {/* Status pill */}
+        <div className="flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-medium text-emerald-500">Hệ thống Trực tuyến — Hoạt động ổn định</span>
+        </div>
+      </div>
+
+      {/* Center: hero copy */}
+      <div className="relative z-10 flex flex-col gap-8">
+        <div>
+          <h1 className="font-bold leading-tight text-white text-4xl">
+            Trí Tuệ Nhân Tạo<br />
+            cho Y Tế{" "}
+            <span className="text-[#0EA5E9]">Tốt Hơn</span>
+          </h1>
+          <p className="mt-4 leading-relaxed text-sm text-[#64748B] max-w-[480px]">
+            Tích hợp quy trình lâm sàng, chẩn đoán bằng AI và hợp nhất dữ liệu bệnh nhân
+            thời gian thực trên một nền tảng an toàn.
+          </p>
+        </div>
+
+        {/* Stat cards with ECG background */}
+        <div className="relative rounded-2xl overflow-hidden h-24">
+          <EcgWave />
+          <div className="absolute inset-0 flex gap-3 p-3 z-10">
+            <StatCard value="48,231"   label="Hồ sơ Bệnh nhân" />
+            <StatCard value="99.97%"   label="Thời gian Hoạt động" />
+            <StatCard value="ISO 27001" label="Đạt chuẩn Bảo mật" />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <p className="relative z-10 text-xs text-[#475569]">
+        © 2026 HMS — Hệ sinh thái Y tế NextGen. Bảo lưu mọi quyền.
+      </p>
+    </div>
+  );
+}
+
+const ROLES = ["Quản trị", "Bác sĩ", "Nhân viên", "Nghiên cứu"];
+const ROLE_CODES = ["ADMIN", "DOCTOR", "STAFF", "RESEARCHER"];
 
 export default function LoginPage() {
   const router = useRouter();
-  const [activeDept, setActiveDept] = useState<DepartmentType>("administration");
+  const [roleIndex, setRoleIndex] = useState(0);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
-  // Validation & Loading States
+
+  // States
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Forgot Password Flow States
+  // Forgot password flow
   const [view, setView] = useState<"login" | "forgot-verify" | "forgot-reset">("login");
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(61);
@@ -82,7 +180,36 @@ export default function LoginPage() {
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  const otpRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const savedUser = localStorage.getItem("user");
+    if (token && savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        const roles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+        const upperRoles = roles.map((r: string) => r.toUpperCase());
+        
+        if (upperRoles.includes("ADMIN")) {
+          router.replace("/user-management/create-user");
+          return;
+        } else if (upperRoles.includes("DOCTOR")) {
+          router.replace("/doctor");
+          return;
+        } else if (upperRoles.includes("STAFF")) {
+          router.replace("/staff");
+          return;
+        } else if (upperRoles.includes("RESEARCHER")) {
+          router.replace("/researcher");
+          return;
+        }
+      } catch (e) {
+        console.error("Error parsing saved user from session", e);
+      }
+    }
+    setCheckingAuth(false);
+  }, [router]);
 
   useEffect(() => {
     if (view === "forgot-verify") {
@@ -132,49 +259,28 @@ export default function LoginPage() {
     }
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const savedUser = localStorage.getItem("user");
-    if (token && savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        const roles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
-        const upperRoles = roles.map((r: string) => r.toUpperCase());
-        
-        if (upperRoles.includes("ADMIN")) {
-          router.replace("/user-management/create-user");
-          return;
-        } else if (upperRoles.includes("DOCTOR")) {
-          router.replace("/doctor");
-          return;
-        } else if (upperRoles.includes("STAFF")) {
-          router.replace("/staff");
-          return;
-        } else if (upperRoles.includes("RESEARCHER")) {
-          router.replace("/researcher");
-          return;
-        }
-      } catch (e) {
-        console.error("Error parsing saved user from session", e);
-      }
-    }
-    setCheckingAuth(false);
-  }, [router]);
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const deptInfo = DEPARTMENTS[activeDept];
-    const validationError = validateLoginForm(username, password, deptInfo.pattern, deptInfo.patternDescription);
-    if (validationError) {
-      setError(validationError);
+    if (!username.trim()) {
+      setError("Số điện thoại là bắt buộc.");
+      return;
+    }
+    if (!/^(\+?84|0)\d{9}$/.test(username.replace(/\s/g, ""))) {
+      setError("Số điện thoại không đúng định dạng Việt Nam (ví dụ: 0912345678).");
+      return;
+    }
+    if (!password.trim()) {
+      setError("Mật khẩu là bắt buộc.");
       return;
     }
 
     setLoading(true);
     try {
-      const data = await loginApiCall(username.trim(), password);
+      const selectedRole = ROLE_CODES[roleIndex];
+      const data = await loginApiCall(username.trim(), password, selectedRole);
+
       if (data.accessToken) {
         localStorage.setItem("authToken", data.accessToken);
       }
@@ -184,9 +290,8 @@ export default function LoginPage() {
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
-      // Redirect based on role
-      const primaryRole = data.user.role || (data.user.roles && data.user.roles[0]) || "";
-      const upperRole = primaryRole.toUpperCase();
+
+      const upperRole = selectedRole.toUpperCase();
       if (upperRole === "ADMIN") {
         router.push("/user-management/create-user");
       } else if (upperRole === "DOCTOR") {
@@ -196,7 +301,7 @@ export default function LoginPage() {
       } else if (upperRole === "RESEARCHER") {
         router.push("/researcher");
       } else {
-        router.push("/user-management/create-user"); // Admin is the default safe fallback
+        router.push("/user-management/create-user");
       }
     } catch (err) {
       const errorVal = err as Error;
@@ -227,8 +332,11 @@ export default function LoginPage() {
     setError(null);
     setForgotError(null);
 
-    const deptInfo = DEPARTMENTS[activeDept];
-    if (!username.trim() || !deptInfo.pattern.test(username.trim())) {
+    if (!username.trim()) {
+      setError("Vui lòng nhập số điện thoại vào ô Số điện thoại trước.");
+      return;
+    }
+    if (!/^(\+?84|0)\d{9}$/.test(username.replace(/\s/g, ""))) {
       setError("Vui lòng nhập số điện thoại hợp lệ ở trên trước khi yêu cầu cấp lại mật khẩu.");
       return;
     }
@@ -331,282 +439,136 @@ export default function LoginPage() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#0B1528] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="animate-spin text-[#0EA5E9] h-8 w-8" />
+      <div className="min-h-screen bg-[#0C1A2E] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="animate-spin h-8 w-8 text-[#0EA5E9]" />
         <p className="text-slate-400 text-xs font-medium">Đang xác thực phiên đăng nhập bảo mật...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen w-full select-none bg-surface font-inter text-neutral-500">
-      {/* LEFT PANE - CLINICAL BRANDING (Hidden on mobile, flex on web) */}
-      <div className="relative hidden w-1/2 flex-col justify-between bg-[#0B1528] p-16 text-white overflow-hidden lg:flex">
-        {/* Decorative Grid / Radial Blur Background Overlay */}
-        <div className="absolute inset-0 bg-radial-gradient from-primary/15 via-transparent to-transparent pointer-events-none opacity-60" />
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="flex h-screen w-screen overflow-hidden bg-white">
+      <BrandPanel />
+
+      {/* ─── Right Auth Panel ─── */}
+      <div className="flex flex-col items-center justify-between w-full lg:w-1/2 p-6 md:p-12 overflow-y-auto bg-white">
         
-        {/* Branding Header */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0"
-            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
-            <div className="relative w-4.5 h-4.5 flex items-center justify-center">
-              <div className="absolute w-4.5 h-[5px] bg-white rounded-sm" />
-              <div className="absolute w-[5px] h-4.5 bg-white rounded-sm" />
-            </div>
+        {/* Mobile Header */}
+        <div className="flex items-center gap-2 lg:hidden w-full max-w-[420px] self-center">
+          <div className="flex w-8 h-8 items-center justify-center rounded-lg bg-[#0EA5E9]">
+            <Plus className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h2 className="text-white font-bold text-[15px] leading-none tracking-wide">HMS</h2>
-            <p className="text-[#38BDF8] text-[9px] mt-1 tracking-wider font-bold uppercase">NextGen Healthcare</p>
-          </div>
+          <span className="font-bold text-neutral-900 leading-none">HMS NextGen</span>
         </div>
 
-        {/* Hero Message & Stats */}
-        <div className="relative z-10 my-auto flex flex-col gap-8 max-w-lg">
-          {/* Status Badge */}
-          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-900/60 px-4 py-1.5 border border-slate-800 text-xs font-medium text-slate-300">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-            </span>
-            Hệ thống Trực tuyến · Đang hoạt động
-          </div>
-
-          {/* Heading */}
-          <h1 className="text-4xl font-bold leading-tight tracking-tight text-white lg:text-5xl">
-            Trí tuệ Nhân tạo <br />
-            <span className="text-primary font-extrabold">Vì Sức khỏe</span> Việt
-          </h1>
-
-          {/* Description */}
-          <p className="text-slate-400 text-sm leading-relaxed">
-            Quy trình lâm sàng tích hợp, chẩn đoán bằng trí tuệ nhân tạo và dữ liệu bệnh nhân thời gian thực — tất cả trên một nền tảng bảo mật.
-          </p>
-
-          {/* Core Metrics & SVG ECG Heartbeat Wave */}
-          <div className="relative mt-8">
-            {/* ECG Heartbeat SVG Wave - Renders behind cards */}
-            <div className="absolute inset-x-0 -bottom-4 h-24 overflow-hidden pointer-events-none z-0 opacity-40">
-              <svg className="w-full h-full stroke-primary" viewBox="0 0 400 100" fill="none">
-                <path
-                  d="M 0 60 L 80 60 L 90 55 L 98 65 L 105 60 L 140 60 L 152 20 L 165 90 L 178 60 L 210 60 L 220 55 L 228 65 L 235 60 L 280 60 L 292 20 L 305 90 L 318 60 L 400 60"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-
-            {/* Statistics Cards */}
-            <div className="relative z-10 grid grid-cols-3 gap-4">
-              <div className="flex flex-col justify-center rounded-hms-lg border border-slate-800 bg-[#0F1D36]/80 p-4 backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-primary/50 hover:bg-[#122442]/80">
-                <span className="text-xl font-bold text-white tracking-tight">48.231</span>
-                <span className="text-[11px] font-medium text-slate-400 mt-1">Hồ sơ Bệnh nhân</span>
-              </div>
-              <div className="flex flex-col justify-center rounded-hms-lg border border-slate-800 bg-[#0F1D36]/80 p-4 backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-primary/50 hover:bg-[#122442]/80">
-                <span className="text-xl font-bold text-white tracking-tight">99,97%</span>
-                <span className="text-[11px] font-medium text-slate-400 mt-1">Cam kết Hoạt động</span>
-              </div>
-              <div className="flex flex-col justify-center rounded-hms-lg border border-slate-800 bg-[#0F1D36]/80 p-4 backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-primary/50 hover:bg-[#122442]/80">
-                <span className="text-xl font-bold text-white tracking-tight">ISO 27001</span>
-                <span className="text-[11px] font-medium text-slate-400 mt-1">Đã kiểm định</span>
-              </div>
-            </div>
-          </div>
-
-          {view !== "login" && (
-            <div className="flex gap-4.5 rounded-hms-lg border border-primary/20 bg-primary/5 p-4.5 backdrop-blur-md animate-[fadeIn_0.25s_ease-out] mt-2">
-              <Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <div className="flex flex-col gap-1 text-left">
-                <span className="text-[12px] font-bold text-white tracking-wide">Xác thực Hai Yếu tố (2FA)</span>
-                <span className="text-[11px] leading-relaxed text-slate-300">
-                  Tài khoản của bạn được bảo vệ bằng 2 lớp bảo mật. Mã xác thực OTP gửi qua SMS sẽ hết hạn sau 5 phút và chỉ sử dụng được 1 lần.
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer (Left) */}
-        <div className="relative z-10 text-xs text-slate-500 font-medium">
-          © 2026 HMS — Hệ sinh thái Chăm sóc Sức khỏe NextGen. Bảo lưu mọi quyền.
-        </div>
-      </div>
-
-      {/* RIGHT PANE - INTERACTIVE LOGIN FORM */}
-      <div className="flex w-full flex-col justify-between bg-white px-6 py-12 sm:px-12 md:px-20 lg:w-1/2 overflow-y-auto">
-        {/* Small Brand Header for Mobile views */}
-        <div className="flex items-center gap-2 lg:hidden mb-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-hms bg-primary">
-            <Plus className="h-5 w-5 text-white stroke-[3px]" />
-          </div>
-          <span className="font-mono text-md font-bold text-neutral-900 leading-none">HMS NextGen</span>
-        </div>
-
-        {/* Top Header progress indicator & secure SLA (Only shown for Forgot Password flow) */}
-        {view !== "login" && (
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
-            <div className="flex items-center gap-3">
-              {/* Step 1: Request */}
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#10B981]">
-                <div className="w-4 h-4 rounded-full bg-[#10B981]/10 flex items-center justify-center">
-                  <Check className="h-2.5 w-2.5 text-[#10B981]" strokeWidth={3} />
-                </div>
-                <span>Yêu cầu</span>
-              </div>
-              <div className="w-6 h-px bg-slate-200" />
-              {/* Step 2: Verify */}
-              <div className={`flex items-center gap-1.5 text-xs font-semibold ${
-                view === "forgot-verify" ? "text-[#0EA5E9]" : "text-[#10B981]"
-              }`}>
-                {view === "forgot-verify" ? (
-                  <div className="w-4 h-4 rounded-full bg-[#0EA5E9] flex items-center justify-center text-white text-[9px] font-bold">2</div>
-                ) : (
-                  <div className="w-4 h-4 rounded-full bg-[#10B981]/10 flex items-center justify-center">
-                    <Check className="h-2.5 w-2.5 text-[#10B981]" strokeWidth={3} />
-                  </div>
-                )}
-                <span>Xác minh</span>
-              </div>
-              <div className="w-6 h-px bg-slate-200" />
-              {/* Step 3: Reset */}
-              <div className={`flex items-center gap-1.5 text-xs font-semibold ${
-                view === "forgot-reset" ? "text-[#0EA5E9]" : "text-slate-400"
-              }`}>
-                {view === "forgot-reset" ? (
-                  <div className="w-4 h-4 rounded-full bg-[#0EA5E9] flex items-center justify-center text-white text-[9px] font-bold">3</div>
-                ) : (
-                  <div className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center text-slate-400 text-[9px] font-bold">3</div>
-                )}
-                <span>Đặt lại</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              <span>Bảo mật · TLS 1.3</span>
-            </div>
-          </div>
-        )}
-
-        {/* Centered Content Container */}
+        {/* Form area */}
         <div className="my-auto mx-auto w-full max-w-[420px] py-8">
+          
           {view === "login" && (
             <form onSubmit={handleLoginSubmit} className="flex flex-col gap-6">
+              
+              {/* Heading */}
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 tracking-tight sm:text-3xl">
-                  Cổng Đăng Nhập Nhân Viên
-                </h1>
-                <p className="text-[#64748B] text-xs mt-1">
-                  Vui lòng chọn phân hệ và nhập số điện thoại để tiếp tục.
+                <h2 className="font-bold text-neutral-900 text-2xl tracking-tight">
+                  Đăng Nhập Hệ Thống
+                </h2>
+                <p className="mt-2 text-xs text-[#64748B] leading-relaxed">
+                  Vui lòng chọn vai trò công tác và điền thông tin để truy cập.
                 </p>
               </div>
-            
-              {/* Form Fields container */}
+
+              {/* Role segmented control */}
+              <div className="flex gap-1 p-1 rounded-xl bg-[#F1F5F9]">
+                {ROLES.map((r, i) => (
+                  <button
+                    type="button"
+                    key={r}
+                    onClick={() => setRoleIndex(i)}
+                    className="flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer border-none bg-transparent"
+                    style={i === roleIndex
+                      ? { background: "white", color: "#0EA5E9", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
+                      : { color: "#64748B" }}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              {/* Fields */}
               <div className="flex flex-col gap-4">
-                {/* Username / Phone Input */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="phone-number" className="text-xs font-bold text-neutral-900">
+                {/* Phone */}
+                <div>
+                  <label htmlFor="phone-number" className="block text-xs font-semibold mb-1.5 text-[#0F172A]">
                     Số điện thoại
                   </label>
                   <input
                     id="phone-number"
-                    type="text"
-                    disabled={loading}
+                    type="tel"
                     value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      if (error) setError(null);
-                    }}
-                    placeholder={DEPARTMENTS[activeDept].placeholder}
-                    className={`w-full h-11 px-3.5 rounded-hms text-sm bg-slate-50 border text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                      error && !DEPARTMENTS[activeDept].pattern.test(username.trim())
-                        ? "border-critical ring-2 ring-critical/10"
-                        : "border-slate-200 focus:border-primary"
-                    }`}
+                    onChange={(e) => { setUsername(e.target.value); if (error) setError(null); }}
+                    placeholder="ví dụ: 0912345678"
+                    className="w-full px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
+                    style={{ height: 40 }}
                   />
                 </div>
 
-                {/* Password Input */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="text-xs font-bold text-neutral-900">
-                      Mật khẩu
-                    </label>
-                    <a
-                      href="#forgot"
-                      onClick={handleForgotPasswordRequest}
-                      className="text-xs font-semibold text-primary hover:underline"
-                    >
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="password" className="text-xs font-semibold text-[#0F172A]">Mật khẩu</label>
+                    <a href="#forgot" onClick={handleForgotPasswordRequest} className="text-xs font-medium hover:underline text-[#0EA5E9]">
                       Quên mật khẩu?
                     </a>
                   </div>
-                  
                   <div className="relative">
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      disabled={loading}
                       value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      placeholder="Nhập mật khẩu của bạn"
-                      className={`w-full h-11 pl-3.5 pr-10 rounded-hms text-sm bg-slate-50 border text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20 ${
-                        error && password.length < 6
-                          ? "border-critical ring-2 ring-critical/10"
-                          : "border-slate-200 focus:border-primary"
-                      }`}
+                      onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
+                      placeholder="Nhập mật khẩu..."
+                      className="w-full pl-3 pr-10 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
+                      style={{ height: 40 }}
                     />
                     <button
                       type="button"
-                      disabled={loading}
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                      aria-label={showPassword ? "Ẩn mật khẩu" : "Hiển thị mật khẩu"}
+                      onClick={() => setShowPassword(s => !s)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none outline-none"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Validation Warning Alert (Error State) */}
+              {/* Error Alert */}
               {error && (
-                <div className="flex items-start gap-2.5 rounded-hms bg-critical/5 p-3 border border-critical/10 text-xs text-critical font-medium animate-[fadeIn_0.2s_ease-out]">
-                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 rounded-xl bg-red-50 p-3 border border-red-100 text-xs text-red-600 font-medium animate-[fadeIn_0.2s_ease-out]">
+                  <AlertCircle size={16} className="mt-0.5 text-red-500 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Login Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full h-11 items-center justify-center rounded-hms bg-primary font-semibold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary/95 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60 disabled:pointer-events-none"
+                className="w-full font-bold text-sm text-white rounded-lg transition-all cursor-pointer hover:opacity-90 active:scale-[0.99] border-none bg-[#0EA5E9] flex items-center justify-center"
+                style={{ height: 44, boxShadow: "0 2px 8px rgba(14,165,233,0.35)", marginTop: 4 }}
               >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang đăng nhập...
-                  </span>
-                ) : (
-                  "Đăng nhập"
-                )}
+                {loading ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : "Đăng nhập"}
               </button>
+
             </form>
           )}
 
           {view === "forgot-verify" && (
             <div className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
-             
-
-              <div className="text-left">
-                <h1 className="text-2xl font-bold text-neutral-900 tracking-tight sm:text-3xl">
+              <div>
+                <h2 className="font-bold text-neutral-900 text-2xl tracking-tight">
                   Quên mật khẩu
-                </h1>
-                <p className="text-[#64748B] text-xs mt-2 leading-relaxed">
+                </h2>
+                <p className="mt-2 text-xs text-[#64748B] leading-relaxed">
                   Để đảm bảo an toàn, chúng tôi đã gửi mã xác minh gồm 6 chữ số đến số điện thoại đã đăng ký của bạn <span className="font-semibold text-neutral-900">{forgotPhone}</span>
                 </p>
               </div>
@@ -632,29 +594,23 @@ export default function LoginPage() {
                 <p className="text-[11px] text-[#94A3B8] text-center mt-1">Nhập mã số được gửi đến số điện thoại của bạn</p>
               </div>
 
-              {/* Validation Warning Alert for Forgot Flow */}
+              {/* OTP Error alert */}
               {forgotError && (
-                <div className="flex items-start gap-2.5 rounded-hms bg-critical/5 p-3 border border-critical/10 text-xs text-critical font-medium animate-[fadeIn_0.2s_ease-out]">
-                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 rounded-xl bg-red-50 p-3 border border-red-100 text-xs text-red-600 font-medium animate-[fadeIn_0.2s_ease-out]">
+                  <AlertCircle size={16} className="mt-0.5 text-red-500 shrink-0" />
                   <span>{forgotError}</span>
                 </div>
               )}
 
-              {/* Verify Button */}
+              {/* Verify OTP Button */}
               <button
                 type="button"
                 disabled={forgotLoading}
                 onClick={handleVerifyOtp}
-                className="flex w-full h-11 items-center justify-center rounded-hms bg-[#0EA5E9] font-semibold text-white shadow-md shadow-sky-100 transition-all hover:bg-[#0284C7] active:scale-[0.98] focus:outline-none disabled:opacity-60 disabled:pointer-events-none"
+                className="w-full font-bold text-sm text-white rounded-lg transition-all cursor-pointer hover:opacity-90 active:scale-[0.99] border-none bg-[#0EA5E9] flex items-center justify-center"
+                style={{ height: 44, boxShadow: "0 2px 8px rgba(14,165,233,0.35)", marginTop: 4 }}
               >
-                {forgotLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang xác minh...
-                  </span>
-                ) : (
-                  "Xác minh mã"
-                )}
+                {forgotLoading ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : "Xác minh mã"}
               </button>
 
               {/* Timer / Resend */}
@@ -668,28 +624,28 @@ export default function LoginPage() {
                     type="button"
                     disabled={forgotLoading}
                     onClick={handleResendOtp}
-                    className="text-xs font-semibold text-primary hover:underline cursor-pointer border-none bg-transparent outline-none"
+                    className="text-xs font-semibold text-[#0EA5E9] hover:underline cursor-pointer border-none bg-transparent outline-none"
                   >
                     Gửi lại mã OTP
                   </button>
                 )}
-                <p className="text-[10px] text-[#94A3B8] mt-1.5 leading-relaxed">
+                <p className="text-[10px] text-[#94A3B8] mt-2 leading-relaxed">
                   Bạn không nhận được mã? Hãy kiểm tra Hộp thư SMS hoặc liên hệ bộ phận hỗ trợ IT.
                 </p>
               </div>
 
-              {/* OR Separator */}
+              {/* Separator */}
               <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-slate-100"></div>
+                <div className="flex-grow border-t border-slate-100" />
                 <span className="flex-shrink mx-4 text-[9px] text-slate-300 font-semibold tracking-wider uppercase">Hoặc</span>
-                <div className="flex-grow border-t border-slate-100"></div>
+                <div className="flex-grow border-t border-slate-100" />
               </div>
 
               {/* Back to Login */}
               <button
                 type="button"
                 onClick={() => setView("login")}
-                className="flex w-full h-11 items-center justify-center gap-2 rounded-hms border border-slate-200 text-xs font-semibold text-[#64748B] hover:bg-slate-50 transition-all"
+                className="flex w-full h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-semibold text-[#64748B] hover:bg-slate-50 transition-all bg-white cursor-pointer"
               >
                 <ArrowLeft size={13} /> Quay lại Đăng nhập
               </button>
@@ -698,25 +654,26 @@ export default function LoginPage() {
 
           {view === "forgot-reset" && (
             <form onSubmit={handleResetPassword} className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
-              {/* Key Notice Badge */}
+              
+              {/* Badge info */}
               <div className="flex items-center gap-2.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-3.5 py-2 text-[#1D4ED8] text-xs font-semibold">
-                <KeyRound className="h-4.5 w-4.5 shrink-0 text-primary" />
-                <span className="uppercase tracking-wider">Khôi phục mật khẩu · Bước 3/3 · Đặt lại</span>
+                <KeyRound className="h-4.5 w-4.5 shrink-0 text-[#0EA5E9]" />
+                <span className="uppercase tracking-wider">Đặt lại mật khẩu</span>
               </div>
 
-              <div className="text-left">
-                <h1 className="text-2xl font-bold text-neutral-900 tracking-tight sm:text-3xl">
+              <div>
+                <h2 className="font-bold text-neutral-900 text-2xl tracking-tight">
                   Đặt mật khẩu mới
-                </h1>
-                <p className="text-[#64748B] text-xs mt-2 leading-relaxed">
+                </h2>
+                <p className="mt-2 text-xs text-[#64748B] leading-relaxed">
                   Mật khẩu mới phải khác với các mật khẩu đã sử dụng trước đó.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4 text-left">
                 {/* New Password */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="new-password" className="text-xs font-bold text-neutral-900">
+                <div>
+                  <label htmlFor="new-password" className="block text-xs font-semibold mb-1.5 text-[#0F172A]">
                     Mật khẩu mới
                   </label>
                   <div className="relative">
@@ -726,55 +683,56 @@ export default function LoginPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Nhập mật khẩu mới của bạn"
-                      className="w-full h-11 pl-3.5 pr-10 rounded-hms text-sm bg-slate-50 border border-slate-200 text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20"
+                      className="w-full pl-3 pr-10 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
+                      style={{ height: 40 }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none outline-none"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Password Criteria Grid */}
+                {/* Password Criteria checklist */}
                 <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 flex flex-col gap-2.5 text-[11px] text-slate-500 font-medium">
                   <div className="flex items-center gap-2">
                     {newPassword.length >= 8 ? (
-                      <div className="w-4 h-4 rounded-full bg-[#10B981]/15 flex items-center justify-center">
+                      <div className="w-4 h-4 rounded-full bg-[#10B981]/15 flex items-center justify-center shrink-0">
                         <Check className="h-3 w-3 text-[#10B981]" strokeWidth={3} />
                       </div>
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-slate-300 bg-white" />
+                      <div className="w-4 h-4 rounded-full border border-slate-300 bg-white shrink-0" />
                     )}
                     <span className={newPassword.length >= 8 ? "text-neutral-900 font-semibold" : ""}>Tối thiểu 8 ký tự</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {/[a-zA-Z]/.test(newPassword) && /\d/.test(newPassword) ? (
-                      <div className="w-4 h-4 rounded-full bg-[#10B981]/15 flex items-center justify-center">
+                      <div className="w-4 h-4 rounded-full bg-[#10B981]/15 flex items-center justify-center shrink-0">
                         <Check className="h-3 w-3 text-[#10B981]" strokeWidth={3} />
                       </div>
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-slate-300 bg-white" />
+                      <div className="w-4 h-4 rounded-full border border-slate-300 bg-white shrink-0" />
                     )}
-                    <span className={/[a-zA-Z]/.test(newPassword) && /\d/.test(newPassword) ? "text-neutral-900 font-semibold" : ""}>Chứa ít nhất 1 chữ cái hoặc chữ số</span>
+                    <span className={/[a-zA-Z]/.test(newPassword) && /\d/.test(newPassword) ? "text-neutral-900 font-semibold" : ""}>Chứa ít nhất 1 chữ cái và 1 chữ số</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? (
-                      <div className="w-4 h-4 rounded-full bg-[#10B981]/15 flex items-center justify-center">
+                      <div className="w-4 h-4 rounded-full bg-[#10B981]/15 flex items-center justify-center shrink-0">
                         <Check className="h-3 w-3 text-[#10B981]" strokeWidth={3} />
                       </div>
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-slate-300 bg-white" />
+                      <div className="w-4 h-4 rounded-full border border-slate-300 bg-white shrink-0" />
                     )}
                     <span className={/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? "text-neutral-900 font-semibold" : ""}>Chứa ít nhất 1 ký tự đặc biệt (@#$%^&*)</span>
                   </div>
                 </div>
 
                 {/* Confirm Password */}
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="confirm-password" className="text-xs font-bold text-neutral-900">
+                <div>
+                  <label htmlFor="confirm-password" className="block text-xs font-semibold mb-1.5 text-[#0F172A]">
                     Xác nhận mật khẩu mới
                   </label>
                   <div className="relative">
@@ -784,82 +742,71 @@ export default function LoginPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Nhập lại mật khẩu mới"
-                      className="w-full h-11 pl-3.5 pr-10 rounded-hms text-sm bg-slate-50 border border-slate-200 text-neutral-900 placeholder-slate-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-primary/20"
+                      className="w-full pl-3 pr-10 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
+                      style={{ height: 40 }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none outline-none"
                     >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
-
-                {/* Safety Info notice */}
-                <div className="flex gap-2.5 rounded-xl bg-[#F0FDF4] border border-[#DCFCE7] p-3 text-[#166534] text-[10px] leading-relaxed">
-                  <Lock className="h-4 w-4 shrink-0 text-[#22C55E] mt-0.5" />
-                  <span>
-                    Sau khi cập nhật thành công, bạn sẽ bị đăng xuất khỏi tất cả các thiết bị khác đang hoạt động. Vui lòng đăng nhập lại bằng mật khẩu mới của bạn.
-                  </span>
-                </div>
               </div>
 
-              {/* Validation Warning Alert for Forgot Flow */}
+              {/* Reset password Error Alert */}
               {forgotError && (
-                <div className="flex items-start gap-2.5 rounded-hms bg-critical/5 p-3 border border-critical/10 text-xs text-critical font-medium animate-[fadeIn_0.2s_ease-out]">
-                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 rounded-xl bg-red-50 p-3 border border-red-100 text-xs text-red-600 font-medium animate-[fadeIn_0.2s_ease-out]">
+                  <AlertCircle size={16} className="mt-0.5 text-red-500 shrink-0" />
                   <span>{forgotError}</span>
                 </div>
               )}
 
-              {/* Submit / Save Password */}
+              {/* Submit Reset Button */}
               <button
                 type="submit"
                 disabled={forgotLoading}
-                className="flex w-full h-11 items-center justify-center rounded-hms bg-[#0EA5E9] font-semibold text-white shadow-md shadow-sky-100 hover:bg-[#0284C7] active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
+                className="w-full font-bold text-sm text-white rounded-lg transition-all cursor-pointer hover:opacity-90 active:scale-[0.99] border-none bg-[#0EA5E9] flex items-center justify-center"
+                style={{ height: 44, boxShadow: "0 2px 8px rgba(14,165,233,0.35)", marginTop: 4 }}
               >
-                {forgotLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang cập nhật...
-                  </span>
-                ) : (
-                  "Cập nhật mật khẩu"
-                )}
+                {forgotLoading ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : "Cập nhật mật khẩu"}
               </button>
 
               {/* Back to Login */}
               <button
                 type="button"
                 onClick={() => setView("login")}
-                className="flex w-full h-11 items-center justify-center gap-2 rounded-hms border border-slate-200 text-xs font-semibold text-[#64748B] hover:bg-slate-50 transition-all"
+                className="flex w-full h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-semibold text-[#64748B] hover:bg-slate-50 transition-all bg-white cursor-pointer"
               >
                 <ArrowLeft size={13} /> Quay lại Đăng nhập
               </button>
             </form>
           )}
+
         </div>
 
-        {/* Footer (Right) */}
-        <div className="flex flex-col gap-3 justify-between border-t border-slate-100 pt-6 text-[11px] font-medium text-slate-400 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="h-3.5 w-3.5 text-warning shrink-0" />
-            <span>Chỉ dành cho nhân sự được ủy quyền — Nghiêm cấm truy cập trái phép.</span>
+        {/* Footer */}
+        <div className="flex flex-col gap-3 justify-between border-t border-slate-100 pt-6 text-[11px] font-medium text-slate-400 sm:flex-row sm:items-center w-full max-w-[420px] self-center">
+          <div className="flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+            <p className="leading-snug text-slate-400 max-w-[280px]">
+              Chỉ dành cho nhân viên được ủy quyền — Nghiêm cấm mọi truy cập trái phép.
+            </p>
           </div>
-          <a
-            href="#support"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Liên hệ hỗ trợ qua helpdesk@nextgen-hms.org hoặc gọi số máy lẻ nội bộ: 8899.");
-            }}
-            className="flex items-center gap-1.5 text-primary hover:underline self-start sm:self-auto"
+          <button 
+            type="button"
+            onClick={() => alert("Liên hệ hỗ trợ qua helpdesk@nextgen-hms.org hoặc gọi số máy lẻ nội bộ: 8899.")}
+            className="flex items-center gap-1.5 shrink-0 hover:opacity-70 transition-opacity cursor-pointer border-none bg-transparent outline-none"
           >
-            <Headphones className="h-3.5 w-3.5" />
-            <span>Hỗ trợ kỹ thuật (IT)</span>
-          </a>
+            <Headphones className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs text-slate-500 font-semibold">Hỗ trợ kỹ thuật</span>
+          </button>
         </div>
+
       </div>
+
     </div>
   );
 }

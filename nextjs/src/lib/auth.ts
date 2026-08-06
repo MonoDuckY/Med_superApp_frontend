@@ -11,7 +11,7 @@ export interface LoginResponseData {
   };
 }
 
-export async function loginApiCall(phoneNumber: string, password: string): Promise<LoginResponseData> {
+export async function loginApiCall(phoneNumber: string, password: string, role: string, deviceId?: string): Promise<LoginResponseData> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   
   const res = await fetch(`${apiUrl}/api/auth/login`, {
@@ -22,6 +22,8 @@ export async function loginApiCall(phoneNumber: string, password: string): Promi
     body: JSON.stringify({
       phoneNumber,
       password,
+      role,
+      deviceId: deviceId || null,
     }),
   });
 

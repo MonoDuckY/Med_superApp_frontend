@@ -5,111 +5,89 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
-  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Eye, EyeOff
+  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Eye, EyeOff, HeartPulse
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
 
 /* ─── Types ─── */
-type Role = "Admin" | "Doctor" | "Staff" | "Researcher" | "Patient" | "";
 type Status = "Active" | "Inactive" | "";
 type Gender = "Male" | "Female" | "Other" | "";
 
-/* ─── Nav data ─── */
-const NAV = [
-  { icon: <LayoutDashboard size={15} strokeWidth={1.75} />, label: "Bảng điều khiển" },
-  {
-    icon: <Users size={15} strokeWidth={1.75} />, label: "Quản lý người dùng", active: true,
-    children: [{ label: "Tất cả người dùng" }, { label: "Tạo người dùng", active: true }, { label: "Vai trò & Quyền hạn" }],
-  },
-  { icon: <Stethoscope size={15} strokeWidth={1.75} />, label: "Lâm sàng", badge: 3 },
-  { icon: <FlaskConical size={15} strokeWidth={1.75} />, label: "Nghiên cứu" },
-  { icon: <FileText size={15} strokeWidth={1.75} />, label: "Báo cáo" },
-  { icon: <Settings size={15} strokeWidth={1.75} />, label: "Cấu hình" },
-];
+/* ─── Shared styling ─── */
+const INPUT_CLASS = "w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white";
+const SELECT_CLASS = "w-full h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 bg-white appearance-none cursor-pointer transition-all";
 
-/* ─── Shared input style ─── */
-const INPUT = "w-full h-10 px-3 text-[13px] text-[#0F172A] placeholder:text-[#CBD5E1] bg-white border border-[#E2E8F0] outline-none transition-all duration-150 focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10";
-const SELECT = `${INPUT} appearance-none cursor-pointer pr-8`;
-
-/* ─── Field wrapper ─── */
-function Field({
-  label, required, optional, hint, error, children, className = "",
-}: {
-  label: string; required?: boolean; optional?: boolean;
-  hint?: string; error?: string; children: React.ReactNode; className?: string;
-}) {
+/* ─── Field Label ─── */
+function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label className="text-[12px] font-semibold text-[#0F172A] flex items-center gap-1.5 leading-none">
-        {label}
-        {required && <span className="text-[#EF4444] text-[11px]">*</span>}
-        {optional && (
-          <span className="text-[10px] font-normal text-[#94A3B8] bg-[#F1F5F9] px-1.5 py-0.5 rounded">
-            Tùy chọn
-          </span>
-        )}
-      </label>
-      {children}
-      {hint && !error && <p className="text-[11px] text-[#94A3B8] leading-none">{hint}</p>}
-      {error && (
-        <p className="flex items-center gap-1 text-[11px] text-[#EF4444] leading-none">
-          <AlertCircle size={10} strokeWidth={2} />{error}
-        </p>
-      )}
+    <label className="block text-xs font-semibold mb-1.5 text-[#0F172A]">
+      {children}{required && <span className="text-rose-500 ml-0.5">*</span>}
+    </label>
+  );
+}
+
+/* ─── Section Heading ─── */
+function SectionHeading({ num, title, sub }: { num: string; title: string; sub: string }) {
+  return (
+    <div className="flex items-start gap-3 mb-5">
+      <span className="flex items-center justify-center rounded-full font-bold text-white shrink-0"
+        style={{ width: 22, height: 22, fontSize: 11, background: "#0EA5E9", marginTop: 1 }}>
+        {num}
+      </span>
+      <div>
+        <p className="font-bold text-sm text-[#0F172A]">{title}</p>
+        <p className="text-xs mt-0.5 text-[#64748B]">{sub}</p>
+      </div>
     </div>
   );
 }
 
-/* ─── Section header ─── */
-function SectionHeader({ num, title, sub }: { num: string; title: string; sub: string }) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-7 h-7 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0">
-        <span className="text-white text-[11px] font-bold">{num}</span>
-      </div>
-      <div>
-        <p className="text-[13px] font-bold text-[#0F172A] leading-none">{title}</p>
-        <p className="text-[11px] text-[#94A3B8] leading-none mt-0.5">{sub}</p>
-      </div>
-    </div>
-  );
+function Divider() {
+  return <div className="border-t border-[#F1F5F9]" />;
 }
 
 export default function CreateUserPage() {
   const router = useRouter();
-  const [expandedNav, setExpandedNav] = useState("User Management");
+  const [expandedNav, setExpandedNav] = useState("Quản lý người dùng");
 
-  /* form state */
-  const [fullName, setFullName]     = useState("");
-  const [phone, setPhone]           = useState("");
-  const [email, setEmail]           = useState("");
-  const [roles, setRoles]           = useState<string[]>([]);
-  const [isOpen, setIsOpen]         = useState(false);
-  const [status, setStatus]         = useState<Status>("");
-  const [dob, setDob]               = useState("");
-  const [gender, setGender]         = useState<Gender>("");
-  const [address, setAddress]       = useState("");
-  const [cccd, setCccd]             = useState("");
-  const [bhyt, setBhyt]             = useState("");
-  const [password, setPassword]     = useState("");
+  /* Form states */
+  const [fullName, setFullName]         = useState("");
+  const [phone, setPhone]               = useState("");
+  const [email, setEmail]               = useState("");
+  const [role, setRole]                 = useState<string>("");
+  const [selectedRoleName, setSelectedRoleName] = useState("");
+  const [status, setStatus]             = useState<Status>("");
+  const [dob, setDob]                   = useState("");
+  const [gender, setGender]             = useState<Gender>("");
+  const [address, setAddress]           = useState("");
+  const [cccd, setCccd]                 = useState("");
+  const [bhyt, setBhyt]                 = useState("");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [licenseFile, setLicenseFile] = useState<File | null>(null);
-  const [dragOver, setDragOver]     = useState(false);
-  const [errors, setErrors]         = useState<Record<string, string>>({});
+  const [licenseFile, setLicenseFile]   = useState<File | null>(null);
+  const [dragOver, setDragOver]         = useState(false);
+  
+  /* Section 4 states */
+  const [height, setHeight]             = useState<string>("");
+  const [weight, setWeight]             = useState<string>("");
+  const [bloodType, setBloodType]       = useState("");
+  const [medicalHistory, setMedicalHistory] = useState("");
+  const [currentSickness, setCurrentSickness] = useState("");
+
+  const [errors, setErrors]             = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted]   = useState(false);
-  const [createdId, setCreatedId]   = useState("");
+  const [submitted, setSubmitted]       = useState(false);
+  const [createdId, setCreatedId]       = useState("");
 
   const [currentUser, setCurrentUser] = useState<{ fullName?: string; phoneNumber?: string; role?: string; roles?: string[] } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
-
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const isOnlyPatient = role === "PATIENT";
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -125,9 +103,6 @@ export default function CreateUserPage() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
@@ -137,9 +112,9 @@ export default function CreateUserPage() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    router.push("/");
+    logoutApiCall().finally(() => {
+      router.push("/");
+    });
   };
 
   const getInitials = (name?: string) => {
@@ -158,13 +133,17 @@ export default function CreateUserPage() {
       e.phone = "Số điện thoại không đúng định dạng Việt Nam (ví dụ: 0912345678).";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       e.email = "Địa chỉ email không đúng định dạng.";
-    if (roles.length === 0) e.roles   = "Vui lòng chọn ít nhất một vai trò.";
+    if (!role) e.role = "Vui lòng chọn vai trò.";
     if (!status) e.status = "Vui lòng chọn trạng thái tài khoản.";
     if (!dob)    e.dob    = "Ngày sinh là bắt buộc.";
     if (!gender) e.gender = "Vui lòng chọn giới tính.";
     if (!address.trim()) e.address = "Địa chỉ thường trú là bắt buộc.";
-    if (roles.includes("DOCTOR") && !licenseFile)
+    if (role === "DOCTOR" && !licenseFile)
       e.license = "Bác sĩ bắt buộc phải tải lên chứng chỉ hành nghề.";
+    if (role !== "PATIENT" && !password.trim())
+      e.password = "Mật khẩu là bắt buộc.";
+    else if (role !== "PATIENT" && password.length < 6)
+      e.password = "Mật khẩu phải dài ít nhất 6 ký tự.";
     return e;
   };
 
@@ -175,14 +154,10 @@ export default function CreateUserPage() {
     setIsSubmitting(true);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const token = localStorage.getItem("authToken");
-
-    // Exclude password if the account only has the PATIENT role (logs in via OTP)
-    const isOnlyPatient = roles.length === 1 && roles.includes("PATIENT");
 
     const payload = {
-      ...(isOnlyPatient ? {} : { password: password.trim() }),
-      roles: roles,
+      ...(role === "PATIENT" ? {} : { password: password.trim() }),
+      role: role,
       fullName: fullName.trim(),
       gender: gender,
       dateOfBirth: dob,
@@ -191,7 +166,12 @@ export default function CreateUserPage() {
       email: email.trim() || null,
       citizenIdentificationCode: cccd || null,
       healthInsuranceCode: bhyt || null,
-      certificate: (roles.includes("DOCTOR") && licenseFile) ? licenseFile.name : null
+      certificate: (role === "DOCTOR" && licenseFile) ? licenseFile.name : null,
+      medicalHistory: medicalHistory.trim() || null,
+      currentSickness: currentSickness.trim() || null,
+      height: height ? parseFloat(height) : null,
+      weight: weight ? parseFloat(weight) : null,
+      bloodType: bloodType || null,
     };
 
     console.log("HMS Frontend Sending Payload:", JSON.stringify(payload, null, 2));
@@ -233,10 +213,11 @@ export default function CreateUserPage() {
   };
 
   const handleReset = () => {
-    setFullName(""); setPhone(""); setEmail(""); setRoles([]); setIsOpen(false); setStatus("");
+    setFullName(""); setPhone(""); setEmail(""); setRole(""); setSelectedRoleName(""); setStatus("");
     setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
-    setPassword(""); setShowPassword(false);
-    setLicenseFile(null); setErrors({}); setSubmitted(false); setCreatedId("");
+    setPassword(""); setShowPassword(false); setLicenseFile(null);
+    setHeight(""); setWeight(""); setBloodType(""); setMedicalHistory(""); setCurrentSickness("");
+    setErrors({}); setSubmitted(false); setCreatedId("");
   };
 
   const handleCancel = () => {
@@ -256,80 +237,6 @@ export default function CreateUserPage() {
     if (file) { setLicenseFile(file); setErrors((p) => ({ ...p, license: "" })); }
   };
 
-  /* ── Sidebar ── */
-  const Sidebar = () => (
-    <aside className="w-[220px] flex-shrink-0 bg-[#0C1A2E] flex flex-col h-full">
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
-        <div className="w-8 h-8 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0"
-          style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
-          <div className="relative w-3.5 h-3.5 flex items-center justify-center">
-            <div className="absolute w-3.5 h-[4px] bg-white rounded-sm" />
-            <div className="absolute w-[4px] h-3.5 bg-white rounded-sm" />
-          </div>
-        </div>
-        <div>
-          <p className="text-white font-bold text-[13px] leading-none tracking-wide">HMS</p>
-          <p className="text-[#475569] text-[10px] mt-0.5 tracking-wide">Admin Console</p>
-        </div>
-      </div>
-
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {NAV.map((item) => (
-          <div key={item.label} className="mb-0.5">
-            <button
-              onClick={() => setExpandedNav(expandedNav === item.label ? "" : item.label)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all group ${
-                item.active ? "bg-[#0EA5E9]/15 text-[#38BDF8]" : "text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8]"
-              }`}
-            >
-              <span className={item.active ? "text-[#38BDF8]" : "text-[#475569] group-hover:text-[#64748B]"}>
-                {item.icon}
-              </span>
-              <span className="text-[12px] font-medium flex-1">{item.label}</span>
-              {"badge" in item && item.badge && (
-                <span className="w-4 h-4 rounded-full bg-[#EF4444] text-white text-[9px] font-bold flex items-center justify-center">
-                  {item.badge}
-                </span>
-              )}
-              {"children" in item && item.children && (
-                <ChevronDown size={12} strokeWidth={2}
-                  className={`transition-transform ${expandedNav === item.label ? "rotate-180" : ""}`} />
-              )}
-            </button>
-            {"children" in item && item.children && expandedNav === item.label && (
-              <div className="ml-8 mt-0.5 flex flex-col gap-0.5">
-                {item.children.map((c) => (
-                  <button key={c.label}
-                    className={`w-full text-left text-[11px] px-3 py-2 rounded-lg transition-all ${
-                      c.active ? "text-[#38BDF8] bg-[#0EA5E9]/10 font-semibold" : "text-[#475569] hover:text-[#64748B] hover:bg-white/5"
-                    }`}>
-                    {c.active && <span className="inline-block w-1 h-1 rounded-full bg-[#0EA5E9] mr-2 mb-0.5" />}
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </nav>
-
-      <div className="border-t border-white/8 px-4 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 flex items-center justify-center">
-            <span className="text-[11px] font-bold text-[#38BDF8]">{getInitials(currentUser?.fullName)}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-[#CBD5E1] truncate">{currentUser?.fullName || "Super Admin"}</p>
-            <p className="text-[10px] text-[#475569] truncate">{currentUser?.phoneNumber || "ADM-20241105"}</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-
-  const rawRoles = currentUser?.roles || (currentUser?.role ? [currentUser.role] : []);
-  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
-
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-[#0C1A2E] flex flex-col items-center justify-center gap-3">
@@ -343,33 +250,114 @@ export default function CreateUserPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-[#F8FAFC]" style={{ fontFamily: "'Inter', sans-serif" }}>
+      
+      {/* ─── Sidebar ─── */}
+      <aside className="flex flex-col shrink-0 h-full w-[220px] bg-[#0C1A2E]">
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
+          <div className="flex items-center justify-center rounded-lg shrink-0 w-8 h-8 bg-[#0EA5E9]"
+            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
+            <span className="text-white text-base font-bold">+</span>
+          </div>
+          <div>
+            <p className="text-white font-bold leading-none text-[13px]">HMS</p>
+            <p className="leading-none mt-1 tracking-wide text-[10px] text-[#475569]">Admin Console</p>
+          </div>
+        </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="flex-shrink-0 h-14 bg-white border-b border-[#E2E8F0] flex items-center px-8 gap-4">
-          <div className="flex items-center gap-1.5 flex-1">
-            <span className="text-[12px] text-[#64748B] hover:text-[#0EA5E9] cursor-pointer transition-colors" onClick={() => router.push("/")}>Quản lý người dùng</span>
-            <ChevronRight size={12} strokeWidth={2} className="text-[#CBD5E1]" />
-            <span className="text-[12px] font-semibold text-[#0F172A]">Tạo người dùng</span>
+        <nav className="flex-1 px-4 py-4 flex flex-col gap-0.5 overflow-y-auto">
+          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
+            <LayoutDashboard size={15} strokeWidth={1.75} />
+            <span className="text-xs truncate">Bảng điều khiển</span>
+          </button>
+          
+          <div>
+            <button 
+              onClick={() => setExpandedNav(expandedNav === "Quản lý người dùng" ? "" : "Quản lý người dùng")}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left cursor-pointer bg-[#0EA5E9]/15 text-[#38BDF8]"
+            >
+              <Users size={15} strokeWidth={1.75} />
+              <span className="text-xs font-medium flex-1 truncate">Quản lý người dùng</span>
+              <ChevronDown size={12} className={`transition-transform duration-200 ${expandedNav === "Quản lý người dùng" ? "rotate-180" : ""}`} />
+            </button>
+            {expandedNav === "Quản lý người dùng" && (
+              <div className="ml-4 mt-0.5 flex flex-col gap-0.5 pl-3 border-l border-white/8">
+                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer">
+                  <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
+                  <span className="text-[11px]">Tất cả người dùng</span>
+                </button>
+                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#38BDF8] cursor-pointer">
+                  <span className="rounded-full shrink-0 w-1.5 h-1.5 bg-[#38BDF8]" />
+                  <span className="text-[11px] font-semibold">Tạo người dùng</span>
+                </button>
+                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer">
+                  <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
+                  <span className="text-[11px]">Vai trò & Quyền hạn</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
+            <Stethoscope size={15} strokeWidth={1.75} />
+            <span className="text-xs flex-1 truncate">Lâm sàng</span>
+            <span className="font-bold rounded-full flex items-center justify-center shrink-0 text-white bg-[#EF4444]"
+              style={{ fontSize: 9, minWidth: 16, height: 16, padding: "0 4px" }}>
+              3
+            </span>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
+            <FlaskConical size={15} strokeWidth={1.75} />
+            <span className="text-xs truncate">Nghiên cứu</span>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
+            <FileText size={15} strokeWidth={1.75} />
+            <span className="text-xs truncate">Báo cáo</span>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
+            <Settings size={15} strokeWidth={1.75} />
+            <span className="text-xs truncate">Cấu hình</span>
+          </button>
+        </nav>
+
+        <div className="px-4 py-4 border-t border-white/8">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center rounded-full shrink-0 font-bold text-[#38BDF8] bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-xs w-8 h-8">
+              {getInitials(currentUser?.fullName)}
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold truncate text-[11px] text-[#CBD5E1]">{currentUser?.fullName || "Super Admin"}</p>
+              <p className="truncate text-[10px] text-[#475569]">{currentUser?.phoneNumber || "ADM-20241105"}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* ─── Main Content Area ─── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        {/* ─── Header ─── */}
+        <header className="shrink-0 bg-white border-b border-[#E2E8F0] px-8 flex items-center justify-between h-14">
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-slate-400">Quản lý người dùng</span>
+            <ChevronRight size={12} className="text-slate-300" />
+            <span className="font-semibold text-[#0F172A]">Tạo người dùng</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative hidden xl:flex items-center">
-              <Search size={13} strokeWidth={2} className="absolute left-3 text-[#94A3B8] pointer-events-none" />
-              <input type="text" placeholder="Tìm kiếm..."
-                className="h-8 pl-8 pr-4 w-44 text-[12px] text-[#0F172A] placeholder:text-[#CBD5E1] bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium bg-[#E6F4EA] border-[#CEEAD6] text-[#10B981]">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+              Hệ thống Trực tuyến
             </div>
-            <button className="relative w-8 h-8 rounded-lg border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0EA5E9] hover:border-[#0EA5E9] transition-all">
-              <Bell size={14} strokeWidth={1.75} />
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#EF4444] text-white text-[8px] font-bold flex items-center justify-center">3</span>
+            <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors text-[#64748B] cursor-pointer">
+              <Bell size={15} />
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 8 }}>3</span>
             </button>
             <div ref={profileRef} className="relative">
               <div 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-8 h-8 rounded-full bg-[#0EA5E9] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center rounded-full font-bold text-white text-xs w-8 h-8 bg-[#0091FF] cursor-pointer"
               >
-                <span className="text-white text-[11px] font-bold">{getInitials(currentUser?.fullName)}</span>
+                {getInitials(currentUser?.fullName)}
               </div>
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out]">
@@ -379,7 +367,7 @@ export default function CreateUserPage() {
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer border-none outline-none"
                   >
                     <LogOut size={13} /> Đăng xuất
                   </button>
@@ -388,27 +376,23 @@ export default function CreateUserPage() {
             </div>
           </div>
         </header>
- 
-        {/* Page content */}
+
+        {/* ─── Main Scrollable Area ─── */}
         <main className="flex-1 overflow-y-auto px-8 py-6">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h1 className="text-[#0F172A] font-bold text-xl flex items-center gap-2.5 mb-1">
-                <UserPlus size={19} strokeWidth={2} className="text-[#0EA5E9]" />
-                Tạo Tài Khoản Người Dùng Mới
-              </h1>
-              <p className="text-[#64748B] text-[13px]">
-                Đăng ký nhân viên y tế hoặc bệnh nhân mới. Các trường có dấu <span className="text-[#EF4444] font-bold">*</span> là bắt buộc.
-              </p>
+          
+          {/* Page title */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2.5 mb-1 text-[#0F172A]">
+              <UserPlus size={19} className="text-[#0EA5E9]" />
+              <h1 className="text-xl font-bold">Tạo Tài Khoản Người Dùng Mới</h1>
             </div>
-            <div className="flex items-center gap-1.5 bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg px-3 py-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              <span className="text-[11px] font-medium text-[#0369A1]">Hệ thống Trực tuyến</span>
-            </div>
+            <p className="text-xs text-[#64748B]">
+              Đăng ký thành viên y tế hoặc bệnh nhân mới. Các trường có dấu <span className="text-rose-500">*</span> là bắt buộc.
+            </p>
           </div>
- 
+
           {submitted ? (
-            /* Success */
+            /* ─── Success Panel ─── */
             <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-12 flex flex-col items-center text-center max-w-[520px] mx-auto mt-8">
               <div className="w-16 h-16 rounded-full bg-[#10B981]/10 flex items-center justify-center mb-5">
                 <CheckCircle2 size={32} strokeWidth={1.5} className="text-[#10B981]" />
@@ -417,259 +401,364 @@ export default function CreateUserPage() {
               <p className="text-[#64748B] text-sm leading-relaxed mb-6">
                 Thành viên <span className="font-semibold text-[#0F172A]">{fullName}</span> đã được thêm vào hệ thống với vai trò{" "}
                 <span className="font-semibold text-[#0EA5E9]">
-                  {roles.map(r => r === "ADMIN" ? "Admin" : r === "DOCTOR" ? "Bác sĩ" : r === "STAFF" ? "Nhân viên" : r === "RESEARCHER" ? "Nghiên cứu sinh" : "Bệnh nhân").join(", ")}
+                  {role === "ADMIN" ? "Quản trị viên" : role === "DOCTOR" ? "Bác sĩ" : role === "RESEARCHER" ? "Nghiên cứu sinh" : role === "PATIENT" ? "Bệnh nhân" : "Nhân viên y tế"}
                 </span>.
               </p>
               <div className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-5 py-4 mb-6 text-left">
                 <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider font-semibold mb-1.5">Mã định danh hệ thống</p>
                 <p className="font-mono font-bold text-[#0EA5E9] text-lg tracking-widest">
                   {createdId || (
-                    ((roles[0] === "ADMIN" ? "ADM" : roles[0] === "DOCTOR" ? "DR" : roles[0] === "RESEARCHER" ? "RES" : roles[0] === "PATIENT" ? "PAT" : "STF")) +
+                    (role === "ADMIN" ? "ADM" : role === "DOCTOR" ? "DR" : role === "RESEARCHER" ? "RES" : role === "PATIENT" ? "PAT" : "STF") +
                     "-" + Date.now().toString().slice(-8)
                   )}
                 </p>
               </div>
               <div className="flex gap-3 w-full">
                 <button onClick={handleReset}
-                  className="flex-1 h-10 rounded-lg border border-[#E2E8F0] text-[13px] font-medium text-[#64748B] hover:bg-[#F8FAFC] transition-all">
+                  className="flex-1 h-10 rounded-lg border border-[#E2E8F0] text-[13px] font-medium text-[#64748B] hover:bg-[#F8FAFC] transition-all cursor-pointer">
                   Tạo Thêm Tài Khoản
                 </button>
                 <button onClick={() => router.push("/")}
-                  className="flex-1 h-10 rounded-lg bg-[#0EA5E9] text-white text-[13px] font-semibold hover:bg-[#0284C7] transition-colors shadow-sm shadow-sky-100">
-                  Xem Tất Cả Người Dùng
+                  className="flex-1 h-10 rounded-lg bg-[#0EA5E9] text-white text-[13px] font-semibold hover:bg-[#0284C7] transition-colors shadow-sm shadow-sky-100 cursor-pointer">
+                  Quay Về Trang Chủ
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
- 
-              {/* Card header */}
-              <div className="flex items-center justify-between px-7 py-4 border-b border-[#F1F5F9] bg-white sticky top-0 z-10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-1.5 h-5 rounded-full bg-[#0EA5E9]" />
-                  <span className="text-[13px] font-bold text-[#0F172A]">Tài khoản nhân sự mới</span>
-                  <span className="text-[11px] text-[#94A3B8] bg-[#F1F5F9] px-2 py-0.5 rounded">3 phần</span>
+            /* ─── Form Card ─── */
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
+              
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#F1F5F9]">
+                <div className="flex items-center gap-3">
+                  <span className="w-1 h-5 rounded-full shrink-0 bg-[#0EA5E9]" />
+                  <span className="font-bold text-sm text-[#0F172A]">Tài khoản nhân sự mới</span>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-[#F1F5F9] text-[#64748B]">4 phần</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck size={13} strokeWidth={2} className="text-[#F59E0B]" />
-                  <span className="text-[11px] font-medium text-[#92400E]">Chế độ xem Lâm sàng — Giới hạn</span>
+                <div className="flex items-center gap-1.5 text-xs font-medium text-[#92400E]">
+                  <ShieldCheck size={14} className="text-amber-500" />
+                  Chế độ xem Lâm sàng — Giới hạn
                 </div>
               </div>
- 
-              <div className="px-7 py-6 flex flex-col gap-8">
+
+              {/* Form body */}
+              <div className="px-7 py-7 space-y-8">
                 {errors.general && (
                   <div className="p-4 bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-[13px] rounded-xl flex items-start gap-2.5">
                     <AlertCircle size={16} className="mt-0.5 text-[#EF4444] flex-shrink-0" />
                     <p className="leading-relaxed">{errors.general}</p>
                   </div>
                 )}
- 
-                {/* ══════ SECTION 1: Account & Role ══════ */}
-                <div>
-                  <SectionHeader num="01" title="Tài khoản & Vai trò" sub="Thông tin đăng nhập, vai trò hệ thống và trạng thái truy cập" />
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
 
-                    <Field label="Họ và Tên" required error={errors.fullName}>
-                      <input type="text" value={fullName}
-                        onChange={(e) => { setFullName(e.target.value); setErrors((p) => ({ ...p, fullName: "" })); }}
-                        placeholder="ví dụ: Nguyễn Thị Lan"
-                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.fullName ? "#EF4444" : undefined }} />
-                    </Field>
+                {/* ── Section 01: Tài khoản & Vai trò ── */}
+                <section>
+                  <SectionHeading num="01" title="Tài khoản & Vai trò"
+                    sub="Thông tin đăng nhập, vai trò hệ thống và trạng thái truy cập" />
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                      <Label required>Họ và Tên</Label>
+                      <input 
+                        type="text" 
+                        value={fullName}
+                        onChange={(e) => { setFullName(e.target.value); setErrors(p => ({ ...p, fullName: "" })); }}
+                        placeholder="ví dụ: Nguyễn Thị Lan" 
+                        className={INPUT_CLASS}
+                        style={{ borderColor: errors.fullName ? "#EF4444" : undefined }} 
+                      />
+                      {errors.fullName && <p className="text-xs text-rose-500 mt-1">{errors.fullName}</p>}
+                    </div>
 
-                    <Field label="Số điện thoại" required hint="+84 hoặc 0 + 9 chữ số" error={errors.phone}>
-                      <input type="tel" value={phone}
-                        onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, "").slice(0, 14)); setErrors((p) => ({ ...p, phone: "" })); }}
-                        placeholder="ví dụ: 0912345678"
-                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.phone ? "#EF4444" : undefined }} />
-                    </Field>
+                    <div>
+                      <Label required>Số điện thoại</Label>
+                      <input 
+                        type="tel" 
+                        value={phone}
+                        onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, "").slice(0, 14)); setErrors(p => ({ ...p, phone: "" })); }}
+                        placeholder="ví dụ: 0912345678" 
+                        className={INPUT_CLASS}
+                        style={{ borderColor: errors.phone ? "#EF4444" : undefined }}
+                      />
+                      <p className="text-[10px] text-[#94A3B8] mt-1">+84 hoặc 0 + 9 chữ số</p>
+                      {errors.phone && <p className="text-xs text-rose-500 mt-1">{errors.phone}</p>}
+                    </div>
 
-                    <Field label="Địa chỉ Email" optional error={errors.email} className="col-span-2">
-                      <input type="email" value={email}
-                        onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: "" })); }}
-                        placeholder="ví dụ: name@hospital.com"
-                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.email ? "#EF4444" : undefined }} />
-                    </Field>
-
-                    <Field label="Vai trò" required error={errors.roles}>
-                      <div ref={dropdownRef} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setIsOpen(!isOpen)}
-                          className={`${INPUT} flex items-center justify-between text-left pr-3`}
-                          style={{ borderRadius: "8px", borderColor: errors.roles ? "#EF4444" : undefined }}
-                        >
-                          <span className={roles.length === 0 ? "text-[#CBD5E1]" : "text-[#0F172A]"}>
-                            {roles.length > 0 
-                              ? roles.map(r => r === "ADMIN" ? "Admin" : r === "DOCTOR" ? "Bác sĩ" : r === "STAFF" ? "Nhân viên" : r === "RESEARCHER" ? "Nghiên cứu sinh" : "Bệnh nhân").join(", ")
-                              : "Chọn vai trò..."}
-                          </span>
-                          <ChevronDown size={14} className="text-[#94A3B8] transition-transform duration-200" style={{ transform: isOpen ? "rotate(180deg)" : undefined }} />
-                        </button>
-                        
-                        {isOpen && (
-                          <div className="absolute left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 max-h-60 overflow-y-auto">
-                            {[
-                              { value: "ADMIN", label: "Admin", desc: "Toàn quyền quản trị hệ thống.", color: "bg-[#EF4444]" },
-                              { value: "DOCTOR", label: "Bác sĩ", desc: "Quản lý hồ sơ lâm sàng & chẩn đoán.", color: "bg-[#0EA5E9]" },
-                              { value: "STAFF", label: "Nhân viên", desc: "Tiếp đón & điều phối lịch hẹn.", color: "bg-[#10B981]" },
-                              { value: "RESEARCHER", label: "Nghiên cứu sinh", desc: "Tập dữ liệu AI & nghiên cứu khoa học.", color: "bg-[#8B5CF6]" },
-                              { value: "PATIENT", label: "Bệnh nhân", desc: "Cổng bệnh nhân & lịch sử khám bệnh.", color: "bg-[#D946EF]" },
-                            ].map((opt) => {
-                              const isChecked = roles.includes(opt.value);
-                              return (
-                                <div
-                                  key={opt.value}
-                                  onClick={() => {
-                                    let nextRoles;
-                                    if (isChecked) {
-                                      nextRoles = roles.filter(r => r !== opt.value);
-                                    } else {
-                                      nextRoles = [...roles, opt.value];
-                                    }
-                                    setRoles(nextRoles);
-                                    setErrors((p) => ({ ...p, roles: "", license: "" }));
-                                  }}
-                                  className="flex items-start gap-3 px-3 py-2 hover:bg-[#F8FAFC] cursor-pointer transition-colors select-none"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => {}} // event is handled by parent div onClick
-                                    className="mt-0.5 rounded border-[#E2E8F0] text-[#0EA5E9] focus:ring-[#0EA5E9]/20 pointer-events-none"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className={`w-1.5 h-1.5 rounded-full ${opt.color}`} />
-                                      <span className="text-[12px] font-semibold text-[#0F172A]">{opt.label}</span>
-                                    </div>
-                                    <p className="text-[10px] text-[#64748B] mt-0.5 leading-tight">{opt.desc}</p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </Field>
-
-                    <Field label="Trạng thái tài khoản" required error={errors.status}>
+                    <div>
+                      <Label required>Vai trò</Label>
                       <div className="relative">
-                        <select value={status}
-                          onChange={(e) => { setStatus(e.target.value as Status); setErrors((p) => ({ ...p, status: "" })); }}
-                          className={SELECT} style={{ borderRadius: "8px", borderColor: errors.status ? "#EF4444" : undefined }}>
+                        <select 
+                          value={selectedRoleName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedRoleName(val);
+                            if (val === "Quản trị viên") setRole("ADMIN");
+                            else if (val === "Bác sĩ") setRole("DOCTOR");
+                            else if (val === "Nghiên cứu sinh") setRole("RESEARCHER");
+                            else if (val === "Bệnh nhân") setRole("PATIENT");
+                            else if (val) setRole("STAFF");
+                            else setRole("");
+                            setErrors(p => ({ ...p, role: "", license: "" }));
+                          }}
+                          className={SELECT_CLASS}
+                          style={{ color: selectedRoleName ? "#0F172A" : "#64748B", borderColor: errors.role ? "#EF4444" : undefined }}
+                        >
+                          <option value="">Chọn vai trò...</option>
+                          <option value="Bác sĩ">Bác sĩ</option>
+                          <option value="Y tá / Điều dưỡng">Y tá / Điều dưỡng</option>
+                          <option value="Lễ tân">Lễ tân</option>
+                          <option value="Dược sĩ">Dược sĩ</option>
+                          <option value="Kỹ thuật viên">Kỹ thuật viên</option>
+                          <option value="Quản trị viên">Quản trị viên</option>
+                          <option value="Nghiên cứu sinh">Nghiên cứu sinh</option>
+                          <option value="Bệnh nhân">Bệnh nhân</option>
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
+                      </div>
+                      {errors.role && <p className="text-xs text-rose-500 mt-1">{errors.role}</p>}
+                    </div>
+
+                    <div>
+                      <Label required>Trạng thái tài khoản</Label>
+                      <div className="relative">
+                        <select 
+                          value={status}
+                          onChange={(e) => { setStatus(e.target.value as Status); setErrors(p => ({ ...p, status: "" })); }}
+                          className={SELECT_CLASS}
+                          style={{ color: status ? "#0F172A" : "#64748B", borderColor: errors.status ? "#EF4444" : undefined }}
+                        >
                           <option value="">Chọn trạng thái...</option>
                           <option value="Active">Hoạt động</option>
-                          <option value="Inactive">Khóa / Tạm dừng</option>
+                          <option value="Inactive">Tạm khóa</option>
                         </select>
-                        <ChevronDown size={13} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+                        <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
                       </div>
-                      {status && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${status === "Active" ? "bg-[#10B981]" : "bg-[#94A3B8]"}`} />
-                          <p className="text-[11px] text-[#64748B]">
-                            {status === "Active" ? "Người dùng có thể đăng nhập vào hệ thống ngay lập tức." : "Tài khoản bị vô hiệu hóa cho đến khi được kích hoạt lại."}
-                          </p>
-                        </div>
-                      )}
-                    </Field>
+                      {errors.status && <p className="text-xs text-rose-500 mt-1">{errors.status}</p>}
+                    </div>
+
+                    <div className="col-span-2">
+                      <Label>Địa chỉ Email</Label>
+                      <input 
+                        type="email" 
+                        value={email}
+                        onChange={(e) => { setEmail(e.target.value); setErrors(p => ({ ...p, email: "" })); }}
+                        placeholder="ví dụ: name@hospital.com" 
+                        className={INPUT_CLASS}
+                        style={{ borderColor: errors.email ? "#EF4444" : undefined }}
+                      />
+                      {errors.email && <p className="text-xs text-rose-500 mt-1">{errors.email}</p>}
+                    </div>
 
                     {!isOnlyPatient && (
-                      <Field label="Mật khẩu" required error={errors.password} className="col-span-2">
+                      <div className="col-span-2">
+                        <Label required>Mật khẩu</Label>
                         <div className="relative">
-                          <input
-                            type={showPassword ? "text" : "password"}
+                          <input 
+                            type={showPassword ? "text" : "password"} 
                             value={password}
-                            onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: "" })); }}
+                            onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: "" })); }}
                             placeholder="Nhập mật khẩu..."
-                            className="w-full h-9 pl-3 pr-10 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all"
-                            style={{ borderRadius: "8px", borderColor: errors.password ? "#EF4444" : undefined }}
+                            className="w-full h-9 pl-3 pr-10 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
+                            style={{ borderColor: errors.password ? "#EF4444" : undefined }} 
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-2.5 top-2 p-0.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none outline-none"
-                          >
-                            {showPassword ? <EyeOff size={14} className="h-4 w-4" /> : <Eye size={14} className="h-4 w-4" />}
+                          <button type="button" onClick={() => setShowPassword(s => !s)}
+                            className="absolute right-2.5 top-2 p-0.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none outline-none">
+                            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                           </button>
                         </div>
                         <p className="text-xs mt-1.5 text-[#94A3B8]">Mật khẩu phải dài ít nhất 6 ký tự và sẽ được mã hóa bảo mật.</p>
-                      </Field>
+                        {errors.password && <p className="text-xs text-rose-500 mt-1">{errors.password}</p>}
+                      </div>
                     )}
                   </div>
-                </div>
+                </section>
 
-                <div className="h-px bg-[#F1F5F9]" />
+                <Divider />
 
-                {/* ══════ SECTION 2: Personal Information ══════ */}
-                <div>
-                  <SectionHeader num="02" title="Thông tin cá nhân" sub="Thông tin cơ bản của người dùng để liên kết hồ sơ" />
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-
-                    <Field label="Ngày sinh" required error={errors.dob}>
-                      <input type="date" value={dob}
-                        onChange={(e) => { setDob(e.target.value); setErrors((p) => ({ ...p, dob: "" })); }}
+                {/* ── Section 02: Thông tin cá nhân ── */}
+                <section>
+                  <SectionHeading num="02" title="Thông tin cá nhân"
+                    sub="Chi tiết nhân khẩu học phục vụ liên kết hồ sơ bệnh nhân" />
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                      <Label required>Ngày sinh</Label>
+                      <input 
+                        type="date" 
+                        value={dob}
                         max={new Date().toISOString().split("T")[0]}
-                        className={INPUT} style={{ borderRadius: "8px", borderColor: errors.dob ? "#EF4444" : undefined }} />
-                    </Field>
-
-                    <Field label="Giới tính" required error={errors.gender}>
+                        onChange={(e) => { setDob(e.target.value); setErrors(p => ({ ...p, dob: "" })); }}
+                        className={INPUT_CLASS} 
+                        style={{ borderColor: errors.dob ? "#EF4444" : undefined }}
+                      />
+                      {errors.dob && <p className="text-xs text-rose-500 mt-1">{errors.dob}</p>}
+                    </div>
+                    <div>
+                      <Label required>Giới tính</Label>
                       <div className="relative">
-                        <select value={gender}
-                          onChange={(e) => { setGender(e.target.value as Gender); setErrors((p) => ({ ...p, gender: "" })); }}
-                          className={SELECT} style={{ borderRadius: "8px", borderColor: errors.gender ? "#EF4444" : undefined }}>
+                        <select 
+                          value={gender}
+                          onChange={(e) => { setGender(e.target.value as Gender); setErrors(p => ({ ...p, gender: "" })); }}
+                          className={SELECT_CLASS}
+                          style={{ color: gender ? "#0F172A" : "#64748B", borderColor: errors.gender ? "#EF4444" : undefined }}
+                        >
                           <option value="">Chọn giới tính...</option>
                           <option value="Male">Nam</option>
                           <option value="Female">Nữ</option>
                           <option value="Other">Khác</option>
                         </select>
-                        <ChevronDown size={13} strokeWidth={2} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
+                        <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
                       </div>
-                    </Field>
-
-                    <Field label="Địa chỉ thường trú" required error={errors.address} className="col-span-2">
-                      <textarea value={address}
-                        onChange={(e) => { setAddress(e.target.value); setErrors((p) => ({ ...p, address: "" })); }}
-                        placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố"
+                      {errors.gender && <p className="text-xs text-rose-500 mt-1">{errors.gender}</p>}
+                    </div>
+                    <div className="col-span-2">
+                      <Label required>Địa chỉ thường trú</Label>
+                      <textarea 
                         rows={3}
-                        className="w-full px-3 py-2 text-[13px] text-[#0F172A] placeholder:text-[#CBD5E1] bg-white border border-[#E2E8F0] outline-none resize-none leading-relaxed transition-all focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10"
-                        style={{ borderRadius: "8px", borderColor: errors.address ? "#EF4444" : undefined }} />
-                    </Field>
+                        value={address}
+                        onChange={(e) => { setAddress(e.target.value); setErrors(p => ({ ...p, address: "" })); }}
+                        placeholder="Số nhà, Đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố"
+                        className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
+                        style={{ borderColor: errors.address ? "#EF4444" : undefined }}
+                      />
+                      {errors.address && <p className="text-xs text-rose-500 mt-1">{errors.address}</p>}
+                    </div>
                   </div>
-                </div>
+                </section>
 
-                <div className="h-px bg-[#F1F5F9]" />
+                <Divider />
 
-                {/* ══════ SECTION 3: Identification ══════ */}
-                <div>
-                  <SectionHeader num="03" title="Mã số định danh" sub="Tùy chọn — để trống nếu chưa được cấp" />
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-
-                    <Field label="Số Căn cước công dân (CCCD)" hint="Mã CCCD gồm 12 chữ số">
-                      <input type="text" value={cccd}
+                {/* ── Section 03: Số định danh ── */}
+                <section>
+                  <SectionHeading num="03" title="Số định danh"
+                    sub="Tùy chọn — để trống nếu chưa được cấp" />
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                      <Label>Số CCCD (Căn cước công dân)</Label>
+                      <input 
+                        type="text"
+                        value={cccd}
                         onChange={(e) => setCccd(e.target.value.replace(/\D/g, "").slice(0, 12))}
                         placeholder="ví dụ: 079085012345"
-                        className={INPUT}
-                        style={{ borderRadius: "8px", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }} />
-                    </Field>
-
-                    <Field label="Mã số Bảo hiểm Y tế (BHYT)" hint="Mã số thẻ BHYT gồm 15 ký tự">
-                      <input type="text" value={bhyt}
+                        className={INPUT_CLASS}
+                        style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }}
+                      />
+                      <p className="text-[10px] text-[#94A3B8] mt-1">Số định danh công dân 12 chữ số — có thể để trống</p>
+                    </div>
+                    <div>
+                      <Label>Mã thẻ BHYT (Bảo hiểm y tế)</Label>
+                      <input 
+                        type="text"
+                        value={bhyt}
                         onChange={(e) => setBhyt(e.target.value.toUpperCase().slice(0, 15))}
                         placeholder="ví dụ: HS4680123456789"
-                        className={INPUT}
-                        style={{ borderRadius: "8px", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }} />
-                    </Field>
+                        className={INPUT_CLASS}
+                        style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }}
+                      />
+                      <p className="text-[10px] text-[#94A3B8] mt-1">Mã số thẻ 15 ký tự — có thể để trống</p>
+                    </div>
                   </div>
-                </div>
+                </section>
 
-                {/* ══════ CONDITIONAL: Doctor License ══════ */}
-                {roles.includes("DOCTOR") && (
-                  <>
-                    <div className="h-px bg-[#F1F5F9]" />
+                {/* ── Section 04: Thông tin Y khoa & Lâm sinh ── */}
+                <Divider />
+                <section>
+                  <div className="flex items-start gap-3 mb-5">
+                    <span className="flex items-center justify-center rounded-full font-bold text-white shrink-0"
+                      style={{ width: 22, height: 22, fontSize: 11, background: "#0EA5E9", marginTop: 1 }}>
+                      04
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm text-[#0F172A]">Thông tin Y khoa & Lâm sinh</p>
+                        <HeartPulse size={15} className="text-[#EF4444]" />
+                      </div>
+                      <p className="text-xs mt-0.5 text-[#64748B]">
+                        Tùy chọn — Sử dụng phục vụ hồ sơ điều trị lâm sàng
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-x-5 gap-y-5 mb-5">
                     <div>
+                      <Label>Chiều cao (cm)</Label>
+                      <input 
+                        type="number"
+                        value={height}
+                        onChange={(e) => setHeight(e.target.value)}
+                        placeholder="ví dụ: 170"
+                        className={INPUT_CLASS}
+                      />
+                    </div>
+                    <div>
+                      <Label>Cân nặng (kg)</Label>
+                      <input 
+                        type="number"
+                        value={weight}
+                        onChange={(e) => setWeight(e.target.value)}
+                        placeholder="ví dụ: 65"
+                        className={INPUT_CLASS}
+                      />
+                    </div>
+                    <div>
+                      <Label>Nhóm máu</Label>
+                      <div className="relative">
+                        <select 
+                          value={bloodType}
+                          onChange={(e) => setBloodType(e.target.value)}
+                          className={SELECT_CLASS}
+                          style={{ color: bloodType ? "#0F172A" : "#64748B" }}
+                        >
+                          <option value="">Chọn nhóm máu...</option>
+                          {["A", "B", "AB", "O", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(o => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                      <Label>Tiền sử bệnh lý</Label>
+                      <textarea 
+                        rows={4}
+                        value={medicalHistory}
+                        onChange={(e) => setMedicalHistory(e.target.value)}
+                        placeholder="Nhập tiền sử bệnh lý cũ nếu có..."
+                        className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
+                      />
+                    </div>
+                    <div>
+                      <Label>Bệnh lý hiện tại</Label>
+                      <textarea 
+                        rows={4}
+                        value={currentSickness}
+                        onChange={(e) => setCurrentSickness(e.target.value)}
+                        placeholder="Nhập tình trạng bệnh lý hiện tại..."
+                        className="w-full px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Info callout */}
+                  <div className="mt-5 flex items-start gap-3 px-4 py-4 rounded-xl border border-[#BAE6FD] bg-[#F0F9FF]">
+                    <span className="w-4 h-4 rounded-full bg-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[#0EA5E9] text-[9px] font-bold">i</span>
+                    </span>
+                    <p className="text-xs leading-relaxed text-[#0369A1]">
+                      Hệ thống sẽ gửi mã số nhân viên và mật khẩu tạm thời qua SMS. Người dùng bắt buộc phải đổi mật khẩu ở lần đăng nhập đầu tiên. Mọi sự kiện đều được ghi nhật ký theo{" "}
+                      <strong>Nghị định 13/2023/NĐ-CP</strong>.
+                    </p>
+                  </div>
+                </section>
+
+                {/* ── Section: Chứng chỉ hành nghề (Bác sĩ) ── */}
+                {role === "DOCTOR" && (
+                  <>
+                    <Divider />
+                    <section>
                       <div className="flex items-center gap-3 mb-5">
                         <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/10 border border-[#BAE6FD] flex items-center justify-center flex-shrink-0">
-                          <FileCheck size={14} strokeWidth={1.75} className="text-[#0EA5E9]" />
+                          <FileCheck size={14} className="text-[#0EA5E9]" />
                         </div>
                         <div>
                           <p className="text-[13px] font-bold text-[#0F172A] leading-none flex items-center gap-2">
@@ -688,7 +777,7 @@ export default function CreateUserPage() {
                         /* Uploaded state */
                         <div className="flex items-center gap-4 p-4 bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl">
                           <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 flex items-center justify-center flex-shrink-0">
-                            <FileCheck size={18} strokeWidth={1.75} className="text-[#10B981]" />
+                            <FileCheck size={18} className="text-[#10B981]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-semibold text-[#0F172A] truncate">{licenseFile.name}</p>
@@ -696,8 +785,8 @@ export default function CreateUserPage() {
                               {(licenseFile.size / 1024).toFixed(1)} KB · Tải lên thành công
                             </p>
                           </div>
-                          <button onClick={() => setLicenseFile(null)}
-                            className="w-7 h-7 rounded-lg border border-[#E2E8F0] flex items-center justify-center text-[#94A3B8] hover:text-[#EF4444] hover:border-[#EF4444] transition-all">
+                          <button type="button" onClick={() => setLicenseFile(null)}
+                            className="w-7 h-7 rounded-lg border border-[#E2E8F0] flex items-center justify-center text-[#94A3B8] hover:text-[#EF4444] hover:border-[#EF4444] transition-all bg-transparent cursor-pointer">
                             <X size={13} strokeWidth={2} />
                           </button>
                         </div>
@@ -717,7 +806,7 @@ export default function CreateUserPage() {
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
                             dragOver ? "bg-[#0EA5E9]/10" : "bg-[#F1F5F9]"
                           }`}>
-                            <Upload size={20} strokeWidth={1.75} className={dragOver ? "text-[#0EA5E9]" : "text-[#94A3B8]"} />
+                            <Upload size={20} className={dragOver ? "text-[#0EA5E9]" : "text-[#94A3B8]"} />
                           </div>
                           <div className="text-center">
                             <p className="text-[13px] font-semibold text-[#0F172A]">
@@ -737,50 +826,45 @@ export default function CreateUserPage() {
                           <AlertCircle size={10} strokeWidth={2} />{errors.license}
                         </p>
                       )}
-                    </div>
+                    </section>
                   </>
                 )}
-
-                {/* Info notice */}
-                <div className="flex items-start gap-2.5 bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg px-4 py-3">
-                  <div className="w-4 h-4 rounded-full bg-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[#0EA5E9] text-[9px] font-bold">i</span>
-                  </div>
-                  <p className="text-[12px] text-[#0369A1] leading-relaxed">
-                    Mã nhân viên được tạo tự động và mật khẩu tạm thời sẽ được gửi qua tin nhắn SMS.
-                    Người dùng bắt buộc phải đổi mật khẩu trong lần đăng nhập đầu tiên. Mọi hoạt động khởi tạo tài khoản đều được ghi nhật ký hệ thống theo <span className="font-semibold">Nghị định 13/2023/NĐ-CP</span>.
-                  </p>
-                </div>
               </div>
 
-              {/* Sticky footer buttons */}
-              <div className="sticky bottom-0 flex items-center justify-between px-7 py-4 bg-white border-t border-[#F1F5F9] shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
+              {/* Footer */}
+              <div className="flex items-center justify-between px-7 py-4 border-t border-[#F1F5F9] bg-[#F8FAFC]">
                 <p className="text-[11px] text-[#CBD5E1]">Hệ thống Quản trị HMS · v2.4.1 · Mọi sự kiện khởi tạo đều được kiểm toán</p>
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={handleCancel}
-                    className="flex items-center gap-1.5 h-10 px-5 rounded-lg border border-[#E2E8F0] text-[13px] font-medium text-[#64748B] hover:bg-[#F8FAFC] hover:border-[#94A3B8] transition-all">
-                    <X size={13} strokeWidth={2} /> Hủy
+                    className="h-9 px-5 text-sm font-semibold border border-[#E2E8F0] rounded-lg hover:bg-slate-50 transition-colors text-[#64748B] cursor-pointer bg-white">
+                    Hủy
                   </button>
                   <button type="button" onClick={handleCreate} disabled={isSubmitting}
-                    className="flex items-center gap-2 h-10 px-6 rounded-lg bg-[#0EA5E9] hover:bg-[#0284C7] active:scale-[0.98] text-white text-[13px] font-semibold transition-all shadow-sm shadow-sky-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                    className="h-9 px-5 text-sm font-bold text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer bg-[#0091FF] disabled:opacity-75 disabled:cursor-not-allowed">
                     {isSubmitting ? (
                       <>
-                        <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                        <svg className="animate-spin w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                         </svg>
                         Đang tạo...
                       </>
                     ) : (
-                      <><UserPlus size={13} strokeWidth={2} /> Tạo tài khoản</>
+                      <>
+                        <CheckCircle2 size={15} />
+                        Tạo tài khoản
+                      </>
                     )}
                   </button>
                 </div>
               </div>
+
             </div>
           )}
+
         </main>
       </div>
+
     </div>
   );
 }
