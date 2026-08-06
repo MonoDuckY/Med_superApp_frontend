@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,6 +51,7 @@ class LoginViewModel extends ChangeNotifier {
         // Thiết bị đã được tin cậy, đăng nhập thành công luôn
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_logged_in', true);
+        await prefs.setBool('is_dev_login', false);
         await prefs.setString(AppConstants.keyUserData, phoneNumber);
         if (context.mounted) {
           context.go('/home');
@@ -64,6 +66,27 @@ class LoginViewModel extends ChangeNotifier {
     } else {
       errorMessage = response.message;
       notifyListeners();
+    }
+  }
+
+  /// [DEV ONLY] Bypass login hoàn toàn — không gọi API, không cần OTP.
+  /// Chỉ hoạt động khi chạy debug build (kDebugMode).
+  Future<void> devBypassLogin(BuildContext context) async {
+    if (!kDebugMode) return;
+
+    isLoading = true;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setBool('is_dev_login', true);
+    await prefs.setString(AppConstants.keyUserData, '0123456789');
+
+    isLoading = false;
+    notifyListeners();
+
+    if (context.mounted) {
+      context.go('/home');
     }
   }
 }

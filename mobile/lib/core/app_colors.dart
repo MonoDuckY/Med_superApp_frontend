@@ -23,4 +23,12 @@ class AppColors {
   static const Color error = Color(0xFFEF4444); // Critical (Rose #EF4444)
   static const Color success = Color(0xFF10B981); // Success (Emerald #10B981)
   static const Color warning = Color(0xFFF59E0B); // Warning (Amber #F59E0B)
+
+  // Extended Palette (UC-03 Appointment Booking)
+  static const Color purple = Color(0xFF7C3AED);        // Selected doctor / MoMo
+  static const Color purpleSurface = Color(0xFFF5F3FF); // Purple card background
+  static const Color slotSelected = Color(0xFF1D4ED8);  // Selected time slot
+  static const Color borderLight = Color(0xFFE2E8F0);   // Light border
+  static const Color textHint = Color(0xFF94A3B8);      // Hint / placeholder text
+  static const Color surfaceLight = Color(0xFFF1F5F9);  // Disabled slot bg
 }
