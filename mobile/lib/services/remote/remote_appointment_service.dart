@@ -92,4 +92,30 @@ class RemoteAppointmentService {
       return [];
     }
   }
+
+  /// Hủy lịch khám (Bệnh nhân tự hủy)
+  Future<void> cancelAppointment(String appointmentId, String reason) async {
+    try {
+      final response = await _dio.patch(
+        '/api/patient/appointments/$appointmentId/cancel',
+        data: {
+          'cancellationReason': reason,
+        },
+      );
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['message'] ?? 'Lỗi khi hủy lịch');
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final message = e.response?.data['message'];
+        if (message != null) {
+          throw Exception(message);
+        }
+      }
+      throw Exception('Lỗi mạng. Không thể hủy lịch.');
+    } catch (e) {
+      throw Exception('Lỗi hệ thống. Không thể hủy lịch.');
+    }
+  }
 }

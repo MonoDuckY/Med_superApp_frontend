@@ -296,6 +296,56 @@ class _AppointmentCard extends StatelessWidget {
     return '$h:$m';
   }
 
+  void _showCancelDialog(BuildContext context, AppointmentRecord record) {
+    final vm = context.read<AppointmentsListViewModel>();
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Hủy lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Vui lòng nhập lý do hủy lịch:'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Nhập lý do...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Đóng'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final reason = reasonController.text.trim();
+                if (reason.isNotEmpty) {
+                  Navigator.pop(ctx);
+                  vm.cancelAppointment(record.id, reason, context);
+                } else {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập lý do hủy lịch')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              child: const Text('Xác nhận hủy', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -430,42 +480,23 @@ class _AppointmentCard extends StatelessWidget {
                 // Action buttons
                 Row(
                   children: [
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Hủy lịch',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.error,
+                    if (record.status == AppointmentStatus.pending || record.status == AppointmentStatus.confirmed)
+                      TextButton(
+                        onPressed: () => _showCancelDialog(context, record),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Hủy lịch',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.error,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 2),
-                    Text('·',
-                        style: TextStyle(color: AppColors.borderLight)),
-                    const SizedBox(width: 2),
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Đổi lịch',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
                     const Spacer(),
                     OutlinedButton(
                       onPressed: () {},

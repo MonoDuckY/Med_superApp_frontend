@@ -128,4 +128,28 @@ class AppointmentsListViewModel extends ChangeNotifier {
     _selectedDate = date;
     notifyListeners();
   }
+
+  Future<void> cancelAppointment(String appointmentId, String reason, BuildContext context) async {
+    try {
+      // Có thể thêm loading state nếu cần
+      await _service.cancelAppointment(appointmentId, reason);
+      
+      // Hủy thành công, load lại danh sách
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Hủy lịch khám thành công.')),
+        );
+      }
+      await loadAppointments();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
