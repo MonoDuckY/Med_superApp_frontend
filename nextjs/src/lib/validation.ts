@@ -6,7 +6,7 @@ export function validateLoginForm(
 ): string | null {
   // Empty State Check
   if (!username.trim() || !password.trim()) {
-    return "Please fill in both Phonenumber and Password.";
+    return "Vui lòng điền đầy đủ cả Số điện thoại và Mật khẩu.";
   }
 
   // Pattern format check for active department
@@ -16,7 +16,7 @@ export function validateLoginForm(
 
   // Passwords must be at least 6 characters
   if (password.length < 6) {
-    return "Password must be at least 6 characters long.";
+    return "Mật khẩu phải dài ít nhất 6 ký tự.";
   }
 
   return null;

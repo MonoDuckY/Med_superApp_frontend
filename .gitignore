@@ -105,3 +105,12 @@ opencode.jsonc
 .code-review-graph/
 .metadata
 mobile/.metadata
+
+CHANGELOG.md
+CONTEXT.md
+PLAN.md
+SPEC.md
+TASKS.md
+TEST_PLAN.md
+CODING.md
+DESIGN.md
