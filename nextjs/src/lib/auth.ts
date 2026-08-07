@@ -50,14 +50,14 @@ export async function loginApiCall(phoneNumber: string, password: string, role: 
   }
 }
 
-export async function requestForgotPasswordApiCall(phoneNumber: string): Promise<void> {
+export async function requestForgotPasswordApiCall(phoneNumber: string, role: string): Promise<void> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const res = await fetch(`${apiUrl}/api/auth/forgot-password/request`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ phoneNumber }),
+    body: JSON.stringify({ phoneNumber, role }),
   });
 
   const contentType = res.headers.get("content-type");
@@ -73,7 +73,8 @@ export async function requestForgotPasswordApiCall(phoneNumber: string): Promise
 
 export async function verifyForgotPasswordOtpApiCall(
   phoneNumber: string,
-  code: string
+  code: string,
+  role: string
 ): Promise<{ resetToken: string; expiresInSeconds: number }> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const res = await fetch(`${apiUrl}/api/auth/forgot-password/verify`, {
@@ -81,7 +82,7 @@ export async function verifyForgotPasswordOtpApiCall(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ phoneNumber, code }),
+    body: JSON.stringify({ phoneNumber, code, role }),
   });
 
   const contentType = res.headers.get("content-type");

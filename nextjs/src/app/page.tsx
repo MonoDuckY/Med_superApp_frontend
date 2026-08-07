@@ -176,6 +176,7 @@ export default function LoginPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotRole, setForgotRole] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
@@ -343,8 +344,10 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await requestForgotPasswordApiCall(username.trim());
+      const selectedRole = ROLE_CODES[roleIndex];
+      await requestForgotPasswordApiCall(username.trim(), selectedRole);
       setForgotPhone(username.trim());
+      setForgotRole(selectedRole);
       setForgotError(null);
       setTimer(60);
       setView("forgot-verify");
@@ -360,7 +363,7 @@ export default function LoginPage() {
     setForgotError(null);
     setForgotLoading(true);
     try {
-      await requestForgotPasswordApiCall(forgotPhone);
+      await requestForgotPasswordApiCall(forgotPhone, forgotRole);
       setTimer(60);
       alert("Đã gửi lại mã OTP mới đến số điện thoại của bạn.");
     } catch (err) {
@@ -381,7 +384,7 @@ export default function LoginPage() {
 
     setForgotLoading(true);
     try {
-      const data = await verifyForgotPasswordOtpApiCall(forgotPhone, otpCode);
+      const data = await verifyForgotPasswordOtpApiCall(forgotPhone, otpCode, forgotRole);
       setResetToken(data.resetToken);
       setView("forgot-reset");
     } catch (err) {
