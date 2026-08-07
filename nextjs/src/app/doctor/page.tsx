@@ -338,7 +338,7 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="h-screen bg-[#F8FAFC] flex flex-col overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Top Header Navigation */}
       <header className="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-8 shrink-0">
         {/* Left Side: Logo */}
@@ -466,11 +466,11 @@ export default function DoctorDashboard() {
 
       {/* Main Content Area */}
       {activeTab === "schedule" ? (
-        <main className="flex-1 overflow-y-auto px-8 py-6">
+        <main className="flex-1 overflow-hidden px-8 py-5">
           <div className="flex gap-6 h-full min-h-0">
             
-            {/* Left Column — 60%: Weekly Schedule Panel */}
-            <div style={{ flex: "0 0 60%" }} className="flex flex-col min-h-0">
+            {/* Left Column — Weekly Schedule Panel */}
+            <div className="flex-1 min-w-0 flex flex-col min-h-0">
               <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden flex flex-col h-full shadow-sm">
                 
                 {/* Week Panel Header */}
@@ -499,7 +499,7 @@ export default function DoctorDashboard() {
                 </div>
 
                 {/* Week Panel Grid */}
-                <div className="flex-1 overflow-x-auto relative min-h-[300px]">
+                <div className="flex-1 overflow-x-auto relative min-h-[200px]">
                   {loadingSchedules && (
                     <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
                       <Loader2 className="animate-spin text-[#0EA5E9] h-8 w-8" />
@@ -528,7 +528,7 @@ export default function DoctorDashboard() {
                           </div>
 
                           {/* Day column slots list */}
-                          <div className="p-2.5 flex-1 flex flex-col gap-2.5 bg-slate-50/20 overflow-y-auto max-h-[480px]">
+                          <div className="p-2.5 flex-1 flex flex-col gap-2.5 bg-slate-50/20 overflow-y-auto">
                             {daySubmissions.length > 0 ? (
                               daySubmissions.map(sub => {
                                 const statusType = mapStatus(sub.status);
@@ -602,8 +602,8 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            {/* Right Column — 40%: Registration Form */}
-            <div style={{ flex: "0 0 calc(40% - 24px)" }} className="flex flex-col min-h-0">
+            {/* Right Column — Registration Form */}
+            <div className="w-[380px] lg:w-[420px] shrink-0 flex flex-col min-h-0">
               <form onSubmit={handleSubmitSchedule} className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden flex flex-col h-full shadow-sm">
                 
                 {/* Form Header */}
