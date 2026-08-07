@@ -102,7 +102,6 @@ export default function StaffDashboard() {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
-  const [doctorFilter, setDoctorFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
   // Modals Visibility
@@ -146,6 +145,25 @@ export default function StaffDashboard() {
     message: "Mô phỏng SMS Gateway: Đang gửi tin nhắn tiếng Việt bất đồng bộ...",
     progress: 65
   });
+
+  const getVietnameseHeaderDate = () => {
+    const today = new Date();
+    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const dayName = days[today.getDay()];
+    const date = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const year = today.getFullYear();
+    return `${dayName}, ${date}/${month}/${year}`;
+  };
+
+  const stats = React.useMemo(() => {
+    return {
+      total: appointments.length,
+      confirmed: appointments.filter((a) => a.status === "Confirmed" || a.status === "Completed").length,
+      cancelled: appointments.filter((a) => a.status === "Cancelled").length,
+      noShow: appointments.filter((a) => a.status === "No-show").length,
+    };
+  }, [appointments]);
 
   const toastInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -788,13 +806,10 @@ export default function StaffDashboard() {
       app.patient.toLowerCase().includes(q) ||
       app.phone.includes(q);
 
-    const matchesDoctor = doctorFilter === "" || app.doctor === doctorFilter;
     const matchesStatus = statusFilter === "" || app.status === statusFilter;
 
-    return matchesSearch && matchesDoctor && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
-
-  const uniqueDoctors = Array.from(new Set(appointments.map((a) => a.doctor)));
   const rawRoles = user?.roles || (user?.role ? [user.role] : []);
   const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
 
@@ -1004,7 +1019,7 @@ export default function StaffDashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <h1 className="text-xl font-bold text-[#0F172A]">Quản lý Lịch hẹn</h1>
-                  <p className="text-xs text-[#64748B] mt-1"> Thứ Hai, 03/08/2026</p>
+                  <p className="text-xs text-[#64748B] mt-1"> {getVietnameseHeaderDate()}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   {/* Online pill */}
@@ -1030,8 +1045,8 @@ export default function StaffDashboard() {
                     <Calendar size={18} strokeWidth={1.75} className="text-slate-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-[#0F172A]">42</p>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Tổng lịch hẹn hôm nay</p>
+                    <p className="text-2xl font-bold text-[#0F172A]">{stats.total}</p>
+                    <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Tổng lịch hẹn</p>
                   </div>
                 </div>
 
@@ -1040,7 +1055,7 @@ export default function StaffDashboard() {
                     <Check size={18} strokeWidth={2} className="text-sky-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-[#0EA5E9]">28</p>
+                    <p className="text-2xl font-bold text-[#0EA5E9]">{stats.confirmed}</p>
                     <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Đã xác nhận</p>
                   </div>
                 </div>
@@ -1050,7 +1065,7 @@ export default function StaffDashboard() {
                     <XCircle size={18} strokeWidth={1.75} className="text-rose-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-[#EF4444]">4</p>
+                    <p className="text-2xl font-bold text-[#EF4444]">{stats.cancelled}</p>
                     <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Đã hủy</p>
                   </div>
                 </div>
@@ -1060,7 +1075,7 @@ export default function StaffDashboard() {
                     <Clock size={18} strokeWidth={1.75} className="text-amber-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-[#F59E0B]">10</p>
+                    <p className="text-2xl font-bold text-[#F59E0B]">{stats.noShow}</p>
                     <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Quá hạn (No-show)</p>
                   </div>
                 </div>
@@ -1078,15 +1093,7 @@ export default function StaffDashboard() {
                       placeholder="Tìm bệnh nhân, SĐT, mã..."
                     />
                   </div>
-                  <div className="relative">
-                    <select value={doctorFilter} onChange={e => setDoctorFilter(e.target.value)} className="h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 text-[#64748B] bg-white appearance-none cursor-pointer">
-                      <option value="">Tất cả Bác sĩ</option>
-                      {uniqueDoctors.map(doc => (
-                        <option key={doc} value={doc}>{doc}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
+
                   <div className="relative">
                     <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 text-[#64748B] bg-white appearance-none cursor-pointer">
                       <option value="">Tất cả Trạng thái</option>
