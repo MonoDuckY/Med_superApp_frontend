@@ -169,7 +169,11 @@ export default function DoctorDashboard() {
     setLoadingSchedules(true);
     try {
       const fromStr = formatDateISO(currentWeekDates[0]);
-      const toStr = formatDateISO(currentWeekDates[6]);
+      // Extend the end date by 1 day to prevent timezone offset boundary issues from omitting Sunday schedules
+      const nextDayOfEnd = new Date(currentWeekDates[6]);
+      nextDayOfEnd.setDate(nextDayOfEnd.getDate() + 1);
+      const toStr = formatDateISO(nextDayOfEnd);
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const res = await fetchWithAuth(`${apiUrl}/api/doctor/work-schedules?from=${fromStr}&to=${toStr}`);
       if (res.ok) {

@@ -22,7 +22,8 @@ import {
   FileText,
   Settings,
   Shield,
-  FlaskConical
+  FlaskConical,
+  Loader2
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -83,6 +84,16 @@ export default function StaffDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Staff scheduling dynamic data states
+  const [doctorsList, setDoctorsList] = useState<{ id: string; fullName: string; phoneNumber: string }[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState("");
+  const [rawSubmissions, setRawSubmissions] = useState<any[]>([]);
+
+  // Patient Search Autocomplete states
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [patientSearchResults, setPatientSearchResults] = useState<{ id: string; fullName: string }[]>([]);
+  const [searchingPatients, setSearchingPatients] = useState(false);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
@@ -220,7 +231,24 @@ export default function StaffDashboard() {
     if (checkingAuth) return;
     fetchAppointments();
     fetchDoctorSchedules();
+    fetchDoctors();
   }, [checkingAuth]);
+
+  // Fetch Doctors List
+  const fetchDoctors = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/doctors`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setDoctorsList(result.data || []);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch doctors:", e);
+    }
+  };
 
   // Fetch Appointments
   const fetchAppointments = async () => {
@@ -320,6 +348,7 @@ export default function StaffDashboard() {
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
+          setRawSubmissions(result.data || []);
           const allSlotIds = Array.from(new Set(
             result.data.flatMap((x: any) => (x.slots || []).map((s: any) => s.slotId))
           )).filter((id): id is string => !!id);
@@ -431,60 +460,119 @@ export default function StaffDashboard() {
     setSchedules(mockSchedules);
   };
 
+  // Compute available slots for selected doctor on selected date
+  const availableSlotsForBooking = React.useMemo(() => {
+    if (!selectedDoctorId || !formDate) return [];
+    const matchedSubmissions = rawSubmissions.filter((sub: any) => {
+      return sub.doctorId === selectedDoctorId && sub.workDate === formDate && sub.status === "APPROVED";
+    });
+    
+    const slotsList: any[] = [];
+    matchedSubmissions.forEach((sub: any) => {
+      (sub.slots || []).forEach((slot: any) => {
+        if (slot.status === "AVAILABLE") {
+          slotsList.push(slot);
+        }
+      });
+    });
+    return slotsList;
+  }, [selectedDoctorId, formDate, rawSubmissions]);
+
+  // Handle Patient Search autocomplete
+  const handlePatientSearch = async (query: string) => {
+    setFormPatientName(query);
+    if (!query.trim()) {
+      setPatientSearchResults([]);
+      setSelectedPatientId("");
+      return;
+    }
+    setSearchingPatients(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/patients/search?name=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setPatientSearchResults(result.data);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to search patients:", e);
+    } finally {
+      setSearchingPatients(false);
+    }
+  };
+
+  // Reset and open add drawer
+  const openAddDrawer = () => {
+    setFormPatientName("");
+    setFormPatientPhone("");
+    setFormDoctor("");
+    setSelectedDoctorId("");
+    setSelectedPatientId("");
+    setFormReason("");
+    setFormDate("2026-08-03");
+    setFormTimeSlot("");
+    setFormDeposit(false);
+    setFormFollowUp(false);
+    setFormOriginRecordId("");
+    setPatientSearchResults([]);
+    setIsAddDrawerOpen(true);
+  };
+
   // Submit Add Appointment
   const handleAddAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formPatientName || !formPatientPhone || !formDoctor) return;
-
-    // extract doctor and room
-    const doctorPart = formDoctor.split(" (")[0];
-    const roomPart = formDoctor.includes(" (") ? formDoctor.split(" (")[1].replace(")", "") : "Phòng khám";
+    if (!selectedPatientId) {
+      alert("Vui lòng tìm và chọn một bệnh nhân.");
+      return;
+    }
+    if (!formTimeSlot) {
+      alert("Vui lòng chọn một khung giờ hẹn.");
+      return;
+    }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-    const newAppointmentObj: Appointment = {
-      id: `#APT-${Math.floor(1000 + Math.random() * 9000)}`,
-      patient: formPatientName,
-      phone: formPatientPhone,
-      doctor: doctorPart,
-      room: roomPart,
-      date: formDate.split("-").reverse().join("/"),
-      time: formTimeSlot,
-      status: "Confirmed",
-      type: formFollowUp ? "Tái khám" : "Standard"
-    };
-
     try {
-      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments`, {
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          patientId: "new-patient",
-          doctorWorkSlotId: "new-slot"
+          patientId: selectedPatientId,
+          doctorWorkSlotId: formTimeSlot // formTimeSlot holds the selected DoctorWorkSlot ID
         })
       });
-    } catch (err) {
-      console.warn(err);
+      if (res.ok) {
+        fetchAppointments();
+        setIsAddDrawerOpen(false);
+
+        // reset fields
+        setFormPatientName("");
+        setFormPatientPhone("");
+        setFormDoctor("");
+        setSelectedDoctorId("");
+        setSelectedPatientId("");
+        setFormReason("");
+        setFormTimeSlot("");
+        setFormDeposit(false);
+        setFormFollowUp(false);
+        setFormOriginRecordId("");
+        setPatientSearchResults([]);
+
+        triggerSmsToast(
+          "SMS Gateway — Đang xử lý",
+          `Gửi tin nhắn thông báo đặt lịch mới đến bệnh nhân ${formPatientName}...`
+        );
+      } else {
+        const result = await res.json();
+        alert(result.message || "Tạo lịch hẹn thất bại.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Không thể kết nối đến máy chủ.");
     }
-
-    setAppointments((prev) => [newAppointmentObj, ...prev]);
-    setIsAddDrawerOpen(false);
-
-    // reset fields
-    setFormPatientName("");
-    setFormPatientPhone("");
-    setFormDoctor("");
-    setFormReason("");
-    setFormDeposit(false);
-    setFormFollowUp(false);
-    setFormOriginRecordId("");
-
-    triggerSmsToast(
-      "SMS Gateway — Đang xử lý",
-      `Gửi tin nhắn thông báo đặt lịch mới đến bệnh nhân ${formPatientName} (${formPatientPhone})...`
-    );
   };
 
   // Submit Reschedule Appointment
@@ -893,7 +981,7 @@ export default function StaffDashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <h1 className="text-xl font-bold text-[#0F172A]">Quản lý Lịch hẹn</h1>
-                  <p className="text-xs text-[#64748B] mt-1">UC-03 / UC-35 — Thứ Hai, 03/08/2026</p>
+                  <p className="text-xs text-[#64748B] mt-1"> Thứ Hai, 03/08/2026</p>
                 </div>
                 <div className="flex items-center gap-3">
                   {/* Online pill */}
@@ -902,7 +990,7 @@ export default function StaffDashboard() {
                     Hệ thống Trực tuyến
                   </div>
                   <button
-                    onClick={() => setIsAddDrawerOpen(true)}
+                    onClick={openAddDrawer}
                     className="flex items-center gap-2 h-9 px-4 text-xs font-semibold text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm cursor-pointer outline-none active:scale-[0.98]"
                     style={{ background: "#0EA5E9", boxShadow: "0 1px 4px rgba(14,165,233,0.3)" }}
                   >
@@ -1218,30 +1306,55 @@ export default function StaffDashboard() {
             {/* Body */}
             <form onSubmit={handleAddAppointment} className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-left">
               {/* Patient Name */}
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
                   Họ và tên bệnh nhân <span className="text-rose-500">*</span>
                 </label>
                 <input
                   value={formPatientName}
                   required
-                  onChange={(e) => setFormPatientName(e.target.value)}
+                  onChange={(e) => handlePatientSearch(e.target.value)}
                   className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
-                  placeholder="VD: Nguyễn Văn An"
+                  placeholder="Nhập tên bệnh nhân để tìm kiếm..."
+                  autoComplete="off"
                 />
+                {searchingPatients && (
+                  <span className="absolute right-3 top-[34px]">
+                    <Loader2 className="animate-spin text-sky-500 h-4 w-4" />
+                  </span>
+                )}
+                {patientSearchResults.length > 0 && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {patientSearchResults.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatientId(p.id);
+                          setFormPatientName(p.fullName);
+                          setFormPatientPhone("Đã liên kết ID: " + p.id);
+                          setPatientSearchResults([]);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors border-none bg-transparent cursor-pointer"
+                      >
+                        <p className="font-semibold text-slate-800">{p.fullName}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">ID: {p.id}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Phone number */}
               <div>
                 <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Số điện thoại <span className="text-rose-500">*</span>
+                  Trạng thái liên kết tài khoản
                 </label>
                 <input
                   value={formPatientPhone}
-                  required
-                  onChange={(e) => setFormPatientPhone(e.target.value)}
-                  className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
-                  placeholder="+84 9xx xxx xxx"
+                  disabled
+                  className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg bg-slate-50 text-slate-500 outline-none select-none cursor-not-allowed"
+                  placeholder="Tự động cập nhật sau khi chọn bệnh nhân"
                 />
               </div>
 
@@ -1252,16 +1365,23 @@ export default function StaffDashboard() {
                 </label>
                 <div className="relative">
                   <select
-                    value={formDoctor}
+                    value={selectedDoctorId}
                     required
-                    onChange={(e) => setFormDoctor(e.target.value)}
+                    onChange={(e) => {
+                      const docId = e.target.value;
+                      setSelectedDoctorId(docId);
+                      const docObj = doctorsList.find(d => d.id === docId);
+                      setFormDoctor(docObj ? docObj.fullName : "");
+                      setFormTimeSlot(""); // Reset selected slot
+                    }}
                     className="w-full h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 bg-white appearance-none cursor-pointer"
                   >
                     <option value="">Chọn bác sĩ...</option>
-                    <option value="BS. Lê Mạnh Hùng (Phòng 102)">BS. Lê Mạnh Hùng (Phòng 102)</option>
-                    <option value="BS. Nguyễn Thị Mai (Phòng 204)">BS. Nguyễn Thị Mai (Phòng 204)</option>
-                    <option value="BS. Trần Quốc Tuấn (Phòng 105)">BS. Trần Quốc Tuấn (Phòng 105)</option>
-                    <option value="BS. Phạm Thanh Hằng (Phòng 301)">BS. Phạm Thanh Hằng (Phòng 301)</option>
+                    {doctorsList.map((doc) => (
+                      <option key={doc.id} value={doc.id}>
+                        {doc.fullName} ({doc.phoneNumber})
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -1276,7 +1396,10 @@ export default function StaffDashboard() {
                   type="date"
                   value={formDate}
                   required
-                  onChange={(e) => setFormDate(e.target.value)}
+                  onChange={(e) => {
+                    setFormDate(e.target.value);
+                    setFormTimeSlot(""); // Reset selected slot
+                  }}
                   className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all bg-white"
                 />
               </div>
@@ -1284,26 +1407,32 @@ export default function StaffDashboard() {
               {/* Time Slots Grid */}
               <div>
                 <label className="block text-xs font-semibold text-[#0F172A] mb-2">Chọn khung giờ hẹn</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {timeSlots.map((slot) => {
-                    const isUnavail = unavailableSlots.includes(slot);
-                    const isActive = formTimeSlot === slot;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        disabled={isUnavail}
-                        onClick={() => setFormTimeSlot(slot)}
-                        className={`py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer outline-none
-                          ${isUnavail ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed" :
-                            isActive ? "bg-sky-500 border-sky-500 text-white shadow-sm font-semibold" :
-                                      "bg-white border-[#E2E8F0] text-[#0F172A] hover:border-sky-300 hover:bg-sky-50"}`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                </div>
+                {availableSlotsForBooking.length === 0 ? (
+                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-lg p-3 text-center italic">
+                    {selectedDoctorId ? "Bác sĩ không có lịch trực khả dụng vào ngày này." : "Vui lòng chọn bác sĩ phụ trách trước."}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {availableSlotsForBooking.map((slotObj: any) => {
+                      const slotLabel = slotObj.slot 
+                        ? `${slotObj.slot.startTime.slice(0, 5)}–${slotObj.slot.endTime.slice(0, 5)}`
+                        : "Khung giờ";
+                      const isActive = formTimeSlot === slotObj.id;
+                      return (
+                        <button
+                          key={slotObj.id}
+                          type="button"
+                          onClick={() => setFormTimeSlot(slotObj.id)}
+                          className={`py-1.5 px-2 text-xs font-medium rounded-lg border transition-all cursor-pointer outline-none text-center
+                            ${isActive ? "bg-sky-500 border-sky-500 text-white shadow-sm font-semibold" :
+                                         "bg-white border-[#E2E8F0] text-[#0F172A] hover:border-sky-300 hover:bg-sky-50"}`}
+                        >
+                          {slotLabel} {slotObj.roomId ? `(${slotObj.roomId})` : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Reason */}
