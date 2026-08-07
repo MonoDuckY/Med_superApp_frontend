@@ -40,7 +40,7 @@ export default function DoctorDashboard() {
 
   // Registration Form States
   const [date, setDate] = useState("");
-  const [shift, setShift] = useState<"MORNING" | "AFTERNOON" | "FULL_TIME">("MORNING");
+  const [shift, setShift] = useState<"MORNING" | "AFTERNOON" | "FULL_TIME" | "NIGHT">("MORNING");
   const [roomId, setRoomId] = useState("");
   const [note, setNote] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -609,9 +609,6 @@ export default function DoctorDashboard() {
                 {/* Form Header */}
                 <div className="px-6 py-4 border-b border-[#F1F5F9] flex items-center justify-between shrink-0">
                   <h2 className="font-bold text-base text-[#0F172A]">Đăng ký Ca làm việc mới</h2>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F0F9FF] text-[#0369A1] tracking-wider">
-                    HMS-PORTAL
-                  </span>
                 </div>
 
                 {/* Form Inputs Container */}
@@ -665,10 +662,11 @@ export default function DoctorDashboard() {
                     <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wider">
                       Ca làm việc <span className="text-rose-500">*</span>
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {[
                         { key: "MORNING", label: "Ca Sáng", time: "08:00 – 12:00" },
                         { key: "AFTERNOON", label: "Ca Chiều", time: "13:30 – 17:30" },
+                        { key: "NIGHT", label: "Ca Đêm", time: "17:00 – 05:00" },
                         { key: "FULL_TIME", label: "Cả Ngày", time: "08:00 – 17:30" },
                       ].map(s => {
                         const active = shift === s.key;
