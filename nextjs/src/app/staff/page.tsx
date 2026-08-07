@@ -92,7 +92,12 @@ export default function StaffDashboard() {
 
   // Patient Search Autocomplete states
   const [selectedPatientId, setSelectedPatientId] = useState("");
-  const [patientSearchResults, setPatientSearchResults] = useState<{ id: string; fullName: string }[]>([]);
+  const [patientSearchResults, setPatientSearchResults] = useState<{
+    id: string;
+    fullName: string;
+    phoneNumber?: string;
+    citizenIdentificationCode?: string;
+  }[]>([]);
   const [searchingPatients, setSearchingPatients] = useState(false);
 
   // Filters State
@@ -489,8 +494,25 @@ export default function StaffDashboard() {
     }
     setSearchingPatients(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+    // Auto-detect if query is phone number, CCCD, or name
+    let params = "";
+    const cleanQuery = query.trim().replace(/\s+/g, "");
+    const isNumeric = /^[+0-9]+$/.test(cleanQuery);
+    if (isNumeric) {
+      if (cleanQuery.startsWith("+") || (cleanQuery.startsWith("0") && cleanQuery.length <= 11 && cleanQuery.length >= 9)) {
+        params = `phoneNumber=${encodeURIComponent(cleanQuery)}`;
+      } else if (cleanQuery.length === 9 || cleanQuery.length === 12) {
+        params = `citizenIdentificationCode=${encodeURIComponent(cleanQuery)}`;
+      } else {
+        params = `phoneNumber=${encodeURIComponent(cleanQuery)}`;
+      }
+    } else {
+      params = `name=${encodeURIComponent(query)}`;
+    }
+
     try {
-      const res = await fetchWithAuth(`${apiUrl}/api/staff/patients/search?name=${encodeURIComponent(query)}`);
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/patients/search?${params}`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -1316,7 +1338,7 @@ export default function StaffDashboard() {
                   required
                   onChange={(e) => handlePatientSearch(e.target.value)}
                   className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
-                  placeholder="Nhập tên bệnh nhân để tìm kiếm..."
+                  placeholder="Tìm kiếm bằng tên, SĐT hoặc CCCD..."
                   autoComplete="off"
                 />
                 {searchingPatients && (
@@ -1333,13 +1355,17 @@ export default function StaffDashboard() {
                         onClick={() => {
                           setSelectedPatientId(p.id);
                           setFormPatientName(p.fullName);
-                          setFormPatientPhone("Đã liên kết ID: " + p.id);
+                          setFormPatientPhone(`Đã liên kết ID: ${p.id}${p.phoneNumber ? ` - SĐT: ${p.phoneNumber}` : ""}`);
                           setPatientSearchResults([]);
                         }}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors border-none bg-transparent cursor-pointer"
                       >
                         <p className="font-semibold text-slate-800">{p.fullName}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">ID: {p.id}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          {p.phoneNumber && <span>SĐT: {p.phoneNumber}</span>}
+                          {p.citizenIdentificationCode && <span className="ml-3">CCCD: {p.citizenIdentificationCode}</span>}
+                        </p>
+                        <p className="text-[9px] text-slate-400 font-mono">ID: {p.id}</p>
                       </button>
                     ))}
                   </div>
