@@ -1004,7 +1004,7 @@ export default function StaffDashboard() {
                           <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">Không tìm thấy lịch hẹn phù hợp.</td>
                         </tr>
                       ) : filteredAppointments.map(a => {
-                        const isCancelled = a.status === "Cancelled" || a.status === "No-show";
+                        const isActionDisabled = a.status === "Cancelled" || a.status === "No-show" || a.status === "Completed";
                         return (
                           <tr key={a.id} className="hover:bg-[#F8FAFC] transition-colors">
                             <td className="px-5 py-3.5 whitespace-nowrap">
@@ -1033,7 +1033,7 @@ export default function StaffDashboard() {
                             <td className="px-5 py-3.5 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <button
-                                  disabled={isCancelled}
+                                  disabled={isActionDisabled}
                                   onClick={() => {
                                     setSelectedAppointmentId(a.id);
                                     setRescheduleDoctor(`${a.doctor} (${a.room})`);
@@ -1042,11 +1042,11 @@ export default function StaffDashboard() {
                                     setIsRescheduleDrawerOpen(true);
                                   }}
                                   className={`h-7 px-3 text-xs font-bold rounded-lg border transition-all outline-none
-                                    ${isCancelled ? "border-slate-100 text-slate-300 bg-slate-50 cursor-not-allowed" : "border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 cursor-pointer"}`}
+                                    ${isActionDisabled ? "border-slate-100 text-slate-300 bg-slate-50 cursor-not-allowed" : "border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 cursor-pointer"}`}
                                 >
                                   Dời lịch
                                 </button>
-                                {!isCancelled && (
+                                {!isActionDisabled && (
                                   <button
                                     onClick={() => {
                                       setSelectedAppointmentId(a.id);
