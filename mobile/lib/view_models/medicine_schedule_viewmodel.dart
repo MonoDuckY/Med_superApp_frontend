@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/dto/medicine_schedule_response.dart';
-import '../models/dto/medicine_schedule_mock_data.dart';
+import '../services/abstract/medicine_schedule_service_abstract.dart';
+import '../services/remote/remote_medicine_schedule_service.dart';
 
 class MedicineScheduleViewModel extends ChangeNotifier {
+  // TODO: Inject via get_it or similar in the future.
+  final MedicineScheduleServiceAbstract _service = RemoteMedicineScheduleService();
+
   MedicineScheduleViewModel() {
     _load();
   }
@@ -62,36 +66,32 @@ class MedicineScheduleViewModel extends ChangeNotifier {
   }
 
   Future<void> markTaken(String scheduleId) async {
-    final idx = _allSchedules.indexWhere((s) => s.id == scheduleId);
-    if (idx == -1) return;
-    final schedule = _allSchedules[idx];
-    if (schedule.status != MedicineScheduleStatus.notYet) return;
-    _allSchedules[idx] = schedule.copyWith(status: MedicineScheduleStatus.taken);
-    notifyListeners();
+    final response = await _service.markTaken(scheduleId);
+    if (response.success && response.data != null) {
+      final idx = _allSchedules.indexWhere((s) => s.id == scheduleId);
+      if (idx != -1) {
+        _allSchedules[idx] = response.data!;
+        notifyListeners();
+      }
+    } else {
+      _errorMessage = response.message;
+      notifyListeners();
+    }
   }
 
   Future<String?> updateScheduleTime(String scheduleId, DateTime newTime) async {
-    if (!newTime.isAfter(DateTime.now())) {
-      return 'Giờ uống mới phải trong tương lai.';
+    final response = await _service.updateScheduleTime(scheduleId, newTime);
+    if (response.success && response.data != null) {
+      final idx = _allSchedules.indexWhere((s) => s.id == scheduleId);
+      if (idx != -1) {
+        _allSchedules[idx] = response.data!;
+        _selectedDate = DateTime(newTime.year, newTime.month, newTime.day);
+        notifyListeners();
+      }
+      return null;
+    } else {
+      return response.message;
     }
-    final idx = _allSchedules.indexWhere((s) => s.id == scheduleId);
-    if (idx == -1) return 'Không tìm thấy lịch.';
-    final schedule = _allSchedules[idx];
-    if (schedule.status != MedicineScheduleStatus.notYet) {
-      return 'Chỉ lịch chưa uống mới có thể đổi giờ.';
-    }
-    final duplicate = _allSchedules.any((s) =>
-        s.id != scheduleId &&
-        s.prescriptionId == schedule.prescriptionId &&
-        s.medicineName == schedule.medicineName &&
-        s.dosage == schedule.dosage &&
-        s.scheduledAt.isAtSameMomentAs(newTime));
-    if (duplicate) return 'Đã có lịch uống cùng thuốc vào giờ này.';
-
-    _allSchedules[idx] = schedule.copyWith(scheduledAt: newTime);
-    _selectedDate = DateTime(newTime.year, newTime.month, newTime.day);
-    notifyListeners();
-    return null;
   }
 
   Future<void> refresh() => _load();
@@ -101,19 +101,25 @@ class MedicineScheduleViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 600));
-    _allSchedules = MedicineScheduleMockData.generate();
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final hasTodaySchedule = _allSchedules.any((s) =>
-        s.scheduledAt.year == today.year &&
-        s.scheduledAt.month == today.month &&
-        s.scheduledAt.day == today.day);
-    if (!hasTodaySchedule && availableDates.isNotEmpty) {
-      _selectedDate = availableDates.first;
+    final response = await _service.getMedicineSchedules();
+    if (response.success && response.data != null) {
+      _allSchedules = response.data!;
+      
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final hasTodaySchedule = _allSchedules.any((s) =>
+          s.scheduledAt.year == today.year &&
+          s.scheduledAt.month == today.month &&
+          s.scheduledAt.day == today.day);
+          
+      if (!hasTodaySchedule && availableDates.isNotEmpty) {
+        _selectedDate = availableDates.first;
+      } else {
+        _selectedDate = today;
+      }
     } else {
-      _selectedDate = today;
+      _errorMessage = response.message;
+      _allSchedules = [];
     }
 
     _isLoading = false;

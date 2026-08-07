@@ -1,10 +1,73 @@
-import 'medicine_schedule_response.dart';
+import '../../core/models/api_response.dart';
+import '../../models/dto/medicine_schedule_response.dart';
+import '../abstract/medicine_schedule_service_abstract.dart';
 
-/// Mock data tĩnh cho UC-10 — dùng trong khi backend hoàn thiện.
-class MedicineScheduleMockData {
-  MedicineScheduleMockData._();
+class MockMedicineScheduleService implements MedicineScheduleServiceAbstract {
+  static final List<MedicineScheduleResponse> _mockData = _generateMockData();
 
-  static List<MedicineScheduleResponse> generate() {
+  @override
+  Future<ApiResponse<List<MedicineScheduleResponse>>> getMedicineSchedules() async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    return ApiResponse.success(List.from(_mockData), message: 'Medicine schedules retrieved successfully.');
+  }
+
+  @override
+  Future<ApiResponse<MedicineScheduleResponse>> updateScheduleTime(
+      String scheduleId, DateTime newTime) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    if (!newTime.isAfter(DateTime.now())) {
+      return ApiResponse.failure('Giờ uống mới phải trong tương lai.');
+    }
+    
+    final idx = _mockData.indexWhere((s) => s.id == scheduleId);
+    if (idx == -1) {
+      return ApiResponse.failure('Không tìm thấy lịch.');
+    }
+    
+    final schedule = _mockData[idx];
+    if (schedule.status != MedicineScheduleStatus.notYet) {
+      return ApiResponse.failure('Chỉ lịch chưa uống mới có thể đổi giờ.');
+    }
+    
+    final duplicate = _mockData.any((s) =>
+        s.id != scheduleId &&
+        s.prescriptionId == schedule.prescriptionId &&
+        s.medicineName == schedule.medicineName &&
+        s.dosage == schedule.dosage &&
+        s.scheduledAt.isAtSameMomentAs(newTime));
+        
+    if (duplicate) {
+      return ApiResponse.failure('Đã có lịch uống cùng thuốc vào giờ này.');
+    }
+
+    final updatedSchedule = schedule.copyWith(scheduledAt: newTime);
+    _mockData[idx] = updatedSchedule;
+    
+    return ApiResponse.success(updatedSchedule, message: 'Medicine schedule time updated successfully.');
+  }
+
+  @override
+  Future<ApiResponse<MedicineScheduleResponse>> markTaken(String scheduleId) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    
+    final idx = _mockData.indexWhere((s) => s.id == scheduleId);
+    if (idx == -1) {
+      return ApiResponse.failure('Không tìm thấy lịch.');
+    }
+    
+    final schedule = _mockData[idx];
+    if (schedule.status != MedicineScheduleStatus.notYet) {
+      return ApiResponse.failure('Chỉ có thể đánh dấu đã uống cho lịch chưa uống.');
+    }
+    
+    final updatedSchedule = schedule.copyWith(status: MedicineScheduleStatus.taken);
+    _mockData[idx] = updatedSchedule;
+    
+    return ApiResponse.success(updatedSchedule, message: 'Medicine marked as taken successfully.');
+  }
+
+  static List<MedicineScheduleResponse> _generateMockData() {
     final now = DateTime.now();
     final yesterday = DateTime(now.year, now.month, now.day - 1);
     final today = DateTime(now.year, now.month, now.day);
