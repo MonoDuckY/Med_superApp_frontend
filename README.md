@@ -9,8 +9,7 @@
 ```
 Med_superApp_frontend/
 ├── mobile/        ← Flutter App (Android / iOS)
-├── nextjs/        ← Next.js Web App (Desktop Dashboard)
-└── shared/        ← Tài nguyên dùng chung (API contracts, design tokens)
+└── nextjs/        ← Next.js Web App (Desktop Dashboard)
 ```
 
 ---
@@ -72,17 +71,6 @@ src/
 └── types/         ← TypeScript interfaces
 ```
 
----
-
-## Shared
-
-```
-shared/
-├── api-contracts/
-│   └── openapi.yaml    ← OpenAPI spec từ Backend team (source of truth)
-└── design-tokens/
-    └── tokens.json     ← Colors, typography dùng chung cho cả hai platform
-```
 
 ---
 
