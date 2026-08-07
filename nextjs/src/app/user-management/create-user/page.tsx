@@ -56,7 +56,6 @@ export default function CreateUserPage() {
   const [phone, setPhone]               = useState("");
   const [email, setEmail]               = useState("");
   const [role, setRole]                 = useState<string>("");
-  const [selectedRoleName, setSelectedRoleName] = useState("");
   const [status, setStatus]             = useState<Status>("");
   const [dob, setDob]                   = useState("");
   const [gender, setGender]             = useState<Gender>("");
@@ -213,7 +212,7 @@ export default function CreateUserPage() {
   };
 
   const handleReset = () => {
-    setFullName(""); setPhone(""); setEmail(""); setRole(""); setSelectedRoleName(""); setStatus("");
+    setFullName(""); setPhone(""); setEmail(""); setRole(""); setStatus("");
     setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
     setPassword(""); setShowPassword(false); setLicenseFile(null);
     setHeight(""); setWeight(""); setBloodType(""); setMedicalHistory(""); setCurrentSickness("");
@@ -486,30 +485,21 @@ export default function CreateUserPage() {
                       <Label required>Vai trò</Label>
                       <div className="relative">
                         <select 
-                          value={selectedRoleName}
+                          value={role}
                           onChange={(e) => {
                             const val = e.target.value;
-                            setSelectedRoleName(val);
-                            if (val === "Quản trị viên") setRole("ADMIN");
-                            else if (val === "Bác sĩ") setRole("DOCTOR");
-                            else if (val === "Nghiên cứu sinh") setRole("RESEARCHER");
-                            else if (val === "Bệnh nhân") setRole("PATIENT");
-                            else if (val) setRole("STAFF");
-                            else setRole("");
+                            setRole(val);
                             setErrors(p => ({ ...p, role: "", license: "" }));
                           }}
                           className={SELECT_CLASS}
-                          style={{ color: selectedRoleName ? "#0F172A" : "#64748B", borderColor: errors.role ? "#EF4444" : undefined }}
+                          style={{ color: role ? "#0F172A" : "#64748B", borderColor: errors.role ? "#EF4444" : undefined }}
                         >
                           <option value="">Chọn vai trò...</option>
-                          <option value="Bác sĩ">Bác sĩ</option>
-                          <option value="Y tá / Điều dưỡng">Y tá / Điều dưỡng</option>
-                          <option value="Lễ tân">Lễ tân</option>
-                          <option value="Dược sĩ">Dược sĩ</option>
-                          <option value="Kỹ thuật viên">Kỹ thuật viên</option>
-                          <option value="Quản trị viên">Quản trị viên</option>
-                          <option value="Nghiên cứu sinh">Nghiên cứu sinh</option>
-                          <option value="Bệnh nhân">Bệnh nhân</option>
+                          <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                          <option value="DOCTOR">DOCTOR (Bác sĩ)</option>
+                          <option value="STAFF">STAFF (Nhân viên y tế)</option>
+                          <option value="RESEARCHER">RESEARCHER (Nghiên cứu sinh)</option>
+                          <option value="PATIENT">PATIENT (Bệnh nhân)</option>
                         </select>
                         <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
                       </div>
