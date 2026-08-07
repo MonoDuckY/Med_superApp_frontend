@@ -28,7 +28,7 @@ class AppointmentSuccessView extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.canvasColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
@@ -40,10 +40,10 @@ class AppointmentSuccessView extends StatelessWidget {
                 height: 88,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF86EFAC), width: 1.5),
-                  color: const Color(0xFFF0FDF4),
+                  border: Border.all(color: AppColors.green300, width: 1.5),
+                  color: AppColors.green50,
                 ),
-                child: const Icon(Icons.check, color: Color(0xFF22C55E), size: 40),
+                child: const Icon(Icons.check, color: AppColors.green500, size: 40),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -70,7 +70,7 @@ class AppointmentSuccessView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: AppColors.borderLight),
                 ),
                 child: Column(
                   children: [
@@ -83,7 +83,7 @@ class AppointmentSuccessView extends StatelessWidget {
                             children: [
                               const Row(
                                 children: [
-                                  Icon(Icons.receipt_long, size: 16, color: Color(0xFF0EA5E9)),
+                                  Icon(Icons.receipt_long, size: 16, color: AppColors.primary),
                                   SizedBox(width: 8),
                                   Text('Tóm tắt lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                 ],
@@ -91,7 +91,7 @@ class AppointmentSuccessView extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDCFCE7),
+                                  color: AppColors.green100,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Text('Chờ xác nhận', style: TextStyle(color: Color(0xFF16A34A), fontSize: 11, fontWeight: FontWeight.bold)),
@@ -128,14 +128,14 @@ class AppointmentSuccessView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFFEF9C3), // Yellow background
+                        color: AppColors.yellow100, // Yellow background
                         borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.notifications_active_outlined, size: 14, color: Color(0xFFD97706)),
+                          Icon(Icons.notifications_active_outlined, size: 14, color: AppColors.amber600),
                           SizedBox(width: 8),
-                          Expanded(child: Text('Thông báo sẽ được gửi qua SMS sau khi đặt lịch thành công.', style: TextStyle(fontSize: 11, color: Color(0xFFD97706)))),
+                          Expanded(child: Text('Thông báo sẽ được gửi qua SMS sau khi đặt lịch thành công.', style: TextStyle(fontSize: 11, color: AppColors.amber600))),
                         ],
                       ),
                     )
@@ -151,7 +151,7 @@ class AppointmentSuccessView extends StatelessWidget {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0EA5E9),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -181,9 +181,9 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF0EA5E9)),
+        Icon(icon, size: 18, color: AppColors.primary),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+        Text(label, style: const TextStyle(color: AppColors.textHint, fontSize: 14)),
         const Spacer(),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
       ],

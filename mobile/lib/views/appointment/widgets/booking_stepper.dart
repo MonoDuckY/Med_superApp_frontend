@@ -49,7 +49,7 @@ class _StepNode extends StatelessWidget {
         ? AppColors.success
         : isActive
             ? AppColors.primary
-            : const Color(0xFFCBD5E1);
+            : AppColors.slate300;
     final labelColor = isDone
         ? AppColors.success
         : isActive
@@ -106,7 +106,7 @@ class _StepConnector extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 20),
         child: Container(
           height: 2,
-          color: done ? AppColors.success : const Color(0xFFE2E8F0),
+          color: done ? AppColors.success : AppColors.borderLight,
         ),
       ),
     );

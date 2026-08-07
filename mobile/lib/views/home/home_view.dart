@@ -69,14 +69,14 @@ class HomeView extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF7ED),
+                              color: AppColors.orange50,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFFED7AA)),
+                              border: Border.all(color: AppColors.orange200),
                             ),
                             child: Row(
                               children: [
                                 const Icon(Icons.bolt,
-                                    size: 14, color: Color(0xFFF97316)),
+                                    size: 14, color: AppColors.orange),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -84,7 +84,7 @@ class HomeView extends StatelessWidget {
                                     style: GoogleFonts.inter(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFFC2410C),
+                                      color: AppColors.orange700,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -185,7 +185,7 @@ class HomeView extends StatelessWidget {
             const SizedBox(height: 10),
             _NavCard(
               icon: Icons.newspaper_outlined,
-              color: const Color(0xFF0D9488),
+              color: AppColors.teal600,
               title: 'Tin tức sức khỏe',
               subtitle: 'Bài viết y tế và lời khuyên sức khỏe',
               onTap: null,

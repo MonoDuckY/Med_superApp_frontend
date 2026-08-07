@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 
 // ── Time Slot ─────────────────────────────────────────────────────────────────
 
@@ -33,8 +34,8 @@ class DoctorModel {
     required this.initials,
     this.specialty = 'Khám bệnh', // Default fallback
     this.phoneNumber,
-    this.avatarColor = const Color(0xFF0EA5E9),
-    this.specialtyColor = const Color(0xFF0EA5E9),
+    this.avatarColor = AppColors.primary,
+    this.specialtyColor = AppColors.primary,
   });
 }
 

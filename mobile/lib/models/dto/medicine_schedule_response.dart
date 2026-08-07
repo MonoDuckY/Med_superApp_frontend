@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/app_colors.dart';
 
 // ── Status Enum (mirrors backend MedicineScheduleStatus) ──────────────────────
 
@@ -91,10 +92,10 @@ class MedicineScheduleResponse {
   }
 
   Color get statusColor {
-    if (status == MedicineScheduleStatus.taken) return const Color(0xFF10B981);
-    if (status == MedicineScheduleStatus.missed) return const Color(0xFFEF4444);
-    if (isOverdue) return const Color(0xFFF59E0B);
-    return const Color(0xFF0EA5E9);
+    if (status == MedicineScheduleStatus.taken) return AppColors.success;
+    if (status == MedicineScheduleStatus.missed) return AppColors.error;
+    if (isOverdue) return AppColors.warning;
+    return AppColors.primary;
   }
 
   IconData get statusIcon {

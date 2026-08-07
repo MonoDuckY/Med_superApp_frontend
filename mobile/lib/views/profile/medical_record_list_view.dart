@@ -34,7 +34,7 @@ class _ListScaffold extends StatelessWidget {
             _Header(),
             _PatientInfoCard(),
             _FilterChips(),
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const Divider(height: 1, color: AppColors.borderLight),
             const Expanded(child: _RecordList()),
           ],
         ),
@@ -92,7 +92,7 @@ class _PatientInfoCard extends StatelessWidget {
             height: 46,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+                colors: [AppColors.primary, AppColors.teal],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -159,7 +159,7 @@ class _FilterChips extends StatelessWidget {
             const SizedBox(width: 8),
             _Chip(
               label: 'Đang điều trị',
-              dot: const Color(0xFFF97316),
+              dot: AppColors.orange,
               filter: MedicalRecordFilter.ongoing,
               current: vm.currentFilter,
               onTap: () => vm.setFilter(MedicalRecordFilter.ongoing),
@@ -167,7 +167,7 @@ class _FilterChips extends StatelessWidget {
             const SizedBox(width: 8),
             _Chip(
               label: 'Đã hoàn thành',
-              dot: const Color(0xFF10B981),
+              dot: AppColors.success,
               filter: MedicalRecordFilter.completed,
               current: vm.currentFilter,
               onTap: () => vm.setFilter(MedicalRecordFilter.completed),
@@ -206,7 +206,7 @@ class _Chip extends StatelessWidget {
           color: isSelected ? AppColors.primary.withAlpha(12) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+            color: isSelected ? AppColors.primary : AppColors.borderLight,
           ),
         ),
         child: Row(
@@ -300,9 +300,9 @@ class _RecordCard extends StatelessWidget {
 
   Color get _dotColor {
     if (record.status == MedicalRecordStatus.ongoing) {
-      return const Color(0xFFF97316);
+      return AppColors.orange;
     }
-    return const Color(0xFF10B981);
+    return AppColors.success;
   }
 
   @override
@@ -419,22 +419,22 @@ class _RecordCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
+                        color: AppColors.amber100,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
+                        border: Border.all(color: AppColors.amber200),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.hourglass_top_rounded,
-                              size: 12, color: Color(0xFFD97706)),
+                              size: 12, color: AppColors.amber600),
                           const SizedBox(width: 6),
                           Text(
                             'Kết quả đang được xử lý...',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFFD97706),
+                              color: AppColors.amber600,
                             ),
                           ),
                         ],
@@ -447,7 +447,7 @@ class _RecordCard extends StatelessWidget {
 
             // ── Action buttons ────────────────────────────────────────────────
             if (record.resultAvailable && record.hasLabResults) ...[
-              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              const Divider(height: 1, color: AppColors.surfaceLight),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Row(
@@ -481,7 +481,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOngoing = status == MedicalRecordStatus.ongoing;
-    final color = isOngoing ? const Color(0xFFF97316) : const Color(0xFF10B981);
+    final color = isOngoing ? AppColors.orange : AppColors.success;
     final label = isOngoing ? 'Đang điều trị' : 'Đã hoàn thành';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

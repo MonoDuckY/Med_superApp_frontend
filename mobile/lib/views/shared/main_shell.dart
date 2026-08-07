@@ -86,10 +86,10 @@ class _BottomNav extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
+        border: Border(top: BorderSide(color: AppColors.borderLight, width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Color(0x0A000000),
+            color: AppColors.blackAlpha10,
             blurRadius: 16,
             offset: Offset(0, -4),
           ),
@@ -137,7 +137,7 @@ class _NavItem extends StatelessWidget {
       case '/schedule':
         return AppColors.primary;
       case '/health':
-        return const Color(0xFFEF4444); // red / heart
+        return AppColors.error; // red / heart
       case '/profile':
         return AppColors.purple;
       default:

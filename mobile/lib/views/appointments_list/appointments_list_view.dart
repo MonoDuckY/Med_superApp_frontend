@@ -123,7 +123,7 @@ class _ListHeader extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: AppColors.borderLight),
         ],
       ),
     );
@@ -219,7 +219,7 @@ class _EmptyAppointments extends StatelessWidget {
       child: Column(
         children: [
           const Icon(Icons.calendar_today_outlined,
-              size: 40, color: Color(0xFFCBD5E1)),
+              size: 40, color: AppColors.slate300),
           const SizedBox(height: 12),
           Text(
             'Không có lịch khám',
@@ -254,13 +254,13 @@ class _AppointmentCard extends StatelessWidget {
   Color get _statusBg {
     switch (record.status) {
       case AppointmentStatus.pending:
-        return const Color(0xFFFEF3C7);
+        return AppColors.amber100;
       case AppointmentStatus.confirmed:
-        return const Color(0xFFD1FAE5);
+        return AppColors.emerald100;
       case AppointmentStatus.completed:
         return const Color(0xFFEFF6FF);
       case AppointmentStatus.cancelled:
-        return const Color(0xFFFEE2E2);
+        return AppColors.red100;
     }
   }
 
@@ -474,7 +474,7 @@ class _AppointmentCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const Divider(height: 1, color: AppColors.surfaceLight),
                 const SizedBox(height: 10),
 
                 // Action buttons

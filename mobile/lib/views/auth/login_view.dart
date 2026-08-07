@@ -55,7 +55,7 @@ class _LoginBody extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF38BDF8), AppColors.primary],
+                    colors: [AppColors.sky400, AppColors.primary],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
@@ -127,15 +127,15 @@ class _LoginBody extends StatelessWidget {
                   hintText: 'e.g. 0912345678',
                   hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
                   filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
+                  fillColor: AppColors.canvasColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    borderSide: const BorderSide(color: AppColors.borderLight),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    borderSide: const BorderSide(color: AppColors.borderLight),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -164,7 +164,7 @@ class _LoginBody extends StatelessWidget {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: const Color(0xFFBAE6FD),
+                    disabledBackgroundColor: AppColors.sky200,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -213,23 +213,23 @@ class _LoginBody extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF7ED),
+                      color: AppColors.orange50,
                       borderRadius: BorderRadius.circular(10),
                       border:
-                          Border.all(color: const Color(0xFFFED7AA)),
+                          Border.all(color: AppColors.orange200),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.bolt,
-                            size: 16, color: Color(0xFFF97316)),
+                            size: 16, color: AppColors.orange),
                         const SizedBox(width: 8),
                         Text(
                           '[DEV]  Bỏ qua đăng nhập',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFFC2410C),
+                            color: AppColors.orange700,
                           ),
                         ),
                       ],
@@ -264,7 +264,7 @@ class _StepIndicator extends StatelessWidget {
           width: isActive ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : const Color(0xFFCBD5E0),
+            color: isActive ? AppColors.primary : AppColors.slate300Alt,
             borderRadius: BorderRadius.circular(4),
           ),
         );

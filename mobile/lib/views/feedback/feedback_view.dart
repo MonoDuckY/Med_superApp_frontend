@@ -87,7 +87,7 @@ class _FeedbackHeader extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: AppColors.borderLight),
         ],
       ),
     );
@@ -249,8 +249,8 @@ class _StarRatingSection extends StatelessWidget {
                           key: ValueKey('star_${starIndex}_$isFilled'),
                           size: 40,
                           color: isFilled
-                              ? const Color(0xFFF59E0B)
-                              : const Color(0xFFCBD5E1),
+                              ? AppColors.warning
+                              : AppColors.slate300,
                         ),
                       ),
                     ),
@@ -319,7 +319,7 @@ class _StarRatingSection extends StatelessWidget {
       case 1:
         return AppColors.error;
       case 2:
-        return const Color(0xFFEF6C00);
+        return AppColors.orange800;
       case 3:
         return AppColors.warning;
       case 4:
@@ -511,9 +511,9 @@ class _WarningNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
+        color: AppColors.amber50,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        border: Border.all(color: AppColors.amber200),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,7 +521,7 @@ class _WarningNote extends StatelessWidget {
           const Icon(
             Icons.info_outline_rounded,
             size: 16,
-            color: Color(0xFFD97706),
+            color: AppColors.amber600,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -535,7 +535,7 @@ class _WarningNote extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFD97706),
+                      color: AppColors.amber600,
                     ),
                   ),
                   const TextSpan(

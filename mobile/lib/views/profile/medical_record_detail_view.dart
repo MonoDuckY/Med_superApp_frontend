@@ -197,7 +197,7 @@ class _StatusBadgeLarge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOngoing = status == MedicalRecordStatus.ongoing;
-    final color = isOngoing ? const Color(0xFFF97316) : const Color(0xFF10B981);
+    final color = isOngoing ? AppColors.orange : AppColors.success;
     final label = isOngoing ? 'Đang điều trị' : 'Đã hoàn thành';
     final icon = isOngoing ? Icons.loop_rounded : Icons.check_circle_outline_rounded;
 
@@ -286,14 +286,14 @@ class _ResultPendingBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7),
+        color: AppColors.amber100,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        border: Border.all(color: AppColors.amber200),
       ),
       child: Row(
         children: [
           const Icon(Icons.hourglass_empty_rounded,
-              color: Color(0xFFD97706), size: 24),
+              color: AppColors.amber600, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -304,7 +304,7 @@ class _ResultPendingBanner extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF92400E),
+                    color: AppColors.amber900,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -312,7 +312,7 @@ class _ResultPendingBanner extends StatelessWidget {
                   'Kết quả chẩn đoán và xét nghiệm chưa sẵn sàng. Vui lòng quay lại sau hoặc liên hệ bệnh viện để biết thêm thông tin.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF92400E),
+                    color: AppColors.amber900,
                     height: 1.4,
                   ),
                 ),
@@ -384,7 +384,7 @@ class _DoctorCard extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   AppColors.primary.withAlpha(200),
-                  const Color(0xFF06B6D4),
+                  AppColors.teal,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -456,7 +456,7 @@ class _VitalSignsGrid extends StatelessWidget {
             Expanded(
               child: _VitalCard(
                 icon: Icons.favorite_outline_rounded,
-                iconColor: const Color(0xFFEF4444),
+                iconColor: AppColors.error,
                 value: vitals.bloodPressure,
                 unit: 'mmHg',
                 label: 'Huyết áp',
@@ -467,7 +467,7 @@ class _VitalSignsGrid extends StatelessWidget {
             Expanded(
               child: _VitalCard(
                 icon: Icons.monitor_heart_outlined,
-                iconColor: const Color(0xFFEC4899),
+                iconColor: AppColors.pink500,
                 value: '${vitals.heartRate}',
                 unit: 'bpm',
                 label: 'Nhịp tim',
@@ -482,7 +482,7 @@ class _VitalSignsGrid extends StatelessWidget {
             Expanded(
               child: _VitalCard(
                 icon: Icons.air_outlined,
-                iconColor: const Color(0xFF0EA5E9),
+                iconColor: AppColors.primary,
                 value: '${vitals.respiratoryRate}',
                 unit: 'lần/phút',
                 label: 'Nhịp thở',
@@ -493,7 +493,7 @@ class _VitalSignsGrid extends StatelessWidget {
             Expanded(
               child: _VitalCard(
                 icon: Icons.thermostat_outlined,
-                iconColor: const Color(0xFFF59E0B),
+                iconColor: AppColors.warning,
                 value: '${vitals.bodyTemperature}',
                 unit: '°C',
                 label: 'Thân nhiệt',
@@ -506,7 +506,7 @@ class _VitalSignsGrid extends StatelessWidget {
           const SizedBox(height: 10),
           _VitalCard(
             icon: Icons.water_drop_outlined,
-            iconColor: const Color(0xFF10B981),
+            iconColor: AppColors.success,
             value: '${vitals.bloodSugar}',
             unit: 'mmol/L',
             label: 'Mỡ máu',
@@ -544,11 +544,11 @@ class _VitalCard extends StatelessWidget {
   Color get _statusColor {
     switch (status) {
       case VitalStatus.normal:
-        return const Color(0xFF10B981);
+        return AppColors.success;
       case VitalStatus.high:
-        return const Color(0xFFEF4444);
+        return AppColors.error;
       case VitalStatus.low:
-        return const Color(0xFF0EA5E9);
+        return AppColors.primary;
     }
   }
 
@@ -710,7 +710,7 @@ class _DiagnosisCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             AppColors.primary.withAlpha(15),
-            const Color(0xFF06B6D4).withAlpha(10),
+            AppColors.teal.withAlpha(10),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -802,10 +802,10 @@ class _ClinicalNotesCard extends StatelessWidget {
             _NoteRow(note: notes[i]),
             if (i < notes.length - 1)
               const Divider(height: 1, indent: 14, endIndent: 14,
-                  color: Color(0xFFF1F5F9)),
+                  color: AppColors.surfaceLight),
           ],
           // Doctor signature
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: AppColors.surfaceLight),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
             child: Row(
@@ -842,23 +842,23 @@ class _ClinicalNotesCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withAlpha(15),
+                    color: AppColors.success.withAlpha(15),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                        color: const Color(0xFF10B981).withAlpha(60)),
+                        color: AppColors.success.withAlpha(60)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.verified_outlined,
-                          size: 11, color: Color(0xFF10B981)),
+                          size: 11, color: AppColors.success),
                       const SizedBox(width: 5),
                       Text(
                         'Đã ký',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF10B981),
+                          color: AppColors.success,
                         ),
                       ),
                     ],
@@ -937,7 +937,7 @@ class _PrescriptionCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0EA5E9).withAlpha(8),
+              color: AppColors.primary.withAlpha(8),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(13)),
               border: Border(
@@ -946,14 +946,14 @@ class _PrescriptionCard extends StatelessWidget {
             child: Row(
               children: [
                 const Icon(Icons.medication_rounded,
-                    size: 16, color: Color(0xFF0EA5E9)),
+                    size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
                   '${items.length} loại thuốc được kê',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0369A1),
+                    color: AppColors.sky700,
                   ),
                 ),
               ],
@@ -964,7 +964,7 @@ class _PrescriptionCard extends StatelessWidget {
             _PrescriptionRow(item: items[i], index: i + 1),
             if (i < items.length - 1)
               const Divider(height: 1, indent: 14, endIndent: 14,
-                  color: Color(0xFFF1F5F9)),
+                  color: AppColors.surfaceLight),
           ],
         ],
       ),
@@ -1052,14 +1052,14 @@ class _PrescriptionRow extends StatelessWidget {
                     if (item.note != null) ...[
                       const SizedBox(width: 10),
                       const Icon(Icons.info_outline_rounded,
-                          size: 11, color: Color(0xFFF59E0B)),
+                          size: 11, color: AppColors.warning),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           item.note!,
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: const Color(0xFFD97706),
+                            color: AppColors.amber600,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1105,11 +1105,11 @@ class _ImageCard extends StatelessWidget {
 
   Color get _color {
     final type = image.imageType.toLowerCase();
-    if (type.contains('ct')) return const Color(0xFF7C3AED);
-    if (type.contains('x-quang')) return const Color(0xFF0EA5E9);
-    if (type.contains('điện tâm') || type.contains('ecg')) return const Color(0xFFEF4444);
-    if (type.contains('siêu âm')) return const Color(0xFF10B981);
-    return const Color(0xFF0D9488);
+    if (type.contains('ct')) return AppColors.purple;
+    if (type.contains('x-quang')) return AppColors.primary;
+    if (type.contains('điện tâm') || type.contains('ecg')) return AppColors.error;
+    if (type.contains('siêu âm')) return AppColors.success;
+    return AppColors.teal600;
   }
 
   @override
@@ -1179,7 +1179,7 @@ class _ImageCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

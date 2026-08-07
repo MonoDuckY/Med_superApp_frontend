@@ -23,7 +23,7 @@ class BookingSummaryBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
+        border: Border.all(color: AppColors.blue200),
       ),
       child: Row(
         children: [

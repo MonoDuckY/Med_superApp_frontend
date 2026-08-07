@@ -194,7 +194,7 @@ class _ProfileHeader extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: AppColors.borderLight),
         ],
       ),
     );
@@ -229,7 +229,7 @@ class _AvatarCard extends StatelessWidget {
             height: 62,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+                colors: [AppColors.primary, AppColors.teal],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -399,7 +399,7 @@ class _ProfileMenuItem extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

@@ -82,7 +82,7 @@ class _MedHeader extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+                      colors: [AppColors.primary, AppColors.teal],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -93,7 +93,7 @@ class _MedHeader extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: AppColors.borderLight),
         ],
       ),
     );
@@ -247,14 +247,14 @@ class _TodaySummaryBanner extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+          colors: [AppColors.primary, AppColors.darkBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0EA5E9).withAlpha(60),
+            color: AppColors.primary.withAlpha(60),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -281,7 +281,7 @@ class _TodaySummaryBanner extends StatelessWidget {
                       value: '${vm.todayTaken}/${vm.todayTotal}',
                       label: 'Đã uống',
                       icon: Icons.check_circle_outline_rounded,
-                      color: const Color(0xFF10B981),
+                      color: AppColors.success,
                     ),
                     if (vm.todayRemaining > 0) ...[
                       const SizedBox(width: 10),
@@ -298,7 +298,7 @@ class _TodaySummaryBanner extends StatelessWidget {
                         value: '${vm.todayOverdue}',
                         label: 'Quá giờ',
                         icon: Icons.warning_amber_rounded,
-                        color: const Color(0xFFFBBF24),
+                        color: AppColors.amber400,
                       ),
                     ],
                   ],
@@ -426,7 +426,7 @@ class _DateChip extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+                  colors: [AppColors.primary, AppColors.teal],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 )
@@ -434,7 +434,7 @@ class _DateChip extends StatelessWidget {
           color: isSelected ? null : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? Colors.transparent : isToday ? AppColors.primary : const Color(0xFFE2E8F0),
+            color: isSelected ? Colors.transparent : isToday ? AppColors.primary : AppColors.borderLight,
             width: isToday && !isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
@@ -511,7 +511,7 @@ class _ScheduleCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDone ? const Color(0xFFE2E8F0) : statusColor.withAlpha(60),
+          color: isDone ? AppColors.borderLight : statusColor.withAlpha(60),
           width: isDone ? 1 : 1.5,
         ),
         boxShadow: [
@@ -669,10 +669,10 @@ class _TimePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: isDone ? const Color(0xFFF1F5F9) : color.withAlpha(15),
+        color: isDone ? AppColors.surfaceLight : color.withAlpha(15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDone ? const Color(0xFFE2E8F0) : color.withAlpha(50),
+          color: isDone ? AppColors.borderLight : color.withAlpha(50),
         ),
       ),
       child: Text(
@@ -767,7 +767,7 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE2E8F0),
+                color: AppColors.borderLight,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -785,7 +785,7 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
             decoration: BoxDecoration(
               color: AppColors.canvasColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.borderLight),
             ),
             child: Row(
               children: [
@@ -819,7 +819,7 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
             child: OutlinedButton.icon(
               onPressed: _pickDateTime,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                side: const BorderSide(color: AppColors.borderLight),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: Icon(Icons.edit_calendar_rounded, size: 18, color: AppColors.textSecondary),
@@ -857,7 +857,7 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF0EA5E9),
+            primary: AppColors.primary,
             onPrimary: Colors.white,
           ),
         ),
@@ -872,7 +872,7 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF0EA5E9),
+            primary: AppColors.primary,
             onPrimary: Colors.white,
           ),
         ),
@@ -904,7 +904,7 @@ class _EmptyDateState extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(Icons.medication_outlined, size: 36, color: AppColors.textHint),
@@ -934,7 +934,7 @@ class _LoadingState extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0EA5E9)),
+        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
       ),
     );
   }

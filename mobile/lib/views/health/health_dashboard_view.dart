@@ -52,7 +52,7 @@ class HealthDashboardView extends StatelessWidget {
                                   title: 'Theo dõi sức khỏe',
                                   description:
                                       'Ghi lại bữa ăn, luyện tập và chỉ số hàng ngày',
-                                  color: const Color(0xFF10B981),
+                                  color: AppColors.success,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -62,7 +62,7 @@ class HealthDashboardView extends StatelessWidget {
                                   title: 'Theo dõi điều trị',
                                   description:
                                       'Diễn biến bệnh và phác đồ điều trị',
-                                  color: const Color(0xFF7C3AED),
+                                  color: AppColors.purple,
                                 ),
                               ),
                             ],
@@ -122,11 +122,7 @@ class _HealthHeader extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFEF4444), Color(0xFFF97316)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    gradient: AppColors.warningGradient,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
@@ -134,7 +130,7 @@ class _HealthHeader extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: AppColors.borderLight),
         ],
       ),
     );
@@ -150,15 +146,11 @@ class _HealthSummaryBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.tealGradient,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0EA5E9).withAlpha(60),
+            color: AppColors.primary.withAlpha(60),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -228,15 +220,11 @@ class _MedicineHighlightCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0EA5E9).withAlpha(60),
+                  color: AppColors.primary.withAlpha(60),
                   blurRadius: 14,
                   offset: const Offset(0, 5),
                 ),
@@ -355,7 +343,7 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isWarning ? const Color(0xFFFBBF24) : Colors.white;
+    final color = isWarning ? AppColors.amber400 : Colors.white;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

@@ -44,7 +44,7 @@ class _BookingScaffold extends StatelessWidget {
                   : const _ByDoctorFlow(),
             ),
             const SizedBox(height: 24),
-            const Divider(color: Color(0xFFE2E8F0), height: 1),
+            const Divider(color: AppColors.borderLight, height: 1),
             const SizedBox(height: 24),
             const _AdditionalInfoSection(),
             const SizedBox(height: 16),
@@ -88,7 +88,7 @@ class _BookingScaffold extends StatelessWidget {
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0EA5E9),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -118,7 +118,7 @@ class _BookingScaffold extends StatelessWidget {
               const SizedBox(height: 8),
               const Text(
                 'Thông báo xác nhận sẽ được gửi sau khi bạn nhấn đặt lịch',
-                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                style: TextStyle(fontSize: 11, color: AppColors.textHint),
               ),
             ],
           ),
@@ -158,7 +158,7 @@ class _BookingScaffold extends StatelessWidget {
       ),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        child: Container(color: AppColors.borderLight, height: 1),
       ),
     );
   }
@@ -176,9 +176,9 @@ class _SegmentedControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: AppColors.canvasColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.surfaceLight),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
@@ -237,7 +237,7 @@ class _Segment extends StatelessWidget {
               title,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFF94A3B8),
+                color: isSelected ? AppColors.primary : AppColors.textHint,
                 fontSize: 14,
               ),
             ),
@@ -247,7 +247,7 @@ class _Segment extends StatelessWidget {
                 width: 24,
                 height: 3,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0EA5E9),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               )
@@ -256,7 +256,7 @@ class _Segment extends StatelessWidget {
                 subtitle,
                 style: const TextStyle(
                   fontSize: 10,
-                  color: Color(0xFFCBD5E1),
+                  color: AppColors.slate300,
                 ),
               ),
           ],
@@ -358,7 +358,7 @@ class _ByDoctorFlow extends StatelessWidget {
                 name: doc.fullName,
                 specialty: 'Khám bệnh', // Default mapping
                 phoneNumber: doc.phoneNumber,
-                avatarColor: const Color(0xFF0EA5E9),
+                avatarColor: AppColors.primary,
                 isSelected: vm.selectedDoctorByDoctorMode?.id == doc.id,
                 onTap: () => vm.selectDoctorByDoctorMode(doc),
               )),
@@ -421,7 +421,7 @@ class _SectionTitle extends StatelessWidget {
           height: 24,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            color: Color(0xFF0EA5E9),
+            color: AppColors.primary,
           ),
           alignment: Alignment.center,
           child: Text(number, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
@@ -432,7 +432,7 @@ class _SectionTitle extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF64748B),
+            color: AppColors.textSecondary,
           ),
         ),
         if (trailingText != null) ...[
@@ -442,7 +442,7 @@ class _SectionTitle extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF0EA5E9),
+              color: AppColors.primary,
             ),
           )
         ]
@@ -513,10 +513,10 @@ class _DateSelectorRow extends StatelessWidget {
               width: 64,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF0EA5E9) : Colors.white,
+                color: isSelected ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
+                  color: isSelected ? AppColors.primary : AppColors.borderLight,
                 ),
               ),
               child: Column(
@@ -543,7 +543,7 @@ class _DateSelectorRow extends StatelessWidget {
                     'Th${date.month}',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isSelected ? Colors.white70 : const Color(0xFFCBD5E1),
+                      color: isSelected ? Colors.white70 : AppColors.slate300,
                     ),
                   ),
                 ],
@@ -594,10 +594,10 @@ class _TimeSlotChip extends StatelessWidget {
         width: (MediaQuery.of(context).size.width - 32 - 12) / 2, // 2 columns
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0EA5E9) : Colors.white,
+          color: isSelected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE2E8F0),
+            color: isSelected ? AppColors.primary : AppColors.borderLight,
           ),
         ),
         child: Row(
@@ -605,7 +605,7 @@ class _TimeSlotChip extends StatelessWidget {
             Icon(
               Icons.access_time, 
               size: 14, 
-              color: isSelected ? Colors.white : (isAvailable ? const Color(0xFF0EA5E9) : const Color(0xFFCBD5E1))
+              color: isSelected ? Colors.white : (isAvailable ? AppColors.primary : AppColors.slate300)
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -617,7 +617,7 @@ class _TimeSlotChip extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: isSelected ? Colors.white : (isAvailable ? AppColors.textPrimary : const Color(0xFFCBD5E1)),
+                    color: isSelected ? Colors.white : (isAvailable ? AppColors.textPrimary : AppColors.slate300),
                   ),
                 ),
               ),
@@ -628,7 +628,7 @@ class _TimeSlotChip extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFE0F2FE),
+                    color: isSelected ? Colors.white.withValues(alpha: 0.2) : AppColors.sky100,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -636,19 +636,19 @@ class _TimeSlotChip extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : const Color(0xFF0EA5E9),
+                      color: isSelected ? Colors.white : AppColors.primary,
                     ),
                   ),
                 )
               else
                 const Text(
                   'Đầy',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                  style: TextStyle(fontSize: 11, color: AppColors.slate300),
                 )
             ] else if (!isAvailable) ...[
               const Text(
                 'Đầy',
-                style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                style: TextStyle(fontSize: 11, color: AppColors.slate300),
               )
             ]
           ],
@@ -665,11 +665,11 @@ class _TimeLegend extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _buildLegendItem(const Color(0xFF0EA5E9), 'Đã chọn'),
+        _buildLegendItem(AppColors.primary, 'Đã chọn'),
         const SizedBox(width: 16),
-        _buildLegendItem(const Color(0xFFCBD5E1), 'Còn trống'),
+        _buildLegendItem(AppColors.slate300, 'Còn trống'),
         const SizedBox(width: 16),
-        _buildLegendItem(const Color(0xFFF1F5F9), 'Đã đầy'),
+        _buildLegendItem(AppColors.surfaceLight, 'Đã đầy'),
       ],
     );
   }
@@ -683,7 +683,7 @@ class _TimeLegend extends StatelessWidget {
           decoration: BoxDecoration(shape: BoxShape.circle, color: color),
         ),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+        Text(text, style: const TextStyle(fontSize: 11, color: AppColors.textHint)),
       ],
     );
   }
@@ -711,11 +711,11 @@ class _DoctorCard extends StatelessWidget {
     // Determine theme color for selection. Let's use red if the avatar is red (e.g., NK -> Red)
     // To keep it simple, if it's selected we use a consistent color or the avatar's color.
     // For now we will use the avatarColor as the border color when selected.
-    Color borderColor = isSelected ? avatarColor : const Color(0xFFE2E8F0);
+    Color borderColor = isSelected ? avatarColor : AppColors.borderLight;
     
     // Fallback if avatarColor is too light, but normally it's fine.
     if (avatarColor == Colors.white || avatarColor == Colors.transparent) {
-      borderColor = const Color(0xFFEF4444); 
+      borderColor = AppColors.error; 
     }
 
     return GestureDetector(
@@ -760,7 +760,7 @@ class _DoctorCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
-                  Text(specialty, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                  Text(specialty, style: const TextStyle(color: AppColors.textHint, fontSize: 12)),
                 ],
               ),
             ),
@@ -782,7 +782,7 @@ class _DoctorCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                  border: Border.all(color: AppColors.slate300),
                 ),
               ),
           ],
@@ -802,7 +802,7 @@ class _AdditionalInfoSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Center(
-          child: Text('THÔNG TIN BỔ SUNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF94A3B8))),
+          child: Text('THÔNG TIN BỔ SUNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textHint)),
         ),
         const SizedBox(height: 16),
         Row(
@@ -819,21 +819,21 @@ class _AdditionalInfoSection extends StatelessWidget {
           maxLength: 300,
           decoration: InputDecoration(
             hintText: 'Mô tả triệu chứng để bác sĩ chuẩn bị trước...',
-            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+            hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF0EA5E9)),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
             counterText: '${vm.reason.length}/300',
-            counterStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+            counterStyle: const TextStyle(color: AppColors.textHint, fontSize: 11),
           ),
         ),
       ],
@@ -880,7 +880,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         children: [
@@ -893,7 +893,7 @@ class _SummaryCard extends StatelessWidget {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.receipt_long, size: 16, color: Color(0xFF0EA5E9)),
+                        Icon(Icons.receipt_long, size: 16, color: AppColors.primary),
                         SizedBox(width: 8),
                         Text('Tóm tắt lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
@@ -901,7 +901,7 @@ class _SummaryCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
+                        color: AppColors.green100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text('Chờ xác nhận', style: TextStyle(color: Color(0xFF16A34A), fontSize: 11, fontWeight: FontWeight.bold)),
@@ -922,14 +922,14 @@ class _SummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: const BoxDecoration(
-              color: Color(0xFFFEF9C3),
+              color: AppColors.yellow100,
               borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.notifications_active_outlined, size: 14, color: Color(0xFFD97706)),
+                Icon(Icons.notifications_active_outlined, size: 14, color: AppColors.amber600),
                 SizedBox(width: 8),
-                Expanded(child: Text('Thông báo sẽ được gửi qua SMS sau khi đặt lịch thành công.', style: TextStyle(fontSize: 11, color: Color(0xFFD97706)))),
+                Expanded(child: Text('Thông báo sẽ được gửi qua SMS sau khi đặt lịch thành công.', style: TextStyle(fontSize: 11, color: AppColors.amber600))),
               ],
             ),
           )
@@ -950,9 +950,9 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF0EA5E9)),
+        Icon(icon, size: 18, color: AppColors.primary),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+        Text(label, style: const TextStyle(color: AppColors.textHint, fontSize: 14)),
         const Spacer(),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
       ],
