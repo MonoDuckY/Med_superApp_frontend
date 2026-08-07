@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../views/auth/login_view.dart';
 import '../views/auth/otp_view.dart';
@@ -7,10 +8,12 @@ import '../views/appointments_list/appointments_list_view.dart';
 import '../views/appointment/appointment_booking_view.dart';
 import '../views/feedback/feedback_view.dart';
 import '../views/health/health_dashboard_view.dart';
+import '../views/health/medicine_schedule_view.dart';
 import '../views/profile/profile_placeholder_view.dart';
 import '../views/profile/medical_record_list_view.dart';
 import '../views/profile/medical_record_detail_view.dart';
 import '../views/shared/main_shell.dart';
+import '../view_models/medicine_schedule_viewmodel.dart';
 
 class AppRouter {
   AppRouter._();
@@ -104,6 +107,15 @@ class AppRouter {
           final id = state.pathParameters['id'] ?? '';
           return MedicalRecordDetailView(recordId: id);
         },
+      ),
+
+      // UC-10: Lịch uống thuốc
+      GoRoute(
+        path: '/health/medicine-schedule',
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => MedicineScheduleViewModel(),
+          child: const MedicineScheduleView(),
+        ),
       ),
     ],
   );

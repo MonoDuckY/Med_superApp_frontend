@@ -253,7 +253,7 @@ class AppointmentViewModel extends ChangeNotifier {
     );
 
     try {
-      final result = await _service.bookAppointment(request);
+      await _service.bookAppointment(request);
       _bookingSuccess = true;
     } catch (e) {
       _bookingSuccess = false;
