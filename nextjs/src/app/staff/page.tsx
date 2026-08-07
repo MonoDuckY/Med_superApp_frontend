@@ -464,7 +464,8 @@ export default function StaffDashboard() {
   const availableSlotsForBooking = React.useMemo(() => {
     if (!selectedDoctorId || !formDate) return [];
     const matchedSubmissions = rawSubmissions.filter((sub: any) => {
-      return sub.doctorId === selectedDoctorId && sub.workDate === formDate && sub.status === "APPROVED";
+      const isApprovedOrAvailable = sub.status === "APPROVED" || sub.status === "AVAILABLE";
+      return sub.doctorId === selectedDoctorId && sub.workDate === formDate && isApprovedOrAvailable;
     });
     
     const slotsList: any[] = [];
