@@ -140,7 +140,7 @@ export default function StaffDashboard() {
     message: string;
     progress: number;
   }>({
-    visible: true, // Default active on load matching mockup
+    visible: false, // Default hidden on load
     title: "SMS Gateway — Đang xử lý",
     message: "Mô phỏng SMS Gateway: Đang gửi tin nhắn tiếng Việt bất đồng bộ...",
     progress: 65
@@ -1022,11 +1022,7 @@ export default function StaffDashboard() {
                   <p className="text-xs text-[#64748B] mt-1"> {getVietnameseHeaderDate()}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* Online pill */}
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold" style={{ background: "#F0F9FF", borderColor: "#BAE6FD", color: "#0369A1" }}>
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    Hệ thống Trực tuyến
-                  </div>
+                 
                   <button
                     onClick={openAddDrawer}
                     className="flex items-center gap-2 h-9 px-4 text-xs font-semibold text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm cursor-pointer outline-none active:scale-[0.98]"
