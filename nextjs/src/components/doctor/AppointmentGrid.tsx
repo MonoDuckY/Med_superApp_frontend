@@ -16,7 +16,7 @@ export default function AppointmentGrid({ onBackToSchedule }: AppointmentGridPro
         Danh sách lịch khám
       </h2>
       <p className="text-[#64748B] text-[13px] max-w-[360px] leading-relaxed mb-6">
-        Tính năng đang được phát triển trong giai đoạn tiếp theo của dự án HMS Clinical Portal.
+        Tính năng đang được phát triển trong giai đoạn tiếp theo của dự án Phân hệ Lâm sàng HMS.
       </p>
 
       <button

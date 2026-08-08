@@ -113,7 +113,7 @@ export default function DoctorDashboard() {
           <Logo size="sm" />
           <div>
             <p className="text-[#0F172A] font-bold text-[14px] leading-none">HMS NextGen</p>
-            <p className="text-[#0EA5E9] text-[10px] font-semibold mt-0.5 tracking-wider uppercase">Clinical Portal</p>
+            <p className="text-[#0EA5E9] text-[10px] font-semibold mt-0.5 tracking-wider uppercase">Phân hệ Bác sĩ</p>
           </div>
         </div>
 

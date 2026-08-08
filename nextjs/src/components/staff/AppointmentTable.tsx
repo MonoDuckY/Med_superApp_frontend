@@ -141,10 +141,10 @@ export default function AppointmentTable({
               className="h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 text-[#64748B] bg-white appearance-none cursor-pointer"
             >
               <option value="">Tất cả Trạng thái</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="Confirmed">Đã xác nhận</option>
+              <option value="Cancelled">Đã hủy</option>
               <option value="Chờ xác nhận">Chờ xác nhận</option>
-              <option value="No-show">No-show</option>
+              <option value="No-show">Quá hạn (No-show)</option>
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
@@ -194,13 +194,13 @@ export default function AppointmentTable({
                       {a.status === "Confirmed" && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
                           <Check size={11} strokeWidth={2.5} />
-                          Confirmed
+                          Đã xác nhận
                         </span>
                       )}
                       {a.status === "Cancelled" && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-500 border border-rose-200">
                           <XCircle size={11} strokeWidth={2.5} />
-                          Cancelled
+                          Đã hủy
                         </span>
                       )}
                       {a.status === "Chờ xác nhận" && (
@@ -212,12 +212,14 @@ export default function AppointmentTable({
                       {a.status === "No-show" && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-400 border border-slate-200">
                           <Clock size={11} strokeWidth={2.5} />
-                          No-show
+                          Quá hạn (No-show)
                         </span>
                       )}
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
-                      <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{a.type}</span>
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        {a.type === "Standard" ? "Khám thường" : a.type}
+                      </span>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">

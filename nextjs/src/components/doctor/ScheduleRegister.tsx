@@ -88,22 +88,32 @@ export default function ScheduleRegister() {
     return "CANCELLED";
   };
 
-  const getSubmissionTimeRange = (subSlots?: any[]) => {
-    if (!subSlots || subSlots.length === 0) return "Chưa rõ";
-    const slotDetails = subSlots.map(s => {
-      const match = allSlots.find(sl => sl.id === s.slotId);
-      return match ? { start: match.startTime, end: match.endTime } : null;
-    }).filter(Boolean) as { start: string; end: string }[];
+  const getSubmissionTimeRange = (sub: any) => {
+    const subSlots = sub.slots;
+    if (subSlots && subSlots.length > 0) {
+      const slotDetails = subSlots.map((s: any) => {
+        const match = allSlots.find(sl => sl.id === s.slotId);
+        return match ? { start: match.startTime, end: match.endTime } : null;
+      }).filter(Boolean) as { start: string; end: string }[];
+      
+      if (slotDetails.length > 0) {
+        slotDetails.sort((a, b) => a.start.localeCompare(b.start));
+        const start = slotDetails[0].start.slice(0, 5);
+        
+        slotDetails.sort((a, b) => b.end.localeCompare(a.end));
+        const end = slotDetails[0].end.slice(0, 5);
+        
+        return `${start} – ${end}`;
+      }
+    }
     
-    if (slotDetails.length === 0) return "Chưa rõ";
-    
-    slotDetails.sort((a, b) => a.start.localeCompare(b.start));
-    const start = slotDetails[0].start.slice(0, 5);
-    
-    slotDetails.sort((a, b) => b.end.localeCompare(a.end));
-    const end = slotDetails[0].end.slice(0, 5);
-    
-    return `${start} – ${end}`;
+    // Fallback based on session
+    const sess = (sub.session || "").toUpperCase();
+    if (sess === "MORNING") return "08:00 – 12:00";
+    if (sess === "AFTERNOON") return "13:00 – 17:00";
+    if (sess === "NIGHT") return "17:00 – 08:00";
+    if (sess === "FULL_TIME") return "08:00 – 17:00";
+    return "Chưa rõ";
   };
 
   const getRoomName = (rId: string) => {
@@ -132,7 +142,10 @@ export default function ScheduleRegister() {
   const fetchSchedules = async () => {
     setLoadingSchedules(true);
     try {
-      const fromStr = formatDateISO(currentWeekDates[0]);
+      const prevDayOfStart = new Date(currentWeekDates[0]);
+      prevDayOfStart.setDate(prevDayOfStart.getDate() - 1);
+      const fromStr = formatDateISO(prevDayOfStart);
+
       const nextDayOfEnd = new Date(currentWeekDates[6]);
       nextDayOfEnd.setDate(nextDayOfEnd.getDate() + 1);
       const toStr = formatDateISO(nextDayOfEnd);
@@ -279,7 +292,7 @@ export default function ScheduleRegister() {
                 const dayName = WEEKDAY_NAMES[i];
                 const dateStr = formatDateISO(dayDate);
                 const dateLabel = formatDateDM(dayDate);
-                const daySubmissions = submissions.filter(s => s.workDate === dateStr);
+                const daySubmissions = submissions.filter(s => (s.workDate ? s.workDate.slice(0, 10) : "") === dateStr);
                 const isToday = formatDateISO(new Date()) === dateStr;
                 
                 return (
@@ -301,8 +314,8 @@ export default function ScheduleRegister() {
                         daySubmissions.map(sub => {
                           const statusType = mapStatus(sub.status);
                           const style = STATUS_STYLE[statusType];
-                          const timeRange = getSubmissionTimeRange(sub.slots);
-                          const roomName = sub.slots && sub.slots[0] ? getRoomName(sub.slots[0].roomId) : "N/A";
+                          const timeRange = getSubmissionTimeRange(sub);
+                          const roomName = getRoomName(sub.roomId || (sub.slots && sub.slots[0] ? sub.slots[0].roomId : "N/A"));
                           
                           return (
                             <div
@@ -314,7 +327,10 @@ export default function ScheduleRegister() {
                                 <div className="flex items-center gap-1.5">
                                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: style.dot }} />
                                   <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: style.text }}>
-                                    {sub.session === "MORNING" ? "Sáng" : "Chiều"}
+                                    {sub.session === "MORNING" ? "Ca sáng" :
+                                     sub.session === "AFTERNOON" ? "Ca chiều" :
+                                     sub.session === "NIGHT" ? "Ca tối" :
+                                     sub.session === "FULL_TIME" ? "Cả ngày" : "Ca trực"}
                                   </span>
                                 </div>
 
@@ -388,20 +404,34 @@ export default function ScheduleRegister() {
             {/* Session Segmented Control */}
             <div>
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wider">Ca làm việc</label>
-              <div className="flex gap-1 p-1 rounded-lg bg-[#F1F5F9]">
+              <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-lg bg-[#F1F5F9]">
                 <button
                   type="button"
                   onClick={() => { setShift("MORNING"); setErrorMsg(null); setSuccessMsg(null); }}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer border-none ${shift === "MORNING" ? "bg-white text-[#0EA5E9] shadow-sm" : "bg-transparent text-slate-500 hover:text-slate-700"}`}
+                  className={`py-1.5 px-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer border-none text-center ${shift === "MORNING" ? "bg-white text-[#0EA5E9] shadow-sm" : "bg-transparent text-slate-500 hover:text-slate-700"}`}
                 >
-                  Sáng (8h-12h)
+                  Ca sáng (8h-12h)
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShift("AFTERNOON"); setErrorMsg(null); setSuccessMsg(null); }}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer border-none ${shift === "AFTERNOON" ? "bg-white text-[#0EA5E9] shadow-sm" : "bg-transparent text-slate-500 hover:text-slate-700"}`}
+                  className={`py-1.5 px-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer border-none text-center ${shift === "AFTERNOON" ? "bg-white text-[#0EA5E9] shadow-sm" : "bg-transparent text-slate-500 hover:text-slate-700"}`}
                 >
-                  Chiều (13h-17h)
+                  Ca chiều (13h-17h)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShift("NIGHT"); setErrorMsg(null); setSuccessMsg(null); }}
+                  className={`py-1.5 px-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer border-none text-center ${shift === "NIGHT" ? "bg-white text-[#0EA5E9] shadow-sm" : "bg-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                  Ca tối (17h-8h)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShift("FULL_TIME"); setErrorMsg(null); setSuccessMsg(null); }}
+                  className={`py-1.5 px-1.5 text-[10px] font-bold rounded-md transition-all cursor-pointer border-none text-center ${shift === "FULL_TIME" ? "bg-white text-[#0EA5E9] shadow-sm" : "bg-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                  Cả ngày (8h-17h)
                 </button>
               </div>
             </div>

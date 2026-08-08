@@ -153,16 +153,19 @@ export default function StaffDashboard() {
         const result = await res.json();
         if (result.success && result.data) {
           setDoctorsList(result.data || []);
+          return result.data || [];
         }
       }
     } catch (e) {
       console.warn("Failed to fetch doctors:", e);
     }
+    return [];
   };
 
   // Fetch Doctor Schedules for Approvals and booking slots picker
-  const fetchDoctorSchedules = async () => {
+  const fetchDoctorSchedules = async (docsParam?: any[]) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const docs = docsParam || doctorsList;
     try {
       const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules`);
       if (res.ok) {
@@ -175,14 +178,26 @@ export default function StaffDashboard() {
             if (slots.length > 0) {
               const start = slots[0].slot?.startTime ? slots[0].slot.startTime.slice(0, 5) : "08:00";
               const end = slots[slots.length - 1].slot?.endTime ? slots[slots.length - 1].slot.endTime.slice(0, 5) : "12:00";
-              timeRange = `${start} – ${end}`;
+              timeRange = `${start}–${end}`;
             }
+
+            const matchedDoc = docs.find((d: any) => d.id === item.doctorId);
+            const docName = matchedDoc ? matchedDoc.fullName : (item.doctorName || `Bác sĩ ID: ${item.doctorId}`);
+
+            let shiftDisplay = "";
+            const sessionUpper = (item.session || "").toUpperCase();
+            if (sessionUpper === "MORNING") shiftDisplay = "Ca sáng";
+            else if (sessionUpper === "AFTERNOON") shiftDisplay = "Ca chiều";
+            else if (sessionUpper === "NIGHT" || sessionUpper === "EVENING") shiftDisplay = "Ca tối (đêm)";
+            else if (sessionUpper === "FULL_TIME") shiftDisplay = "Cả ngày";
+            else shiftDisplay = "Ca làm việc";
+
             return {
               id: item.submissionId,
-              doctorName: item.doctorName || `Bác sĩ ID: ${item.doctorId}`,
+              doctorName: docName,
               workDate: item.workDate,
-              shift: item.session === "MORNING" ? `Sáng (${timeRange})` : `Chiều (${timeRange})`,
-              roomName: slots[0]?.roomName || "N/A",
+              shift: shiftDisplay,
+              roomName: item.roomId || (slots[0]?.roomId || "N/A"),
               status: item.status,
               rejectionReason: item.rejectionReason
             };
@@ -206,8 +221,8 @@ export default function StaffDashboard() {
         if (result.success && result.data) {
           const mapped: Appointment[] = result.data.map((a: any) => {
             const timeStr = a.startTime && a.endTime 
-              ? `${a.startTime.slice(0, 5)} – ${a.endTime.slice(0, 5)}`
-              : "08:00 – 08:30";
+              ? `${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`
+              : "08:00–08:30";
             
             let displayStatus: Status = "Chờ xác nhận";
             const apiStatus = a.status ? a.status.toUpperCase() : "PENDING";
@@ -246,7 +261,7 @@ export default function StaffDashboard() {
         doctor: "BS. Lê Mạnh Hùng",
         room: "Phòng 102",
         date: "03/08/2026",
-        time: "09:00 – 09:30",
+        time: "09:00–09:30",
         status: "Confirmed",
         type: "Standard"
       },
@@ -257,7 +272,7 @@ export default function StaffDashboard() {
         doctor: "BS. Nguyễn Thị Mai",
         room: "Phòng 204",
         date: "03/08/2026",
-        time: "18:00 – 18:30",
+        time: "18:00–18:30",
         status: "Cancelled",
         type: "Tái khám"
       },
@@ -268,7 +283,7 @@ export default function StaffDashboard() {
         doctor: "BS. Trần Quốc Tuấn",
         room: "Phòng 105",
         date: "03/08/2026",
-        time: "10:00 – 10:30",
+        time: "10:00–10:30",
         status: "Chờ xác nhận",
         type: "Standard"
       },
@@ -279,7 +294,7 @@ export default function StaffDashboard() {
         doctor: "BS. Phạm Thanh Hằng",
         room: "Phòng 301",
         date: "02/08/2026",
-        time: "14:00 – 14:30",
+        time: "14:00–14:30",
         status: "No-show",
         type: "Standard"
       }
@@ -394,9 +409,12 @@ export default function StaffDashboard() {
 
   useEffect(() => {
     if (checkingAuth) return;
-    fetchAppointments();
-    fetchDoctorSchedules();
-    fetchDoctors();
+    const initData = async () => {
+      const loadedDocs = await fetchDoctors();
+      fetchAppointments();
+      fetchDoctorSchedules(loadedDocs);
+    };
+    initData();
   }, [checkingAuth]);
 
   if (checkingAuth || !user) {
@@ -430,8 +448,8 @@ export default function StaffDashboard() {
           <div className="px-6 flex items-center gap-3">
             <Logo size="sm" />
             <div>
-              <p className="text-white font-bold leading-none text-[13px] tracking-tight">HMS Staff</p>
-              <p className="text-[#0EA5E9] text-[10px] font-semibold mt-1 uppercase tracking-wider">Dashboard</p>
+              <p className="text-white font-bold leading-none text-[13px] tracking-tight">HMS Nhân viên</p>
+              <p className="text-[#0EA5E9] text-[10px] font-semibold mt-1 uppercase tracking-wider">Bảng điều khiển</p>
             </div>
           </div>
 

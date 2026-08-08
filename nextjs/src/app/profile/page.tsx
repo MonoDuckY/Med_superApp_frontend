@@ -25,11 +25,11 @@ function Sidebar({ user, userRoles, onBack }: { user: any; userRoles: string[]; 
   };
 
   const getRoleLabel = () => {
-    if (userRoles.includes("ADMIN")) return "Admin Console";
-    if (userRoles.includes("DOCTOR")) return "Doctor Portal";
-    if (userRoles.includes("STAFF")) return "Staff Portal";
-    if (userRoles.includes("RESEARCHER")) return "Research Portal";
-    return "HMS Portal";
+    if (userRoles.includes("ADMIN")) return "Trang Quản trị";
+    if (userRoles.includes("DOCTOR")) return "Phân hệ Bác sĩ";
+    if (userRoles.includes("STAFF")) return "Phân hệ Nhân viên";
+    if (userRoles.includes("RESEARCHER")) return "Phân hệ Nghiên cứu";
+    return "Phân hệ HMS";
   };
 
   return (
@@ -131,10 +131,6 @@ export default function ProfilePage() {
             <span style={{ color: "#64748B" }}>Cấu hình</span>
             <Ico d={ic.chevRight} cls="w-3 h-3 text-slate-300" />
             <span className="font-semibold" style={{ color: "#0F172A" }}>Hồ sơ cá nhân</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-medium bg-[#E6F4EA] border-[#CEEAD6] color-[#10B981] text-[#10B981]">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            Hệ thống Trực tuyến
           </div>
         </header>
 

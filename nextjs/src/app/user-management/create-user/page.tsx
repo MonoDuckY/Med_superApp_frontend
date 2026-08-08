@@ -54,7 +54,6 @@ export default function CreateUserPage() {
   /* Form states */
   const [fullName, setFullName]         = useState("");
   const [phone, setPhone]               = useState("");
-  const [email, setEmail]               = useState("");
   const [role, setRole]                 = useState<string>("");
   const [status, setStatus]             = useState<Status>("");
   const [dob, setDob]                   = useState("");
@@ -130,8 +129,6 @@ export default function CreateUserPage() {
     if (!phone.trim())     e.phone = "Số điện thoại là bắt buộc.";
     else if (!/^(\+?84|0)\d{9}$/.test(phone.replace(/\s/g, "")))
       e.phone = "Số điện thoại không đúng định dạng Việt Nam (ví dụ: 0912345678).";
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      e.email = "Địa chỉ email không đúng định dạng.";
     if (!role) e.role = "Vui lòng chọn vai trò.";
     if (!status) e.status = "Vui lòng chọn trạng thái tài khoản.";
     if (!dob)    e.dob    = "Ngày sinh là bắt buộc.";
@@ -162,7 +159,6 @@ export default function CreateUserPage() {
       dateOfBirth: dob,
       phoneNumber: phone.replace(/\s/g, ""),
       address: address.trim(),
-      email: email.trim() || null,
       citizenIdentificationCode: cccd || null,
       healthInsuranceCode: bhyt || null,
       certificate: (role === "DOCTOR" && licenseFile) ? licenseFile.name : null,
@@ -212,7 +208,7 @@ export default function CreateUserPage() {
   };
 
   const handleReset = () => {
-    setFullName(""); setPhone(""); setEmail(""); setRole(""); setStatus("");
+    setFullName(""); setPhone(""); setRole(""); setStatus("");
     setDob(""); setGender(""); setAddress(""); setCccd(""); setBhyt("");
     setPassword(""); setShowPassword(false); setLicenseFile(null);
     setHeight(""); setWeight(""); setBloodType(""); setMedicalHistory(""); setCurrentSickness("");
@@ -520,18 +516,7 @@ export default function CreateUserPage() {
                       {errors.status && <p className="text-xs text-rose-500 mt-1">{errors.status}</p>}
                     </div>
 
-                    <div className="col-span-2">
-                      <Label>Địa chỉ Email</Label>
-                      <input 
-                        type="email" 
-                        value={email}
-                        onChange={(e) => { setEmail(e.target.value); setErrors(p => ({ ...p, email: "" })); }}
-                        placeholder="ví dụ: name@hospital.com" 
-                        className={INPUT_CLASS}
-                        style={{ borderColor: errors.email ? "#EF4444" : undefined }}
-                      />
-                      {errors.email && <p className="text-xs text-rose-500 mt-1">{errors.email}</p>}
-                    </div>
+
 
                     {!isOnlyPatient && (
                       <div className="col-span-2">

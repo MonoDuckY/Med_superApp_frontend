@@ -95,7 +95,7 @@ export default function ResearcherDashboard() {
           </div>
           <div>
             <p className="text-[#0F172A] font-bold text-[14px] leading-none">HMS NextGen</p>
-            <p className="text-[#8B5CF6] text-[10px] font-semibold mt-0.5 tracking-wide uppercase">Research Portal</p>
+            <p className="text-[#8B5CF6] text-[10px] font-semibold mt-0.5 tracking-wide uppercase">Phân hệ Nghiên cứu</p>
           </div>
         </div>
         {/* Avatar circle with Dropdown */}
