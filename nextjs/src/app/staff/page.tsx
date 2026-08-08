@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -23,27 +23,18 @@ import {
   Settings,
   Shield,
   FlaskConical,
-  Loader2
+  Loader2,
+  User
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
 import Logo from "@/components/Logo";
 
-// ─── Data Types ───────────────────────────────────────────────────────────────
+import AppointmentTable, { Appointment } from "@/components/staff/AppointmentTable";
+import BookingDrawer from "@/components/staff/BookingDrawer";
+import ScheduleApprovals from "@/components/staff/ScheduleApprovals";
 
 type Status = "Confirmed" | "Cancelled" | "No-show" | "Completed" | "Chờ xác nhận";
-
-interface Appointment {
-  id: string;
-  patient: string;
-  phone: string;
-  doctor: string;
-  room: string;
-  date: string;
-  time: string;
-  status: Status;
-  type: string;
-}
 
 interface DoctorSchedule {
   id: string;
@@ -51,88 +42,42 @@ interface DoctorSchedule {
   workDate: string;
   shift: string;
   roomName: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: string;
   rejectionReason?: string;
 }
 
-const statusMap: Record<Status, { bg: string; text: string }> = {
-  Confirmed:     { bg: "bg-sky-50",     text: "text-sky-600" },
-  Cancelled:     { bg: "bg-rose-50",    text: "text-rose-600" },
-  "No-show":     { bg: "bg-slate-100",  text: "text-slate-500" }, // standard grey badge
-  "Chờ xác nhận": { bg: "bg-amber-50",   text: "text-amber-600" },
-  Completed:     { bg: "bg-emerald-50", text: "text-emerald-600" },
-};
-
 export default function StaffDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>("appointments");
+  
+  // Authentication & Session States
   const [user, setUser] = useState<{ fullName?: string; phoneNumber?: string; roles?: string[]; role?: string } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-
+  
   // Profile Menu States & Ref
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const getInitials = (name?: string) => {
-    if (!name) return "TB";
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 0) return "TB";
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  // Tab State
+  const [activeTab, setActiveTab] = useState<string>("appointments");
 
   // Core Data States
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Staff scheduling dynamic data states
-  const [doctorsList, setDoctorsList] = useState<{ id: string; fullName: string; phoneNumber: string }[]>([]);
-  const [selectedDoctorId, setSelectedDoctorId] = useState("");
   const [rawSubmissions, setRawSubmissions] = useState<any[]>([]);
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Patient Search Autocomplete states
-  const [selectedPatientId, setSelectedPatientId] = useState("");
-  const [patientSearchResults, setPatientSearchResults] = useState<{
-    id: string;
-    fullName: string;
-    phoneNumber?: string;
-    citizenIdentificationCode?: string;
-  }[]>([]);
-  const [searchingPatients, setSearchingPatients] = useState(false);
-
-  // Filters State
+  // UI Control States
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-
-  // Modals Visibility
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
   const [isRescheduleDrawerOpen, setIsRescheduleDrawerOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isRejectScheduleModalOpen, setIsRejectScheduleModalOpen] = useState(false);
 
   // Selected Item for Actions
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-
-  // Input states for forms
-  const [formPatientName, setFormPatientName] = useState("");
-  const [formPatientPhone, setFormPatientPhone] = useState("");
-  const [formDoctor, setFormDoctor] = useState("");
-  const [formDate, setFormDate] = useState("2026-08-03");
-  const [formTimeSlot, setFormTimeSlot] = useState("08:00–08:30");
-  const [formReason, setFormReason] = useState("");
-  const [formDeposit, setFormDeposit] = useState(false);
-  const [formFollowUp, setFormFollowUp] = useState(false);
-  const [formOriginRecordId, setFormOriginRecordId] = useState("");
-
-  const [rescheduleSlotId, setRescheduleSlotId] = useState("08:00–08:30");
-  const [rescheduleDoctor, setRescheduleDoctor] = useState("");
-  const [rescheduleDate, setRescheduleDate] = useState("2026-08-03");
-  const [rescheduleReason, setRescheduleReason] = useState("");
-
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
 
   // Toast status for SMS simulation
   const [smsToast, setSmsToast] = useState<{
@@ -141,40 +86,13 @@ export default function StaffDashboard() {
     message: string;
     progress: number;
   }>({
-    visible: false, // Default hidden on load
+    visible: false,
     title: "SMS Gateway — Đang xử lý",
     message: "Mô phỏng SMS Gateway: Đang gửi tin nhắn tiếng Việt bất đồng bộ...",
-    progress: 65
+    progress: 0
   });
 
-  const getVietnameseHeaderDate = () => {
-    const today = new Date();
-    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const dayName = days[today.getDay()];
-    const date = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${dayName}, ${date}/${month}/${year}`;
-  };
-
-  const stats = React.useMemo(() => {
-    return {
-      total: appointments.length,
-      confirmed: appointments.filter((a) => a.status === "Confirmed" || a.status === "Completed").length,
-      cancelled: appointments.filter((a) => a.status === "Cancelled").length,
-      noShow: appointments.filter((a) => a.status === "No-show").length,
-    };
-  }, [appointments]);
-
   const toastInterval = useRef<NodeJS.Timeout | null>(null);
-
-  // Time Slots details
-  const timeSlots = [
-    "08:00–08:30", "08:30–09:00", "09:00–09:30", "09:30–10:00",
-    "10:00–10:30", "10:30–11:00", "13:00–13:30", "13:30–14:00",
-    "14:00–14:30", "14:30–15:00", "15:00–15:30", "16:00–16:30",
-  ];
-  const unavailableSlots = ["09:00–09:30", "14:00–14:30"];
 
   // SMS Simulator Toast trigger
   const triggerSmsToast = (title: string, message: string) => {
@@ -188,75 +106,43 @@ export default function StaffDashboard() {
       progress: 0
     });
 
-    let currentProgress = 0;
     toastInterval.current = setInterval(() => {
-      currentProgress += 1;
-      setSmsToast((prev) => ({
-        ...prev,
-        progress: Math.min(currentProgress * 2, 100)
-      }));
-
-      if (currentProgress >= 50) {
-        if (toastInterval.current) {
-          clearInterval(toastInterval.current);
+      setSmsToast((prev) => {
+        if (prev.progress >= 100) {
+          if (toastInterval.current) clearInterval(toastInterval.current);
+          return { ...prev, visible: false, progress: 0 };
         }
-        setTimeout(() => {
-          setSmsToast((prev) => ({ ...prev, visible: false }));
-        }, 1500);
-      }
-    }, 60);
+        return { ...prev, progress: prev.progress + 25 };
+      });
+    }, 750);
   };
 
-  // Auth Guard & Dropdown Click Outside
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const savedUser = localStorage.getItem("user");
-    if (!token || !savedUser) {
-      router.push("/");
-      return;
-    }
-    try {
-      const parsedUser = JSON.parse(savedUser);
-      const roles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
-      const upperRoles = roles.map((r: string) => r.toUpperCase());
-      
-      if (!upperRoles.includes("STAFF")) {
-        if (upperRoles.includes("ADMIN")) {
-          router.push("/user-management/create-user");
-        } else if (upperRoles.includes("DOCTOR")) {
-          router.push("/doctor");
-        } else if (upperRoles.includes("RESEARCHER")) {
-          router.push("/researcher");
-        } else {
-          router.push("/");
-        }
-        return;
-      }
-      
-      setUser(parsedUser);
-      setCheckingAuth(false);
-    } catch (e) {
-      console.error(e);
-      router.push("/");
-      return;
-    }
+  const getVietnameseHeaderDate = () => {
+    const today = new Date();
+    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const dayName = days[today.getDay()];
+    const date = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const year = today.getFullYear();
+    return `${dayName}, ${date}/${month}/${year}`;
+  };
 
-    function handleClickOutside(event: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [router]);
+  const getInitials = (name?: string) => {
+    if (!name) return "TB";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0) return "TB";
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
-  // Load Data
-  useEffect(() => {
-    if (checkingAuth) return;
-    fetchAppointments();
-    fetchDoctorSchedules();
-    fetchDoctors();
-  }, [checkingAuth]);
+  const stats = useMemo(() => {
+    return {
+      total: appointments.length,
+      confirmed: appointments.filter((a) => a.status === "Confirmed" || a.status === "Completed").length,
+      cancelled: appointments.filter((a) => a.status === "Cancelled").length,
+      noShow: appointments.filter((a) => a.status === "No-show").length,
+    };
+  }, [appointments]);
 
   // Fetch Doctors List
   const fetchDoctors = async () => {
@@ -274,33 +160,72 @@ export default function StaffDashboard() {
     }
   };
 
+  // Fetch Doctor Schedules for Approvals and booking slots picker
+  const fetchDoctorSchedules = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setRawSubmissions(result.data || []);
+          const mapped: DoctorSchedule[] = result.data.map((item: any) => {
+            const slots = item.slots || [];
+            let timeRange = "Chưa thiết lập";
+            if (slots.length > 0) {
+              const start = slots[0].slot?.startTime ? slots[0].slot.startTime.slice(0, 5) : "08:00";
+              const end = slots[slots.length - 1].slot?.endTime ? slots[slots.length - 1].slot.endTime.slice(0, 5) : "12:00";
+              timeRange = `${start} – ${end}`;
+            }
+            return {
+              id: item.submissionId,
+              doctorName: item.doctorName || `Bác sĩ ID: ${item.doctorId}`,
+              workDate: item.workDate,
+              shift: item.session === "MORNING" ? `Sáng (${timeRange})` : `Chiều (${timeRange})`,
+              roomName: slots[0]?.roomName || "N/A",
+              status: item.status,
+              rejectionReason: item.rejectionReason
+            };
+          });
+          setSchedules(mapped);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch doctor schedules:", e);
+    }
+  };
+
   // Fetch Appointments
   const fetchAppointments = async () => {
     setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
     try {
       const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
-          const mapped: Appointment[] = result.data.map((item: any) => {
-            let apiStatus: Status = "Confirmed";
-            if (item.status === "CANCELLED") apiStatus = "Cancelled";
-            else if (item.status === "NO_SHOW") apiStatus = "No-show";
-            else if (item.status === "PENDING_STAFF_CONFIRMATION") apiStatus = "Chờ xác nhận";
-            else if (item.status === "COMPLETED") apiStatus = "Completed";
+          const mapped: Appointment[] = result.data.map((a: any) => {
+            const timeStr = a.startTime && a.endTime 
+              ? `${a.startTime.slice(0, 5)} – ${a.endTime.slice(0, 5)}`
+              : "08:00 – 08:30";
+            
+            let displayStatus: Status = "Chờ xác nhận";
+            const apiStatus = a.status ? a.status.toUpperCase() : "PENDING";
+            if (apiStatus.includes("CONFIRM")) displayStatus = "Confirmed";
+            else if (apiStatus.includes("CANCEL")) displayStatus = "Cancelled";
+            else if (apiStatus.includes("COMPLET")) displayStatus = "Completed";
+            else if (apiStatus.includes("NO_SHOW")) displayStatus = "No-show";
 
             return {
-              id: item.id ? (item.id.startsWith("#") ? item.id : `#${item.id}`) : `#APT-${Math.floor(1000 + Math.random() * 9000)}`,
-              patient: item.patient?.fullName || "Bệnh nhân ẩn danh",
-              phone: item.patient?.phoneNumber || "N/A",
-              doctor: item.doctor?.fullName || "BS. Bệnh Viện",
-              room: item.room?.name || "Phòng khám",
-              date: item.doctorWorkSlot?.workDate || "03/08/2026",
-              time: item.slot ? `${item.slot.startTime?.slice(0, 5)} – ${item.slot.endTime?.slice(0, 5)}` : "09:00 – 09:30",
-              status: apiStatus,
-              type: item.diagnosis ? "Tái khám" : "Standard"
+              id: a.appointmentCode || `#APT-${a.id.slice(-4)}`,
+              patient: a.patientName || "Bệnh nhân",
+              phone: a.patientPhone || "",
+              doctor: a.doctorName ? `BS. ${a.doctorName}` : "Bác sĩ",
+              room: a.roomName || "Phòng khám",
+              date: a.workDate || "",
+              time: timeStr,
+              status: displayStatus,
+              type: "Standard"
             };
           });
           setAppointments(mapped);
@@ -308,11 +233,11 @@ export default function StaffDashboard() {
           return;
         }
       }
-    } catch (err) {
-      console.warn("Failed to fetch appointments from backend, loading mock fallback.", err);
+    } catch (e) {
+      console.warn("Failed to fetch appointments:", e);
     }
-
-    // Default design mock fallback
+    
+    // Fallback Mock Data
     const mockAppointments: Appointment[] = [
       {
         id: "#APT-9863",
@@ -363,458 +288,118 @@ export default function StaffDashboard() {
     setLoading(false);
   };
 
-  // Fetch Doctor Schedules
-  const fetchDoctorSchedules = async () => {
+  // Automated Scanning No-show
+  const handleAutoScanNoShow = async () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
     try {
-      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules`);
-      if (res.ok) {
-        const result = await res.json();
-        if (result.success && result.data) {
-          setRawSubmissions(result.data || []);
-          const allSlotIds = Array.from(new Set(
-            result.data.flatMap((x: any) => (x.slots || []).map((s: any) => s.slotId))
-          )).filter((id): id is string => !!id);
-
-          const mapped: DoctorSchedule[] = result.data.map((item: any) => {
-            const slots = item.slots || [];
-            let shiftLabel = "Ca Sáng (08:00 - 12:00)";
-            if (slots.length >= 16) {
-              shiftLabel = "Cả Ngày (08:00 - 17:30)";
-            } else if (slots.length > 0) {
-              const firstSlotId = slots[0].slotId;
-              let foundSession: string | null = null;
-              
-              // 1. Try LocalStorage Cache
-              try {
-                const cached = localStorage.getItem("workSlotOptions");
-                if (cached) {
-                  const cachedSlots = JSON.parse(cached);
-                  const matched = cachedSlots.find((opt: any) => opt.id === firstSlotId);
-                  if (matched) {
-                    foundSession = matched.session;
-                  }
-                }
-              } catch (e) {
-                console.warn(e);
-              }
-
-              if (foundSession === "MORNING") {
-                shiftLabel = "Ca Sáng (08:00 - 12:00)";
-              } else if (foundSession === "AFTERNOON") {
-                shiftLabel = "Ca Chiều (13:30 - 17:30)";
-              } else {
-                // 2. Try Heuristic from Counter Clustering
-                const counters = allSlotIds.map(id => parseInt(id.slice(-6), 16)).sort((a, b) => a - b);
-                const minCounter = counters[0];
-                const maxCounter = counters[counters.length - 1];
-                const firstSlotCounter = parseInt(firstSlotId.slice(-6), 16);
-
-                if (maxCounter - minCounter > 7) {
-                  const base = minCounter;
-                  shiftLabel = (firstSlotCounter - base < 8) ? "Ca Sáng (08:00 - 12:00)" : "Ca Chiều (13:30 - 17:30)";
-                } else {
-                  // 3. Fallback: Split at 3271350 (standard middle threshold for the seeded database cluster)
-                  shiftLabel = (firstSlotCounter > 3271350) ? "Ca Chiều (13:30 - 17:30)" : "Ca Sáng (08:00 - 12:00)";
-                }
-              }
-            }
-
-            const rawStatus = item.status || "PENDING";
-            let statusVal: "PENDING" | "APPROVED" | "REJECTED" = "PENDING";
-            if (rawStatus === "REJECTED") {
-              statusVal = "REJECTED";
-            } else if (rawStatus !== "PENDING" && rawStatus !== "CANCELLED") {
-              statusVal = "APPROVED";
-            }
-
-            return {
-              id: item.submissionId || item.id || `SUB-${Math.floor(1000 + Math.random() * 9000)}`,
-              doctorName: (item.doctor && item.doctor.fullName) || item.doctorName || "BS. Bác Sĩ",
-              workDate: item.workDate || "04/08/2026",
-              shift: shiftLabel,
-              roomName: (slots[0] && slots[0].roomId) || item.roomId || "Phòng 102",
-              status: statusVal
-            };
-          });
-          setSchedules(mapped);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to fetch schedules from backend, loading mock fallback.", err);
-    }
-
-    const mockSchedules: DoctorSchedule[] = [
-      {
-        id: "SUB-101",
-        doctorName: "BS. Lê Mạnh Hùng",
-        workDate: "04/08/2026",
-        shift: "Sáng (08:00 - 12:00)",
-        roomName: "Phòng 102",
-        status: "PENDING"
-      },
-      {
-        id: "SUB-102",
-        doctorName: "BS. Nguyễn Thị Mai",
-        workDate: "05/08/2026",
-        shift: "Chiều (13:30 - 17:30)",
-        roomName: "Phòng 204",
-        status: "PENDING"
-      },
-      {
-        id: "SUB-103",
-        doctorName: "BS. Trần Quốc Tuấn",
-        workDate: "04/08/2026",
-        shift: "Sáng (08:00 - 12:00)",
-        roomName: "Phòng 105",
-        status: "APPROVED"
-      },
-      {
-        id: "SUB-104",
-        doctorName: "BS. Phạm Thanh Hằng",
-        workDate: "04/08/2026",
-        shift: "Chiều (13:30 - 17:30)",
-        roomName: "Phòng 301",
-        status: "REJECTED",
-        rejectionReason: "Trùng lịch đăng ký phòng với bác sĩ khác."
-      }
-    ];
-    setSchedules(mockSchedules);
-  };
-
-  // Compute available slots for selected doctor on selected date
-  const availableSlotsForBooking = React.useMemo(() => {
-    if (!selectedDoctorId || !formDate) return [];
-    const matchedSubmissions = rawSubmissions.filter((sub: any) => {
-      const isApprovedOrAvailable = sub.status === "APPROVED" || sub.status === "AVAILABLE";
-      return sub.doctorId === selectedDoctorId && sub.workDate === formDate && isApprovedOrAvailable;
-    });
-    
-    const slotsList: any[] = [];
-    matchedSubmissions.forEach((sub: any) => {
-      (sub.slots || []).forEach((slot: any) => {
-        if (slot.status === "AVAILABLE") {
-          slotsList.push(slot);
-        }
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/scan-no-show`, {
+        method: "POST"
       });
-    });
-    return slotsList;
-  }, [selectedDoctorId, formDate, rawSubmissions]);
-
-  // Handle Patient Search autocomplete
-  const handlePatientSearch = async (query: string) => {
-    setFormPatientName(query);
-    if (!query.trim()) {
-      setPatientSearchResults([]);
-      setSelectedPatientId("");
-      return;
-    }
-    setSearchingPatients(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-    // Auto-detect if query is phone number, CCCD, or name
-    let params = "";
-    const cleanQuery = query.trim().replace(/\s+/g, "");
-    const isNumeric = /^[+0-9]+$/.test(cleanQuery);
-    if (isNumeric) {
-      if (cleanQuery.startsWith("+") || (cleanQuery.startsWith("0") && cleanQuery.length <= 11 && cleanQuery.length >= 9)) {
-        params = `phoneNumber=${encodeURIComponent(cleanQuery)}`;
-      } else if (cleanQuery.length === 9 || cleanQuery.length === 12) {
-        params = `citizenIdentificationCode=${encodeURIComponent(cleanQuery)}`;
-      } else {
-        params = `phoneNumber=${encodeURIComponent(cleanQuery)}`;
-      }
-    } else {
-      params = `name=${encodeURIComponent(query)}`;
-    }
-
-    try {
-      const res = await fetchWithAuth(`${apiUrl}/api/staff/patients/search?${params}`);
-      if (res.ok) {
-        const result = await res.json();
-        if (result.success && result.data) {
-          setPatientSearchResults(result.data);
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to search patients:", e);
-    } finally {
-      setSearchingPatients(false);
-    }
-  };
-
-  // Reset and open add drawer
-  const openAddDrawer = () => {
-    setFormPatientName("");
-    setFormPatientPhone("");
-    setFormDoctor("");
-    setSelectedDoctorId("");
-    setSelectedPatientId("");
-    setFormReason("");
-    setFormDate("2026-08-03");
-    setFormTimeSlot("");
-    setFormDeposit(false);
-    setFormFollowUp(false);
-    setFormOriginRecordId("");
-    setPatientSearchResults([]);
-    setIsAddDrawerOpen(true);
-  };
-
-  // Submit Add Appointment
-  const handleAddAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPatientId) {
-      alert("Vui lòng tìm và chọn một bệnh nhân.");
-      return;
-    }
-    if (!formTimeSlot) {
-      alert("Vui lòng chọn một khung giờ hẹn.");
-      return;
-    }
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-    try {
-      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          patientId: selectedPatientId,
-          doctorWorkSlotId: formTimeSlot // formTimeSlot holds the selected DoctorWorkSlot ID
-        })
-      });
-      if (res.ok) {
-        fetchAppointments();
-        setIsAddDrawerOpen(false);
-
-        // reset fields
-        setFormPatientName("");
-        setFormPatientPhone("");
-        setFormDoctor("");
-        setSelectedDoctorId("");
-        setSelectedPatientId("");
-        setFormReason("");
-        setFormTimeSlot("");
-        setFormDeposit(false);
-        setFormFollowUp(false);
-        setFormOriginRecordId("");
-        setPatientSearchResults([]);
-
+      const result = await res.json();
+      if (res.ok && result.success) {
         triggerSmsToast(
-          "SMS Gateway — Đang xử lý",
-          `Gửi tin nhắn thông báo đặt lịch mới đến bệnh nhân ${formPatientName}...`
+          "Hệ thống Quét tự động",
+          "Đang tiến hành tự động quét lịch hẹn quá hạn và gửi SMS thông báo..."
         );
+        fetchAppointments();
       } else {
-        const result = await res.json();
-        alert(result.message || "Tạo lịch hẹn thất bại.");
+        alert(result.message || "Quét lịch hẹn quá hạn thất bại.");
       }
-    } catch (err: any) {
-      alert(err.message || "Không thể kết nối đến máy chủ.");
+    } catch (e: any) {
+      alert(e.message || "Lỗi kết nối đến máy chủ.");
     }
-  };
-
-  // Submit Reschedule Appointment
-  const handleRescheduleAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedAppointmentId || !rescheduleDoctor || !rescheduleReason) return;
-
-    const appointmentToModify = appointments.find((a) => a.id === selectedAppointmentId);
-    if (!appointmentToModify) return;
-
-    const doctorPart = rescheduleDoctor.split(" (")[0];
-    const roomPart = rescheduleDoctor.includes(" (") ? rescheduleDoctor.split(" (")[1].replace(")", "") : "Phòng khám";
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-    try {
-      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointmentId.replace("#", "")}/reschedule`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          doctorWorkSlotId: rescheduleSlotId,
-          reason: rescheduleReason
-        })
-      });
-    } catch (err) {
-      console.warn(err);
-    }
-
-    setAppointments((prev) =>
-      prev.map((app) =>
-        app.id === selectedAppointmentId
-          ? {
-              ...app,
-              doctor: doctorPart,
-              room: roomPart,
-              date: rescheduleDate.split("-").reverse().join("/"),
-              time: rescheduleSlotId,
-              status: "Confirmed"
-            }
-          : app
-      )
-    );
-
-    setIsRescheduleDrawerOpen(false);
-    setRescheduleReason("");
-    setRescheduleDoctor("");
-
-    triggerSmsToast(
-      "SMS Gateway — Đang xử lý",
-      `Gửi tin nhắn thay đổi lịch hẹn đến bệnh nhân ${appointmentToModify.patient} (${appointmentToModify.phone})...`
-    );
   };
 
   // Submit Cancel Appointment
-  const handleCancelAppointment = async (e: React.FormEvent) => {
+  const handleCancelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAppointmentId || !cancelReason.trim()) return;
-
-    const appointmentToModify = appointments.find((a) => a.id === selectedAppointmentId);
-    if (!appointmentToModify) return;
+    if (!selectedAppointment || !cancelReason.trim()) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
     try {
-      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointmentId.replace("#", "")}/cancel`, {
-        method: "PATCH",
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointment.id}/cancel`, {
+        method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          cancellationReason: cancelReason
-        })
+          reason: cancelReason.trim(),
+        }),
       });
-    } catch (err) {
-      console.warn(err);
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        triggerSmsToast(
+          "SMS Gateway — Đang xử lý",
+          `Mô phỏng gửi SMS: Đã hủy lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} thành công!`
+        );
+        setIsCancelModalOpen(false);
+        setCancelReason("");
+        fetchAppointments();
+      } else {
+        alert(result.message || "Hủy lịch hẹn thất bại.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Lỗi kết nối đến máy chủ.");
     }
-
-    setAppointments((prev) =>
-      prev.map((app) =>
-        app.id === selectedAppointmentId
-          ? {
-              ...app,
-              status: "Cancelled"
-            }
-          : app
-      )
-    );
-
-    setIsCancelModalOpen(false);
-    setCancelReason("");
-
-    triggerSmsToast(
-      "SMS Gateway — Đang xử lý",
-      `Gửi tin nhắn thông báo hủy lịch khám đến bệnh nhân ${appointmentToModify.patient} (${appointmentToModify.phone})...`
-    );
   };
 
-  // Doctor Schedule Approvals
-  const handleApproveSchedule = async (id: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const targetSchedule = schedules.find((s) => s.id === id);
-    if (!targetSchedule) return;
-
-    try {
-      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules/${id}/decision`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          decision: "APPROVE",
-          rejectionReason: ""
-        })
-      });
-    } catch (err) {
-      console.warn(err);
-    }
-
-    setSchedules((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "APPROVED" } : s))
-    );
-
-    triggerSmsToast(
-      "SMS Gateway — Đang xử lý",
-      `Gửi tin nhắn SMS xác nhận lịch làm việc đến Bác sĩ ${targetSchedule.doctorName}...`
-    );
-  };
-
-  const handleOpenRejectSchedule = (id: string) => {
-    setSelectedScheduleId(id);
-    setIsRejectScheduleModalOpen(true);
-  };
-
-  const handleRejectSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedScheduleId || !rejectReason) return;
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const targetSchedule = schedules.find((s) => s.id === selectedScheduleId);
-    if (!targetSchedule) return;
-
-    try {
-      await fetchWithAuth(`${apiUrl}/api/staff/scheduling/work-schedules/${selectedScheduleId}/decision`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          decision: "REJECT",
-          rejectionReason: rejectReason
-        })
-      });
-    } catch (err) {
-      console.warn(err);
-    }
-
-    setSchedules((prev) =>
-      prev.map((s) =>
-        s.id === selectedScheduleId
-          ? { ...s, status: "REJECTED", rejectionReason: rejectReason }
-          : s
-      )
-    );
-
-    setIsRejectScheduleModalOpen(false);
-    setRejectReason("");
-
-    triggerSmsToast(
-      "SMS Gateway — Đang xử lý",
-      `Gửi tin nhắn từ chối duyệt lịch làm việc đến Bác sĩ ${targetSchedule.doctorName}...`
-    );
-  };
-
-
-
-  // Logout Handler
   const handleLogout = async () => {
     await logoutApiCall();
     router.push("/");
   };
 
-  // Filter Logic
-  const filteredAppointments = appointments.filter((app) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      !q ||
-      app.id.toLowerCase().includes(q) ||
-      app.patient.toLowerCase().includes(q) ||
-      app.phone.includes(q);
+  // On Mount Auth Check
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const savedUser = localStorage.getItem("user");
+    if (!token || !savedUser) {
+      router.push("/");
+      return;
+    }
+    try {
+      const parsedUser = JSON.parse(savedUser);
+      const roles = parsedUser.roles || (parsedUser.role ? [parsedUser.role] : []);
+      const upperRoles = roles.map((r: string) => r.toUpperCase());
+      
+      if (!upperRoles.includes("STAFF")) {
+        if (upperRoles.includes("ADMIN")) {
+          router.push("/user-management/create-user");
+        } else if (upperRoles.includes("DOCTOR")) {
+          router.push("/doctor");
+        } else if (upperRoles.includes("RESEARCHER")) {
+          router.push("/researcher");
+        } else {
+          router.push("/");
+        }
+        return;
+      }
+      
+      setUser(parsedUser);
+      setCheckingAuth(false);
+    } catch (e) {
+      console.error(e);
+      router.push("/");
+      return;
+    }
 
-    const matchesStatus = statusFilter === "" || app.status === statusFilter;
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [router]);
 
-    return matchesSearch && matchesStatus;
-  });
-  const rawRoles = user?.roles || (user?.role ? [user.role] : []);
-  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
+  useEffect(() => {
+    if (checkingAuth) return;
+    fetchAppointments();
+    fetchDoctorSchedules();
+    fetchDoctors();
+  }, [checkingAuth]);
 
-  if (checkingAuth) {
+  if (checkingAuth || !user) {
     return (
       <div className="min-h-screen bg-[#0C1A2E] flex flex-col items-center justify-center gap-3">
         <svg className="animate-spin h-8 w-8 text-[#0EA5E9]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -826,10 +411,10 @@ export default function StaffDashboard() {
     );
   }
 
-  // Sidebar components listing
+  const rawRoles = user?.roles || (user?.role ? [user.role] : []);
+  const userRoles = rawRoles.filter((r): r is string => !!r).map(r => r.toUpperCase());
+
   const sidebarItems = [
-    { label: "Bảng điều khiển",      icon: LayoutDashboard,   id: "dashboard" },
-    { label: "Tiếp đón & Lâm sinh",  icon: Stethoscope, id: "intake" },
     { label: "Quản lý Lịch hẹn",     icon: Calendar,    id: "appointments"  },
     { label: "Phê duyệt Lịch Bác sĩ",icon: ClipboardList,   id: "schedules" },
     { label: "Báo cáo",              icon: FileText,    id: "reports" },
@@ -839,928 +424,308 @@ export default function StaffDashboard() {
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] text-slate-600 overflow-hidden font-sans antialiased select-none">
       
-      {/* ════════════════ LEFT SIDEBAR ════════════════ */}
-      <aside
-        className="flex flex-col shrink-0 h-full text-white"
-        style={{ width: 220, background: "#0C1A2E" }}
-      >
-        {/* Logo Header */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
-          <Logo size="sm" />
-          <div>
-            <p className="text-white font-bold text-[13px] leading-none tracking-wide">HMS</p>
-            <p className="text-[#475569] text-[10px] mt-0.5 tracking-wide">Staff Portal</p>
+      {/* Sidebar Component */}
+      <aside className="w-[240px] shrink-0 h-full bg-[#0C1A2E] flex flex-col justify-between py-6">
+        <div className="space-y-6">
+          <div className="px-6 flex items-center gap-3">
+            <Logo size="sm" />
+            <div>
+              <p className="text-white font-bold leading-none text-[13px] tracking-tight">HMS Staff</p>
+              <p className="text-[#0EA5E9] text-[10px] font-semibold mt-1 uppercase tracking-wider">Dashboard</p>
+            </div>
           </div>
+
+          <nav className="px-3 space-y-1">
+            {sidebarItems.map((item) => {
+              const active = activeTab === item.id;
+              const IconComp = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left text-xs font-semibold transition-all border-none bg-transparent cursor-pointer outline-none
+                    ${active ? "bg-[#0EA5E9]/15 text-[#38BDF8] shadow-sm" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
+                >
+                  <IconComp size={15} className={active ? "text-[#38BDF8]" : "text-slate-400"} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-4 flex flex-col gap-0.5 overflow-y-auto">
-          {sidebarItems.map(item => {
-            const isActive = activeTab === item.id;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all cursor-pointer w-full outline-none"
-                style={isActive
-                  ? { background: "rgba(14,165,233,0.15)", color: "#38BDF8" }
-                  : { color: "#64748B" }
-                }
-                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#94A3B8"; } }}
-                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748B"; } }}
-              >
-                <Icon size={16} className="shrink-0" />
-                <span className={`text-xs ${isActive ? "font-semibold" : ""} truncate`}>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Profile Card Footer */}
-        <div className="border-t border-white/8 px-4 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-[11px] font-bold text-[#38BDF8]">{getInitials(user?.fullName)}</span>
+        {/* Sidebar Footer */}
+        <div className="px-6 border-t border-slate-800 pt-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/20 flex items-center justify-center font-bold text-[#38BDF8] text-xs">
+              {getInitials(user?.fullName)}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-[#CBD5E1] truncate">{user?.fullName || "Trần Thị B"}</p>
-              <p className="text-[10px] text-[#475569] truncate">{user?.phoneNumber || "0912345678"}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-slate-300 truncate leading-none">{user?.fullName || "Staff"}</p>
+              <p className="text-[10px] text-slate-500 font-mono mt-1.5 truncate">{user?.phoneNumber || "N/A"}</p>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* ════════════════ MAIN CONTENT AREA ════════════════ */}
+      {/* Main Dashboard body */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
-        {/* Header Navigation */}
-        <header className="shrink-0 bg-white border-b border-[#E2E8F0] px-8 flex items-center justify-between" style={{ height: 56 }}>
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span style={{ color: "#64748B" }}>Nhân viên y tế</span>
-            <ChevronRight size={12} strokeWidth={2} className="text-slate-300" />
-            <span className="font-semibold" style={{ color: "#0F172A" }}>
+        {/* Header */}
+        <header className="h-16 shrink-0 bg-white border-b border-[#E2E8F0] px-8 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            <span className="text-[#64748B]">Bảng làm việc</span>
+            <ChevronRight size={12} className="text-slate-300" />
+            <span className="text-[#0F172A]">
               {activeTab === "appointments"
-                ? "Quản lý lịch hẹn"
+                ? "Quản lý Lịch hẹn"
                 : activeTab === "schedules"
                 ? "Phê duyệt Lịch Bác sĩ"
-                : activeTab === "dashboard"
-                ? "Bảng điều khiển"
-                : activeTab === "intake"
-                ? "Tiếp đón & Lâm sinh"
                 : activeTab === "reports"
                 ? "Báo cáo"
                 : "Cấu hình"}
             </span>
           </div>
 
-          {/* Header Actions */}
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search size={13} strokeWidth={2} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
-              <input
-                className="h-8 pl-8 pr-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all"
-                style={{ width: 180, background: "#F8FAFC" }}
-                placeholder="Tìm kiếm..."
-              />
-            </div>
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-semibold text-slate-400">{getVietnameseHeaderDate()}</span>
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="flex items-center gap-3">
+              <button className="relative p-2 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none border-none bg-transparent">
+                <Bell size={14} strokeWidth={1.75} />
+                <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 9 }}>3</span>
+              </button>
 
-            {/* Notification Bell */}
-            <button className="relative p-2 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none">
-              <Bell size={14} strokeWidth={1.75} />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 9 }}>3</span>
-            </button>
-
-            {/* Avatar circle with Dropdown */}
-            <div ref={profileRef} className="relative">
-              <div
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-8 h-8 rounded-full bg-[#0EA5E9] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
-              >
-                <span className="text-white text-[11px] font-bold">{getInitials(user?.fullName)}</span>
-              </div>
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out] text-left">
-                  <div className="px-4 py-2 border-b border-[#F1F5F9]">
-                    <p className="text-[12px] font-semibold text-[#0F172A] truncate">{user?.fullName || "Trần Thị B"}</p>
-                    <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "0912345678"}</p>
-                  </div>
-                  
-                  {/* Role switcher for multi-role accounts */}
-                  {userRoles.length > 1 && (
-                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
-                      <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
-                      <div className="flex flex-col gap-0.5">
-                        {userRoles.includes("ADMIN") && (
-                          <button
-                            onClick={() => router.push("/user-management/create-user")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <Shield size={13} className="shrink-0 text-slate-400" />
-                            <span>Quản trị viên</span>
-                          </button>
-                        )}
-                        {userRoles.includes("DOCTOR") && (
-                          <button
-                            onClick={() => router.push("/doctor")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <Stethoscope size={13} className="shrink-0 text-slate-400" />
-                            <span>Bác sĩ</span>
-                          </button>
-                        )}
-                        {userRoles.includes("STAFF") && (
-                          <button
-                            onClick={() => router.push("/staff")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#0EA5E9] bg-sky-50/60 font-semibold cursor-pointer border-none outline-none"
-                          >
-                            <ClipboardList size={13} className="shrink-0 text-[#0EA5E9]" />
-                            <span className="flex-1">Nhân viên y tế</span>
-                            <Check size={11} className="text-[#0EA5E9] ml-auto" />
-                          </button>
-                        )}
-                        {userRoles.includes("RESEARCHER") && (
-                          <button
-                            onClick={() => router.push("/researcher")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <FlaskConical size={13} className="shrink-0 text-slate-400" />
-                            <span>Nghiên cứu sinh</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold"
-                  >
-                    <LogOut size={13} /> Đăng xuất
-                  </button>
+              <div ref={profileRef} className="relative">
+                <div
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="w-8 h-8 rounded-full bg-[#0EA5E9] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  <span className="text-white text-[11px] font-bold">{getInitials(user?.fullName)}</span>
                 </div>
-              )}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out] text-left">
+                    <div className="px-4 py-2 border-b border-[#F1F5F9]">
+                      <p className="text-[12px] font-semibold text-[#0F172A] truncate">{user?.fullName || "Trần Thị B"}</p>
+                      <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "0912345678"}</p>
+                    </div>
+                    
+                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                      <button
+                        onClick={() => router.push("/profile")}
+                        className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                      >
+                        <User size={13} className="shrink-0 text-slate-400" />
+                        <span>Hồ sơ cá nhân</span>
+                      </button>
+                    </div>
+                    
+                    {userRoles.length > 1 && (
+                      <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                        <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
+                        <div className="flex flex-col gap-0.5">
+                          {userRoles.includes("ADMIN") && (
+                            <button
+                              onClick={() => router.push("/user-management/create-user")}
+                              className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                            >
+                              <Shield size={13} className="shrink-0 text-slate-400" />
+                              <span>Quản trị viên</span>
+                            </button>
+                          )}
+                          {userRoles.includes("DOCTOR") && (
+                            <button
+                              onClick={() => router.push("/doctor")}
+                              className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                            >
+                              <Stethoscope size={13} className="shrink-0 text-slate-400" />
+                              <span>Bác sĩ</span>
+                            </button>
+                          )}
+                          {userRoles.includes("STAFF") && (
+                            <button
+                              onClick={() => router.push("/staff")}
+                              className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#0EA5E9] bg-sky-50/60 font-semibold cursor-pointer border-none outline-none"
+                            >
+                              <ClipboardList size={13} className="shrink-0 text-[#0EA5E9]" />
+                              <span className="flex-1">Nhân viên y tế</span>
+                              <Check size={11} className="text-[#0EA5E9] ml-auto" />
+                            </button>
+                          )}
+                          {userRoles.includes("RESEARCHER") && (
+                            <button
+                              onClick={() => router.push("/researcher")}
+                              className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                            >
+                              <FlaskConical size={13} className="shrink-0 text-slate-400" />
+                              <span>Nghiên cứu sinh</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold border-none bg-transparent"
+                    >
+                      <LogOut size={13} /> Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Content Tabs */}
         <main className="flex-1 overflow-y-auto px-8 py-6 space-y-5">
-          {activeTab === "appointments" && (
+          {loading ? (
+            <div className="min-h-[400px] flex flex-col items-center justify-center gap-2.5">
+              <Loader2 className="animate-spin text-[#0EA5E9] h-8 w-8" />
+              <p className="text-slate-400 text-xs font-semibold">Đang đồng bộ dữ liệu hệ thống...</p>
+            </div>
+          ) : (
             <>
-              {/* Title row */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-xl font-bold text-[#0F172A]">Quản lý Lịch hẹn</h1>
-                  <p className="text-xs text-[#64748B] mt-1"> {getVietnameseHeaderDate()}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                 
-                  <button
-                    onClick={openAddDrawer}
-                    className="flex items-center gap-2 h-9 px-4 text-xs font-semibold text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm cursor-pointer outline-none active:scale-[0.98]"
-                    style={{ background: "#0EA5E9", boxShadow: "0 1px 4px rgba(14,165,233,0.3)" }}
-                  >
-                    <Plus size={14} strokeWidth={2} className="text-white" />
-                    Thêm lịch hẹn mới
-                  </button>
-                </div>
-              </div>
+              {activeTab === "appointments" && (
+                <AppointmentTable
+                  appointments={appointments}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  onAddBooking={() => setIsAddDrawerOpen(true)}
+                  onReschedule={(apt) => {
+                    setSelectedAppointment(apt);
+                    setIsRescheduleDrawerOpen(true);
+                  }}
+                  onCancel={(apt) => {
+                    setSelectedAppointment(apt);
+                    setIsCancelModalOpen(true);
+                  }}
+                  onScanNoShow={handleAutoScanNoShow}
+                  stats={stats}
+                />
+              )}
 
-              {/* KPI Cards Row */}
-              <div className="grid grid-cols-4 gap-5">
-                <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                    <Calendar size={18} strokeWidth={1.75} className="text-slate-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[#0F172A]">{stats.total}</p>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Tổng lịch hẹn</p>
-                  </div>
-                </div>
+              {activeTab === "schedules" && (
+                <ScheduleApprovals
+                  schedules={schedules}
+                  onRefresh={fetchDoctorSchedules}
+                />
+              )}
 
-                <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Check size={18} strokeWidth={2} className="text-sky-500" />
+              {activeTab !== "appointments" && activeTab !== "schedules" && (
+                <div className="min-h-[400px] bg-white border border-[#E2E8F0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-sm">
+                  <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4 text-[#64748B]">
+                    <ClipboardList size={24} className="text-slate-400" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[#0EA5E9]">{stats.confirmed}</p>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Đã xác nhận</p>
-                  </div>
+                  <h3 className="text-slate-800 font-bold text-sm">Chuyên mục đang phát triển</h3>
+                  <p className="text-slate-400 text-xs mt-1.5 max-w-sm leading-relaxed">
+                    Tính năng này đang được thiết lập. Hãy truy cập &quot;Quản lý Lịch hẹn&quot; hoặc &quot;Phê duyệt Lịch Bác sĩ&quot; để thao tác.
+                  </p>
                 </div>
-
-                <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
-                    <XCircle size={18} strokeWidth={1.75} className="text-rose-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[#EF4444]">{stats.cancelled}</p>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Đã hủy</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-[#E2E8F0] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Clock size={18} strokeWidth={1.75} className="text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[#F59E0B]">{stats.noShow}</p>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-snug">Quá hạn (No-show)</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Table controls & filter section */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center gap-3 flex-wrap">
-                  <div className="relative" style={{ minWidth: 220, flex: 1 }}>
-                    <Search size={14} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
-                    <input
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full h-9 pl-9 pr-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
-                      placeholder="Tìm bệnh nhân, SĐT, mã..."
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 text-[#64748B] bg-white appearance-none cursor-pointer">
-                      <option value="">Tất cả Trạng thái</option>
-                      <option value="Confirmed">Confirmed</option>
-                      <option value="Cancelled">Cancelled</option>
-                      <option value="Chờ xác nhận">Chờ xác nhận</option>
-                      <option value="No-show">No-show</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Table Data */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                        {["Mã lịch hẹn", "Bệnh nhân", "Bác sĩ & Phòng", "Ngày & Giờ", "Trạng thái", "Loại", "Thao tác"].map(h => (
-                          <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#F1F5F9] font-medium">
-                      {filteredAppointments.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">Không tìm thấy lịch hẹn phù hợp.</td>
-                        </tr>
-                      ) : filteredAppointments.map(a => {
-                        const isActionDisabled = a.status === "Cancelled" || a.status === "No-show" || a.status === "Completed";
-                        return (
-                          <tr key={a.id} className="hover:bg-[#F8FAFC] transition-colors">
-                            <td className="px-5 py-3.5 whitespace-nowrap">
-                              <span className="mono text-xs font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded">{a.id}</span>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <p className="font-semibold text-[#0F172A]">{a.patient}</p>
-                              <p className="text-xs text-[#64748B] mono mt-0.5">{a.phone}</p>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <p className="text-[#0F172A]">{a.doctor}</p>
-                              <p className="text-xs text-[#64748B] mt-0.5">{a.room}</p>
-                            </td>
-                            <td className="px-5 py-3.5 whitespace-nowrap">
-                              <p className="text-[#0F172A] text-xs">{a.date}</p>
-                              <p className="text-xs text-[#64748B] mono mt-0.5">{a.time}</p>
-                            </td>
-                            <td className="px-5 py-3.5 whitespace-nowrap">
-                              <StatusBadge status={a.status} />
-                            </td>
-                            <td className="px-5 py-3.5 whitespace-nowrap">
-                              {a.type === "Tái khám"
-                                ? <span className="text-xs font-medium border border-sky-200 text-sky-600 px-2 py-0.5 rounded-full">{a.type}</span>
-                                : <span className="text-xs text-[#64748B]">{a.type}</span>}
-                            </td>
-                            <td className="px-5 py-3.5 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  disabled={isActionDisabled}
-                                  onClick={() => {
-                                    setSelectedAppointmentId(a.id);
-                                    setRescheduleDoctor(`${a.doctor} (${a.room})`);
-                                    setRescheduleDate(a.date.split("/").reverse().join("-"));
-                                    setRescheduleSlotId(a.time.replace(" – ", "–"));
-                                    setIsRescheduleDrawerOpen(true);
-                                  }}
-                                  className={`h-7 px-3 text-xs font-bold rounded-lg border transition-all outline-none
-                                    ${isActionDisabled ? "border-slate-100 text-slate-300 bg-slate-50 cursor-not-allowed" : "border-sky-200 text-sky-600 hover:bg-sky-50 hover:border-sky-300 cursor-pointer"}`}
-                                >
-                                  Dời lịch
-                                </button>
-                                {!isActionDisabled && (
-                                  <button
-                                    onClick={() => {
-                                      setSelectedAppointmentId(a.id);
-                                      setIsCancelModalOpen(true);
-                                    }}
-                                    className="h-7 px-3 text-xs font-bold rounded-lg border border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer outline-none"
-                                  >
-                                    Hủy
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              )}
             </>
-          )}
-
-          {activeTab === "schedules" && (
-            <div className="flex flex-col gap-5">
-              {/* Title Section */}
-              <div>
-                <h1 className="text-xl font-bold text-[#0F172A]">Phê duyệt Lịch làm việc</h1>
-                <p className="text-xs text-[#64748B] mt-1">
-                  Xem và duyệt đăng ký trực của các Bác sĩ khoa phòng
-                </p>
-              </div>
-
-              {/* Table card */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-[#E2E8F0] text-slate-400 font-bold uppercase tracking-wider">
-                      <th className="px-6 py-3.5">Bác sĩ</th>
-                      <th className="px-6 py-3.5">Ngày đăng ký</th>
-                      <th className="px-6 py-3.5">Ca làm việc</th>
-                      <th className="px-6 py-3.5">Phòng khám</th>
-                      <th className="px-6 py-3.5">Trạng thái</th>
-                      <th className="px-6 py-3.5 text-center">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
-                    {schedules.map((sch) => (
-                      <tr key={sch.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-900">{sch.doctorName}</td>
-                        <td className="px-6 py-4">{sch.workDate}</td>
-                        <td className="px-6 py-4">{sch.shift}</td>
-                        <td className="px-6 py-4">{sch.roomName}</td>
-                        <td className="px-6 py-4">
-                          {sch.status === "PENDING" && (
-                            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-200">
-                              Chờ duyệt
-                            </span>
-                          )}
-                          {sch.status === "APPROVED" && (
-                            <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-200">
-                              Đã duyệt
-                            </span>
-                          )}
-                          {sch.status === "REJECTED" && (
-                            <div>
-                              <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-bold border border-rose-200">
-                                Bị từ chối
-                              </span>
-                              {sch.rejectionReason && (
-                                <p className="text-[10px] text-rose-500 mt-1 italic font-normal">
-                                  Lý do: {sch.rejectionReason}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {sch.status === "PENDING" ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleApproveSchedule(sch.id)}
-                                className="h-7 px-3 bg-[#0EA5E9] text-white rounded-md text-[11px] font-bold hover:bg-[#0284C7] active:scale-[0.98] transition-all outline-none"
-                              >
-                                Phê duyệt
-                              </button>
-                              <button
-                                onClick={() => handleOpenRejectSchedule(sch.id)}
-                                className="h-7 px-3 border border-red-200 text-red-500 rounded-md text-[11px] font-bold hover:bg-red-50 active:scale-[0.98] transition-all outline-none"
-                              >
-                                Từ chối
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 text-[10px]">Đã xử lý</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab !== "appointments" && activeTab !== "schedules" && (
-            <div className="min-h-[400px] bg-white border border-[#E2E8F0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4 text-[#64748B]">
-                <ClipboardList size={24} className="text-slate-400" />
-              </div>
-              <h3 className="text-slate-800 font-bold text-sm">Chuyên mục đang phát triển</h3>
-              <p className="text-slate-400 text-xs mt-1.5 max-w-sm leading-relaxed">
-                Tính năng này đang được thiết lập. Hãy truy cập &quot;Quản lý Lịch hẹn&quot; hoặc &quot;Phê duyệt Lịch Bác sĩ&quot; để thao tác.
-              </p>
-            </div>
           )}
         </main>
       </div>
 
-      {/* ════════════════ SMS LOG BANNER (Toast) ════════════════ */}
+      {/* DRAWER: ADD / RESCHEDULE APPOINTMENT */}
+      <BookingDrawer
+        isOpen={isAddDrawerOpen || isRescheduleDrawerOpen}
+        mode={isAddDrawerOpen ? "ADD" : "RESCHEDULE"}
+        selectedAppointment={selectedAppointment}
+        doctorsList={doctorsList}
+        rawSubmissions={rawSubmissions}
+        onClose={() => {
+          setIsAddDrawerOpen(false);
+          setIsRescheduleDrawerOpen(false);
+          setSelectedAppointment(null);
+        }}
+        onRefresh={() => {
+          fetchAppointments();
+          fetchDoctorSchedules();
+        }}
+        triggerSmsToast={triggerSmsToast}
+      />
+
+      {/* MODAL: CANCEL APPOINTMENT */}
+      {isCancelModalOpen && selectedAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-[1px] animate-[fadeIn_0.15s_ease-out]"
+            onClick={() => { setIsCancelModalOpen(false); setSelectedAppointment(null); }}
+          />
+          <form
+            onSubmit={handleCancelSubmit}
+            className="relative bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-[360px] p-6 shadow-2xl text-left animate-[scaleIn_0.15s_ease-out]"
+          >
+            <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3 mb-4">
+              <h3 className="font-bold text-sm text-[#0F172A]">Hủy lịch hẹn {selectedAppointment.id}</h3>
+              <button
+                type="button"
+                onClick={() => { setIsCancelModalOpen(false); setSelectedAppointment(null); }}
+                className="p-1 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors border-none bg-transparent cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Bạn đang thực hiện hủy lịch hẹn của bệnh nhân <strong className="text-neutral-900">{selectedAppointment.patient}</strong>. Vui lòng ghi rõ lý do.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Lý do hủy lịch <span className="text-rose-500">*</span></label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Bệnh nhân bận đột xuất, yêu cầu hoàn cọc..."
+                  required
+                  rows={2}
+                  className="w-full px-3 py-2 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 resize-none bg-white text-slate-800 placeholder:text-slate-300"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mt-5 pt-3 border-t border-[#F1F5F9]">
+              <button
+                type="button"
+                onClick={() => { setIsCancelModalOpen(false); setSelectedAppointment(null); }}
+                className="flex-1 h-9 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors cursor-pointer bg-transparent outline-none"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                className="flex-1 h-9 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors border-none cursor-pointer"
+              >
+                Xác nhận hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* SMS Simulated Floating Toast */}
       {smsToast.visible && (
-        <div className="fixed bottom-5 right-5 z-40 rounded-xl shadow-2xl overflow-hidden flex items-stretch max-w-xs" style={{ background: "#0F172A" }}>
-          <div className="w-1 shrink-0" style={{ background: "#0EA5E9" }} />
-          <div className="px-4 py-3 flex items-start gap-3 flex-1">
-            <MessageSquare size={16} className="text-sky-400 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-semibold text-sky-400 mb-0.5">{smsToast.title}</p>
-              <p className="text-xs leading-relaxed" style={{ color: "#94A3B8" }}>{smsToast.message}</p>
-              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: "#1E293B" }}>
-                <div
-                  className="h-full bg-sky-500 rounded-full transition-all duration-300"
-                  style={{ width: `${smsToast.progress}%` }}
-                />
-              </div>
-            </div>
-            <button
-              onClick={() => setSmsToast((prev) => ({ ...prev, visible: false }))}
-              className="text-slate-600 hover:text-white transition-colors shrink-0 cursor-pointer mt-0.5"
-            >
-              <X size={13} />
-            </button>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0C1A2E] border border-slate-800 rounded-2xl w-[320px] p-4 text-left shadow-2xl animate-[slideInUp_0.2s_ease-out] flex gap-3.5">
+          <div className="w-9 h-9 rounded-xl bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center shrink-0 text-[#38BDF8]">
+            <MessageSquare size={16} />
           </div>
-        </div>
-      )}
-
-      {/* ════════════════ DRAWER: ADD APPOINTMENT (Right Slide) ════════════════ */}
-      {isAddDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-[fadeIn_0.2s_ease-out]"
-            onClick={() => setIsAddDrawerOpen(false)}
-          />
-          {/* Drawer container */}
-          <div className="relative z-10 flex flex-col bg-white shadow-2xl overflow-hidden h-full animate-[slideInRight_0.2s_ease-out]" style={{ width: 420 }}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]">
-              <div className="text-left">
-                <h2 className="text-sm font-semibold text-[#0F172A]">Thêm lịch hẹn mới</h2>
-                <p className="text-xs text-[#64748B] mt-0.5">Điền thông tin để tạo lịch hẹn</p>
-              </div>
-              <button
-                onClick={() => setIsAddDrawerOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none"
-              >
-                <X size={14} />
-              </button>
+          <div className="flex-1 min-w-0 text-slate-400 text-xs">
+            <p className="font-bold text-white text-[13px]">{smsToast.title}</p>
+            <p className="mt-1 leading-normal text-[11px] font-medium">{smsToast.message}</p>
+            
+            {/* Progress Bar */}
+            <div className="mt-3 w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-[#0EA5E9] transition-all duration-300 rounded-full" style={{ width: `${smsToast.progress}%` }} />
             </div>
-
-            {/* Body */}
-            <form onSubmit={handleAddAppointment} className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-left">
-              {/* Patient Name */}
-              <div className="relative">
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Họ và tên bệnh nhân <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  value={formPatientName}
-                  required
-                  onChange={(e) => handlePatientSearch(e.target.value)}
-                  className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white"
-                  placeholder="Tìm kiếm bằng tên, SĐT hoặc CCCD..."
-                  autoComplete="off"
-                />
-                {searchingPatients && (
-                  <span className="absolute right-3 top-[34px]">
-                    <Loader2 className="animate-spin text-sky-500 h-4 w-4" />
-                  </span>
-                )}
-                {patientSearchResults.length > 0 && (
-                  <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {patientSearchResults.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedPatientId(p.id);
-                          setFormPatientName(p.fullName);
-                          setFormPatientPhone(`Đã liên kết ID: ${p.id}${p.phoneNumber ? ` - SĐT: ${p.phoneNumber}` : ""}`);
-                          setPatientSearchResults([]);
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors border-none bg-transparent cursor-pointer"
-                      >
-                        <p className="font-semibold text-slate-800">{p.fullName}</p>
-                        <p className="text-[10px] text-slate-500 font-medium">
-                          {p.phoneNumber && <span>SĐT: {p.phoneNumber}</span>}
-                          {p.citizenIdentificationCode && <span className="ml-3">CCCD: {p.citizenIdentificationCode}</span>}
-                        </p>
-                        <p className="text-[9px] text-slate-400 font-mono">ID: {p.id}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Phone number */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Trạng thái liên kết tài khoản
-                </label>
-                <input
-                  value={formPatientPhone}
-                  disabled
-                  className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg bg-slate-50 text-slate-500 outline-none select-none cursor-not-allowed"
-                  placeholder="Tự động cập nhật sau khi chọn bệnh nhân"
-                />
-              </div>
-
-              {/* Doctor select */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Bác sĩ phụ trách <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedDoctorId}
-                    required
-                    onChange={(e) => {
-                      const docId = e.target.value;
-                      setSelectedDoctorId(docId);
-                      const docObj = doctorsList.find(d => d.id === docId);
-                      setFormDoctor(docObj ? docObj.fullName : "");
-                      setFormTimeSlot(""); // Reset selected slot
-                    }}
-                    className="w-full h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 bg-white appearance-none cursor-pointer"
-                  >
-                    <option value="">Chọn bác sĩ...</option>
-                    {doctorsList.map((doc) => (
-                      <option key={doc.id} value={doc.id}>
-                        {doc.fullName} ({doc.phoneNumber})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Work Date */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Ngày hẹn <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formDate}
-                  required
-                  onChange={(e) => {
-                    setFormDate(e.target.value);
-                    setFormTimeSlot(""); // Reset selected slot
-                  }}
-                  className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all bg-white"
-                />
-              </div>
-
-              {/* Time Slots Grid */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-2">Chọn khung giờ hẹn</label>
-                {availableSlotsForBooking.length === 0 ? (
-                  <p className="text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-lg p-3 text-center italic">
-                    {selectedDoctorId ? "Bác sĩ không có lịch trực khả dụng vào ngày này." : "Vui lòng chọn bác sĩ phụ trách trước."}
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {availableSlotsForBooking.map((slotObj: any) => {
-                      const slotLabel = slotObj.slot 
-                        ? `${slotObj.slot.startTime.slice(0, 5)}–${slotObj.slot.endTime.slice(0, 5)}`
-                        : "Khung giờ";
-                      const isActive = formTimeSlot === slotObj.id;
-                      return (
-                        <button
-                          key={slotObj.id}
-                          type="button"
-                          onClick={() => setFormTimeSlot(slotObj.id)}
-                          className={`py-1.5 px-2 text-xs font-medium rounded-lg border transition-all cursor-pointer outline-none text-center
-                            ${isActive ? "bg-sky-500 border-sky-500 text-white shadow-sm font-semibold" :
-                                         "bg-white border-[#E2E8F0] text-[#0F172A] hover:border-sky-300 hover:bg-sky-50"}`}
-                        >
-                          {slotLabel} {slotObj.roomId ? `(${slotObj.roomId})` : ""}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                </div>
-
-              {/* Reason */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">Lý do khám bệnh</label>
-                <textarea
-                  value={formReason}
-                  onChange={(e) => setFormReason(e.target.value)}
-                  className="w-full h-20 px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
-                  placeholder="Mô tả triệu chứng hoặc lý do khám..."
-                />
-              </div>
-
-              {/* Checkboxes */}
-              <div className="space-y-3 pt-1">
-                
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formFollowUp}
-                    onChange={(e) => setFormFollowUp(e.target.checked)}
-                    className="w-4 h-4 accent-sky-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-[#0F172A] font-medium">Lịch tái khám</span>
-                </label>
-                {formFollowUp && (
-                  <div className="ml-6 animate-[fadeIn_0.15s_ease-out] text-left">
-                    <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                      Mã bệnh án gốc <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      value={formOriginRecordId}
-                      required
-                      onChange={(e) => setFormOriginRecordId(e.target.value)}
-                      className="mono w-full h-9 px-3 text-sm border border-sky-200 bg-sky-50 rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-400 transition-all"
-                      placeholder="VD: MR-2026-0034"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Submit footer buttons */}
-              <div className="flex gap-3 pt-6 pb-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddDrawerOpen(false)}
-                  className="flex-1 h-9 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors cursor-pointer outline-none"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 h-9 text-xs font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors cursor-pointer outline-none"
-                >
-                  Lưu lịch hẹn
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════ DRAWER: RESCHEDULE APPOINTMENT (Right Slide) ════════════════ */}
-      {isRescheduleDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-[fadeIn_0.2s_ease-out]"
-            onClick={() => setIsRescheduleDrawerOpen(false)}
-          />
-          {/* Drawer container */}
-          <div className="relative z-10 flex flex-col bg-white shadow-2xl overflow-hidden h-full animate-[slideInRight_0.2s_ease-out]" style={{ width: 420 }}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]">
-              <div className="text-left">
-                <h2 className="text-sm font-semibold text-[#0F172A]">Dời lịch hẹn {selectedAppointmentId}</h2>
-                <p className="text-xs text-[#64748B] mt-0.5">Chọn lịch khám thay thế cho bệnh nhân</p>
-              </div>
-              <button
-                onClick={() => setIsRescheduleDrawerOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <form onSubmit={handleRescheduleAppointment} className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-left">
-              {/* Doctor select */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Chọn Bác sĩ & Phòng khám <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={rescheduleDoctor}
-                    required
-                    onChange={(e) => setRescheduleDoctor(e.target.value)}
-                    className="w-full h-9 pl-3 pr-8 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 bg-white appearance-none cursor-pointer"
-                  >
-                    <option value="">Chọn bác sĩ...</option>
-                    <option value="BS. Lê Mạnh Hùng (Phòng 102)">BS. Lê Mạnh Hùng (Phòng 102)</option>
-                    <option value="BS. Nguyễn Thị Mai (Phòng 204)">BS. Nguyễn Thị Mai (Phòng 204)</option>
-                    <option value="BS. Trần Quốc Tuấn (Phòng 105)">BS. Trần Quốc Tuấn (Phòng 105)</option>
-                    <option value="BS. Phạm Thanh Hằng (Phòng 301)">BS. Phạm Thanh Hằng (Phòng 301)</option>
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Work Date */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Ngày dời sang <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={rescheduleDate}
-                  required
-                  onChange={(e) => setRescheduleDate(e.target.value)}
-                  className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all bg-white"
-                />
-              </div>
-
-              {/* Time Slots Grid */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-2">Chọn khung giờ mới</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {timeSlots.map((slot) => {
-                    const isUnavail = unavailableSlots.includes(slot);
-                    const isActive = rescheduleSlotId === slot;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        disabled={isUnavail}
-                        onClick={() => setRescheduleSlotId(slot)}
-                        className={`py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer outline-none
-                          ${isUnavail ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed" :
-                            isActive ? "bg-sky-500 border-sky-500 text-white shadow-sm font-semibold" :
-                                      "bg-white border-[#E2E8F0] text-[#0F172A] hover:border-sky-300 hover:bg-sky-50"}`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Reason */}
-              <div>
-                <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                  Lý do dời lịch <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  value={rescheduleReason}
-                  required
-                  onChange={(e) => setRescheduleReason(e.target.value)}
-                  className="w-full h-24 px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
-                  placeholder="Nhập lý do dời lịch khám bệnh..."
-                />
-              </div>
-
-              {/* Submit footer buttons */}
-              <div className="flex gap-3 pt-6 pb-2">
-                <button
-                  type="button"
-                  onClick={() => setIsRescheduleDrawerOpen(false)}
-                  className="flex-1 h-9 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors cursor-pointer outline-none"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 h-9 text-xs font-semibold bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors cursor-pointer outline-none"
-                >
-                  Xác nhận dời lịch
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════ MODAL: CANCEL APPOINTMENT ════════════════ */}
-      {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-[fadeIn_0.2s_ease-out]"
-            onClick={() => setIsCancelModalOpen(false)}
-          />
-          {/* Modal box */}
-          <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-left animate-[scaleIn_0.15s_ease-out]">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 bg-rose-50 rounded-xl shrink-0">
-                <XCircle size={18} className="text-rose-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-[#0F172A]">Xác nhận Hủy lịch hẹn</h2>
-                <p className="text-sm text-[#64748B] mt-0.5">
-                  <span className="mono font-semibold text-[#0F172A]">{selectedAppointmentId}</span> — Hành động này không thể hoàn tác
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleCancelAppointment}>
-              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                Lý do hủy lịch hẹn (Bắt buộc) <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={cancelReason}
-                required
-                onChange={e => setCancelReason(e.target.value)}
-                className="w-full h-24 px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
-                placeholder="Nhập lý do hủy lịch hẹn..."
-              />
-
-              <div className="flex gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsCancelModalOpen(false)}
-                  className="flex-1 h-9 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors cursor-pointer outline-none"
-                >
-                  Quay lại
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 h-9 text-xs font-semibold bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors cursor-pointer outline-none"
-                >
-                  Xác nhận Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════ MODAL: REJECT WORK SCHEDULE ════════════════ */}
-      {isRejectScheduleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-[fadeIn_0.2s_ease-out]"
-            onClick={() => setIsRejectScheduleModalOpen(false)}
-          />
-          {/* Modal box */}
-          <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-left animate-[scaleIn_0.15s_ease-out]">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 bg-rose-50 rounded-xl shrink-0">
-                <XCircle size={18} className="text-rose-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-[#0F172A]">Từ chối lịch làm việc Bác sĩ</h2>
-                <p className="text-sm text-[#64748B] mt-0.5">
-                  Mã đăng ký: <span className="mono font-semibold text-[#0F172A]">{selectedScheduleId}</span>
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleRejectSchedule}>
-              <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
-                Lý do từ chối (Bắt buộc) <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={rejectReason}
-                required
-                onChange={e => setRejectReason(e.target.value)}
-                className="w-full h-24 px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 resize-none transition-all bg-white"
-                placeholder="Nhập lý do từ chối lịch..."
-              />
-
-              <div className="flex gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsRejectScheduleModalOpen(false)}
-                  className="flex-1 h-9 text-xs font-semibold border border-[#E2E8F0] rounded-lg text-[#64748B] hover:bg-slate-50 transition-colors cursor-pointer outline-none"
-                >
-                  Quay lại
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 h-9 text-xs font-semibold bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors cursor-pointer outline-none"
-                >
-                  Từ chối lịch
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
 
     </div>
-  );
-}
-
-// ─── StatusBadge Helper Component ──────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: Status }) {
-  const s = statusMap[status] || { bg: "bg-slate-100", text: "text-slate-500" };
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}>
-      {status}
-    </span>
   );
 }

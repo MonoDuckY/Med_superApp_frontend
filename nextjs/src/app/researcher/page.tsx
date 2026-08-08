@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FlaskConical, LogOut, Shield, User, Phone, CheckCircle2, Check, Stethoscope, ClipboardList } from "lucide-react";
+import { FlaskConical, LogOut, Shield, User, CheckCircle2, Check, Stethoscope, ClipboardList } from "lucide-react";
 import { logoutApiCall } from "@/lib/auth";
+import DatasetPanel from "@/components/researcher/DatasetPanel";
 
 export default function ResearcherDashboard() {
   const router = useRouter();
@@ -112,55 +113,54 @@ export default function ResearcherDashboard() {
                 <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "N/A"}</p>
               </div>
               
-                  {/* Role switcher for multi-role accounts */}
-                  {userRoles.length > 1 && (
-                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
-                      <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
-                      <div className="flex flex-col gap-0.5">
-                        {userRoles.includes("ADMIN") && (
-                          <button
-                            onClick={() => router.push("/user-management/create-user")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <Shield size={13} className="shrink-0 text-slate-400" />
-                            <span>Quản trị viên</span>
-                          </button>
-                        )}
-                        {userRoles.includes("DOCTOR") && (
-                          <button
-                            onClick={() => router.push("/doctor")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <Stethoscope size={13} className="shrink-0 text-slate-400" />
-                            <span>Bác sĩ</span>
-                          </button>
-                        )}
-                        {userRoles.includes("STAFF") && (
-                          <button
-                            onClick={() => router.push("/staff")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none"
-                          >
-                            <ClipboardList size={13} className="shrink-0 text-slate-400" />
-                            <span>Nhân viên y tế</span>
-                          </button>
-                        )}
-                        {userRoles.includes("RESEARCHER") && (
-                          <button
-                            onClick={() => router.push("/researcher")}
-                            className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#8B5CF6] bg-violet-50/60 font-semibold cursor-pointer border-none outline-none"
-                          >
-                            <FlaskConical size={13} className="shrink-0 text-[#8B5CF6]" />
-                            <span className="flex-1">Nghiên cứu sinh</span>
-                            <Check size={11} className="text-[#8B5CF6] ml-auto" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
+              {/* Role switcher for multi-role accounts */}
+              {userRoles.length > 1 && (
+                <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                  <p className="px-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chuyển vai trò</p>
+                  <div className="flex flex-col gap-0.5">
+                    {userRoles.includes("ADMIN") && (
+                      <button
+                        onClick={() => router.push("/user-management/create-user")}
+                        className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                      >
+                        <Shield size={13} className="shrink-0 text-slate-400" />
+                        <span>Quản trị viên</span>
+                      </button>
+                    )}
+                    {userRoles.includes("DOCTOR") && (
+                      <button
+                        onClick={() => router.push("/doctor")}
+                        className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                      >
+                        <Stethoscope size={13} className="shrink-0 text-slate-400" />
+                        <span>Bác sĩ</span>
+                      </button>
+                    )}
+                    {userRoles.includes("STAFF") && (
+                      <button
+                        onClick={() => router.push("/staff")}
+                        className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                      >
+                        <ClipboardList size={13} className="shrink-0 text-slate-400" />
+                        <span>Nhân viên y tế</span>
+                      </button>
+                    )}
+                    {userRoles.includes("RESEARCHER") && (
+                      <button
+                        className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-[#8B5CF6] bg-violet-50/60 font-semibold cursor-pointer border-none outline-none"
+                      >
+                        <FlaskConical size={13} className="shrink-0 text-[#8B5CF6]" />
+                        <span className="flex-1">Nghiên cứu sinh</span>
+                        <Check size={11} className="text-[#8B5CF6] ml-auto" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold border-none"
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold border-none bg-transparent"
               >
                 <LogOut size={13} /> Đăng xuất
               </button>
@@ -171,48 +171,7 @@ export default function ResearcherDashboard() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-[500px] bg-white border border-[#E2E8F0] rounded-2xl p-10 shadow-sm flex flex-col items-center text-center">
-          {/* Badge icon */}
-          <div className="w-16 h-16 rounded-full bg-[#8B5CF6]/10 flex items-center justify-center mb-6">
-            <FlaskConical size={32} strokeWidth={1.5} className="text-[#8B5CF6]" />
-          </div>
-
-          {/* Heading requested by the user */}
-          <h2 className="text-[#8B5CF6] font-bold text-xl mb-2">
-            Đây là trang của Nghiên cứu sinh
-          </h2>
-          <p className="text-[#64748B] text-[13px] max-w-[360px] leading-relaxed mb-6">
-            Hệ thống phân tích nghiên cứu, truy vấn tập dữ liệu y sinh học và quản lý mẫu thử.
-          </p>
-
-          {/* User profile card details */}
-          <div className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-5 text-left mb-6 flex flex-col gap-3">
-            <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider font-semibold border-b border-[#E2E8F0] pb-2">
-              Thông tin phiên làm việc
-            </p>
-            <div className="flex items-center gap-3 text-[13px]">
-              <User size={14} className="text-[#94A3B8] flex-shrink-0" />
-              <span className="text-[#64748B]">Nghiên cứu sinh:</span>
-              <span className="font-semibold text-[#0F172A]">{user?.fullName || "N/A"}</span>
-            </div>
-            <div className="flex items-center gap-3 text-[13px]">
-              <Phone size={14} className="text-[#94A3B8] flex-shrink-0" />
-              <span className="text-[#64748B]">Điện thoại:</span>
-              <span className="font-mono text-[#0F172A]">{user?.phoneNumber || "N/A"}</span>
-            </div>
-            <div className="flex items-center gap-3 text-[13px]">
-              <Shield size={14} className="text-[#94A3B8] flex-shrink-0" />
-              <span className="text-[#64748B]">Vai trò:</span>
-              <span className="font-medium text-[#8B5CF6] bg-[#8B5CF6]/10 px-2 py-0.5 rounded text-[11px]">RESEARCHER</span>
-            </div>
-          </div>
-
-          {/* Verification indicator */}
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#10B981]">
-            <CheckCircle2 size={13} />
-            <span>Môi trường nghiên cứu an toàn</span>
-          </div>
-        </div>
+        <DatasetPanel user={user} />
       </main>
     </div>
   );
