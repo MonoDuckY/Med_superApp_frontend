@@ -19,6 +19,7 @@ import {
   X
 } from "lucide-react";
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
+import Logo from "@/components/Logo";
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -347,10 +348,7 @@ export default function DoctorDashboard() {
       <header className="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-8 shrink-0">
         {/* Left Side: Logo */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-[#0EA5E9] flex items-center justify-center text-white"
-            style={{ boxShadow: "0 0 12px rgba(14,165,233,0.35)" }}>
-            <Plus size={16} strokeWidth={2.5} />
-          </div>
+          <Logo size="sm" />
           <div>
             <p className="text-[#0F172A] font-bold text-[14px] leading-none">HMS NextGen</p>
             <p className="text-[#0EA5E9] text-[10px] font-semibold mt-0.5 tracking-wider uppercase">Clinical Portal</p>

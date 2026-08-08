@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
+import Logo from "@/components/Logo";
 
 // ─── Data Types ───────────────────────────────────────────────────────────────
 
@@ -845,13 +846,7 @@ export default function StaffDashboard() {
       >
         {/* Logo Header */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
-          <div className="w-8 h-8 rounded-lg bg-[#0EA5E9] flex items-center justify-center flex-shrink-0"
-            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
-            <div className="relative w-3.5 h-3.5 flex items-center justify-center">
-              <div className="absolute w-3.5 h-[4px] bg-white rounded-sm" />
-              <div className="absolute w-[4px] h-3.5 bg-white rounded-sm" />
-            </div>
-          </div>
+          <Logo size="sm" />
           <div>
             <p className="text-white font-bold text-[13px] leading-none tracking-wide">HMS</p>
             <p className="text-[#475569] text-[10px] mt-0.5 tracking-wide">Staff Portal</p>
@@ -1463,7 +1458,7 @@ export default function StaffDashboard() {
                     })}
                   </div>
                 )}
-              </div>
+                </div>
 
               {/* Reason */}
               <div>

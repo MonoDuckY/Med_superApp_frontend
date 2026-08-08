@@ -22,6 +22,8 @@ import {
   verifyForgotPasswordOtpApiCall 
 } from "@/lib/auth";
 
+import Logo from "@/components/Logo";
+
 /* ─── ECG wave SVG ───────────────────────────────────────────────────────────── */
 function EcgWave() {
   return (
@@ -100,12 +102,7 @@ function BrandPanel() {
       <div className="relative z-10 flex flex-col gap-5">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div
-            className="flex items-center justify-center rounded-lg shrink-0 w-9 h-9 bg-[#0EA5E9]"
-            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}
-          >
-            <Plus className="w-5 h-5 text-white" />
-          </div>
+          <Logo size="md" />
           <div>
             <p className="font-bold text-white leading-none text-sm">HMS</p>
             <p className="leading-none mt-1 tracking-widest font-semibold text-[10px] text-[#475569]">NEXTGEN HEALTHCARE</p>
@@ -458,9 +455,7 @@ export default function LoginPage() {
         
         {/* Mobile Header */}
         <div className="flex items-center gap-2 lg:hidden w-full max-w-[420px] self-center">
-          <div className="flex w-8 h-8 items-center justify-center rounded-lg bg-[#0EA5E9]">
-            <Plus className="h-5 w-5 text-white" />
-          </div>
+          <Logo size="sm" showGlow={false} />
           <span className="font-bold text-neutral-900 leading-none">HMS NextGen</span>
         </div>
 

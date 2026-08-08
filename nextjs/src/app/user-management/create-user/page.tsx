@@ -343,10 +343,6 @@ export default function CreateUserPage() {
             <span className="font-semibold text-[#0F172A]">Tạo người dùng</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium bg-[#E6F4EA] border-[#CEEAD6] text-[#10B981]">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-              Hệ thống Trực tuyến
-            </div>
             <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors text-[#64748B] cursor-pointer">
               <Bell size={15} />
               <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 8 }}>3</span>
