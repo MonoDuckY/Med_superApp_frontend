@@ -23,7 +23,8 @@ import {
   Settings,
   Shield,
   FlaskConical,
-  Loader2
+  Loader2,
+  User
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -946,6 +947,16 @@ export default function StaffDashboard() {
                   <div className="px-4 py-2 border-b border-[#F1F5F9]">
                     <p className="text-[12px] font-semibold text-[#0F172A] truncate">{user?.fullName || "Trần Thị B"}</p>
                     <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "0912345678"}</p>
+                  </div>
+                  
+                  <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                    <button
+                      onClick={() => router.push("/profile")}
+                      className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                    >
+                      <User size={13} className="shrink-0 text-slate-400" />
+                      <span>Hồ sơ cá nhân</span>
+                    </button>
                   </div>
                   
                   {/* Role switcher for multi-role accounts */}
