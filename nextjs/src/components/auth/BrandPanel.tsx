@@ -79,11 +79,6 @@ export default function BrandPanel() {
             <p className="leading-none mt-1 tracking-widest font-semibold text-[10px] text-[#475569]">NEXTGEN HEALTHCARE</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-medium text-emerald-500">Hệ thống Trực tuyến — Hoạt động ổn định</span>
-        </div>
       </div>
 
       <div className="relative z-10 flex flex-col gap-8">
