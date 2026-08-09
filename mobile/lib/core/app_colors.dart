@@ -88,4 +88,17 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // UC-08: Daily Activities gradients
+  static const LinearGradient successGradient = LinearGradient(
+    colors: [success, teal600],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient orangeGradient = LinearGradient(
+    colors: [orange, amber600],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }

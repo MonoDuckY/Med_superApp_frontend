@@ -46,14 +46,9 @@ class HealthDashboardView extends StatelessWidget {
                           const SizedBox(height: 12),
                           Row(
                             children: [
+                              // UC-08 — Theo dõi sức khỏe hàng ngày (ACTIVE)
                               Expanded(
-                                child: ComingSoonFeatureCard(
-                                  icon: Icons.monitor_heart_outlined,
-                                  title: 'Theo dõi sức khỏe',
-                                  description:
-                                      'Ghi lại bữa ăn, luyện tập và chỉ số hàng ngày',
-                                  color: AppColors.success,
-                                ),
+                                child: _ActivityHighlightCard(),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -354,6 +349,72 @@ class _MiniStat extends StatelessWidget {
           style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color),
         ),
       ],
+    );
+  }
+}
+
+// ── Activity Highlight Card (UC-08 — Navigate to daily activities) ─────────────
+
+class _ActivityHighlightCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/health/daily-activities'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: AppColors.successGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.success.withAlpha(60),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(30),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withAlpha(60)),
+                  ),
+                  child: const Icon(Icons.monitor_heart_rounded,
+                      size: 20, color: Colors.white),
+                ),
+                const Spacer(),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 12, color: Colors.white.withAlpha(180)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Theo dõi\nsức khỏe',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Bữa ăn & luyện tập',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                color: Colors.white.withAlpha(180),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

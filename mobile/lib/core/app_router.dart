@@ -9,6 +9,7 @@ import '../views/appointment/appointment_booking_view.dart';
 import '../views/feedback/feedback_view.dart';
 import '../views/health/health_dashboard_view.dart';
 import '../views/health/medicine_schedule_view.dart';
+import '../views/health/daily_activities_view.dart';
 import '../views/profile/profile_placeholder_view.dart';
 import '../views/profile/medical_record_list_view.dart';
 import '../views/profile/medical_record_detail_view.dart';
@@ -116,6 +117,12 @@ class AppRouter {
           create: (_) => MedicineScheduleViewModel(),
           child: const MedicineScheduleView(),
         ),
+      ),
+
+      // UC-08: Theo dõi hoạt động sức khỏe hàng ngày
+      GoRoute(
+        path: '/health/daily-activities',
+        builder: (context, state) => const DailyActivitiesView(),
       ),
     ],
   );
