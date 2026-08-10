@@ -55,6 +55,12 @@ class ApiClient {
   /// Xóa toàn bộ token khi logout.
   static Future<void> clearTokens() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Nếu dùng devBypassLogin, không logout (tránh đá văng user liên tục khi API lỗi)
+    if (prefs.getBool('is_dev_login') == true) {
+      return;
+    }
+
     await prefs.remove(AppConstants.keyAccessToken);
     await prefs.remove(AppConstants.keyRefreshToken);
     await prefs.remove(AppConstants.keyUserData);

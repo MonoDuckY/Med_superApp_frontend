@@ -203,7 +203,27 @@ class _ProfileHeader extends StatelessWidget {
 
 // ── Avatar Card ───────────────────────────────────────────────────────────────
 
-class _AvatarCard extends StatelessWidget {
+class _AvatarCard extends StatefulWidget {
+  @override
+  State<_AvatarCard> createState() => _AvatarCardState();
+}
+
+class _AvatarCardState extends State<_AvatarCard> {
+  String _userName = 'Khách';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_data') ?? 'Khách'; // AppConstants.keyUserData == 'user_data'
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -256,7 +276,7 @@ class _AvatarCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Nguyễn Văn An',
+                  _userName,
                   style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,

@@ -11,7 +11,4 @@ class AppConstants {
   static const String keyAccessToken  = 'access_token';
   static const String keyRefreshToken = 'refresh_token';
   static const String keyUserData     = 'user_data';
-
-  // Feature flags
-  static const bool useMockServices = false; // ← Đổi thành true để dùng mock khi không có backend
 }

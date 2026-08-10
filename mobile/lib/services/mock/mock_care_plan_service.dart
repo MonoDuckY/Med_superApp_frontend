@@ -20,10 +20,10 @@ class MockCarePlanService implements CarePlanServiceAbstract {
     _meals.add(
       MealResponse(
         id: 'm1',
+        userId: 'u1',
         mealName: 'Bữa sáng',
         scheduledAt: DateTime(yesterday.year, yesterday.month, yesterday.day, 7, 30),
         status: PlanScheduleStatus.completed,
-        totalCalories: 450,
         note: 'Ăn nhẹ',
         dishes: [
           DishResponse(id: 'd1', dishName: 'Phở bò', quantity: 1, unit: 'tô', totalCalories: 450),
@@ -34,6 +34,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
     _workouts.add(
       WorkoutResponse(
         id: 'w1',
+        userId: 'u1',
         workoutName: 'Chạy bộ',
         scheduledAt: DateTime(today.year, today.month, today.day, 6, 0),
         status: PlanScheduleStatus.notYet,
@@ -46,7 +47,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
   @override
   Future<ApiResponse<List<MealResponse>>> getMeals() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return ApiResponse.success('Thành công', _meals);
+    return ApiResponse.success(_meals, message: 'Thành công');
   }
 
   @override
@@ -69,20 +70,18 @@ class MockCarePlanService implements CarePlanServiceAbstract {
       totalFat: (d['totalFat'] as num?)?.toDouble(),
     )).toList();
 
-    final totalCal = newDishes.fold(0.0, (sum, d) => sum + d.totalCalories);
-
     final meal = MealResponse(
       id: 'm_${_random.nextInt(1000)}',
+      userId: 'u1',
       mealName: mealName,
       scheduledAt: scheduledAt,
       status: PlanScheduleStatus.notYet,
-      totalCalories: totalCal,
       note: note,
       dishes: newDishes,
     );
 
     _meals.add(meal);
-    return ApiResponse.success('Thành công', meal);
+    return ApiResponse.success(meal, message: 'Thành công');
   }
 
   @override
@@ -90,17 +89,8 @@ class MockCarePlanService implements CarePlanServiceAbstract {
     await Future.delayed(const Duration(milliseconds: 300));
     final index = _meals.indexWhere((m) => m.id == mealId);
     if (index != -1) {
-      final old = _meals[index];
-      _meals[index] = MealResponse(
-        id: old.id,
-        mealName: old.mealName,
-        scheduledAt: old.scheduledAt,
-        status: PlanScheduleStatus.completed,
-        totalCalories: old.totalCalories,
-        note: old.note,
-        dishes: old.dishes,
-      );
-      return ApiResponse.success('Thành công', _meals[index]);
+      _meals[index] = _meals[index].copyWith(status: PlanScheduleStatus.completed);
+      return ApiResponse.success(_meals[index], message: 'Thành công');
     }
     return ApiResponse.failure('Không tìm thấy bữa ăn');
   }
@@ -108,7 +98,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
   @override
   Future<ApiResponse<List<WorkoutResponse>>> getWorkouts() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return ApiResponse.success('Thành công', _workouts);
+    return ApiResponse.success(_workouts, message: 'Thành công');
   }
 
   @override
@@ -121,6 +111,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
     await Future.delayed(const Duration(milliseconds: 600));
     final workout = WorkoutResponse(
       id: 'w_${_random.nextInt(1000)}',
+      userId: 'u1',
       workoutName: workoutName,
       scheduledAt: scheduledAt,
       status: PlanScheduleStatus.notYet,
@@ -128,7 +119,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
       note: note,
     );
     _workouts.add(workout);
-    return ApiResponse.success('Thành công', workout);
+    return ApiResponse.success(workout, message: 'Thành công');
   }
 
   @override
@@ -136,16 +127,8 @@ class MockCarePlanService implements CarePlanServiceAbstract {
     await Future.delayed(const Duration(milliseconds: 300));
     final index = _workouts.indexWhere((w) => w.id == workoutId);
     if (index != -1) {
-      final old = _workouts[index];
-      _workouts[index] = WorkoutResponse(
-        id: old.id,
-        workoutName: old.workoutName,
-        scheduledAt: old.scheduledAt,
-        status: PlanScheduleStatus.completed,
-        content: old.content,
-        note: old.note,
-      );
-      return ApiResponse.success('Thành công', _workouts[index]);
+      _workouts[index] = _workouts[index].copyWith(status: PlanScheduleStatus.completed);
+      return ApiResponse.success(_workouts[index], message: 'Thành công');
     }
     return ApiResponse.failure('Không tìm thấy bài tập');
   }

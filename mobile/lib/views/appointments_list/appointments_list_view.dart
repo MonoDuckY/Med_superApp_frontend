@@ -104,11 +104,13 @@ class _ListHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Nguyễn Văn An', // TODO: Replace with real user name from SharedPreferences
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                Consumer<AppointmentsListViewModel>(
+                  builder: (context, vm, _) => Text(
+                    vm.userName, 
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),

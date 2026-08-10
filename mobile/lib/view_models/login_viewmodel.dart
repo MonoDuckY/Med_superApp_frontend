@@ -7,15 +7,22 @@ import '../core/utils/device_utils.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
-
+import '../core/config/environment_config.dart';
 class LoginViewModel extends ChangeNotifier {
   String phoneNumber = '';
   bool isLoading = false;
   String? errorMessage;
 
-  final AuthServiceAbstract _authService = AppConstants.useMockServices 
+  AuthServiceAbstract _authService = EnvironmentConfig.isMock 
       ? MockAuthService() 
       : RemoteAuthService();
+
+  void updateMockState() {
+    _authService = EnvironmentConfig.isMock 
+        ? MockAuthService() 
+        : RemoteAuthService();
+    notifyListeners();
+  }
 
   bool get isValidPhone {
     // Chấp nhận 10 chữ số bắt đầu bằng 0, hoặc định dạng +84
