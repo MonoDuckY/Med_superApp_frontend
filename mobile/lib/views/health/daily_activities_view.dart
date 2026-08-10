@@ -152,7 +152,7 @@ class _ActivityHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.white,
       child: Column(
         children: [
           Padding(
@@ -203,7 +203,7 @@ class _ActivityHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.monitor_heart_rounded,
-                      color: Colors.white, size: 22),
+                      color: AppColors.white, size: 22),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -232,7 +232,7 @@ class _DatePickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.white,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       child: Row(
         children: dates.asMap().entries.map((entry) {
@@ -311,7 +311,7 @@ class _DateChip extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: isSelected
-                    ? Colors.white.withAlpha(200)
+                    ? AppColors.white.withAlpha(200)
                     : AppColors.textSecondary,
               ),
             ),
@@ -321,7 +321,7 @@ class _DateChip extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isSelected ? Colors.white : AppColors.textPrimary,
+                color: isSelected ? AppColors.white : AppColors.textPrimary,
               ),
             ),
           ],
@@ -421,7 +421,7 @@ class _BannerStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 18, color: Colors.white.withAlpha(220)),
+        Icon(icon, size: 18, color: AppColors.white.withAlpha(220)),
         const SizedBox(height: 4),
         RichText(
           text: TextSpan(
@@ -431,14 +431,14 @@ class _BannerStat extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               ),
               TextSpan(
                 text: ' $unit',
                 style: GoogleFonts.inter(
                   fontSize: 11,
-                  color: Colors.white.withAlpha(200),
+                  color: AppColors.white.withAlpha(200),
                 ),
               ),
             ],
@@ -449,7 +449,7 @@ class _BannerStat extends StatelessWidget {
           label,
           style: GoogleFonts.inter(
             fontSize: 11,
-            color: Colors.white.withAlpha(180),
+            color: AppColors.white.withAlpha(180),
           ),
         ),
       ],
@@ -463,7 +463,7 @@ class _BannerDivider extends StatelessWidget {
     return Container(
       height: 36,
       width: 1,
-      color: Colors.white.withAlpha(60),
+      color: AppColors.white.withAlpha(60),
       margin: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
@@ -479,7 +479,7 @@ class _ActivityTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.white,
       margin: const EdgeInsets.only(top: 14),
       child: TabBar(
         controller: controller,
@@ -583,7 +583,7 @@ class _NutritionTab extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (_) => AddMealBottomSheet(
         forDate: selectedDate,
         onSubmit: ({
@@ -684,7 +684,7 @@ class _WorkoutTab extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (_) => AddWorkoutBottomSheet(
         forDate: selectedDate,
         onSubmit: ({
@@ -748,14 +748,14 @@ class _AddFab extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 20),
+            Icon(icon, color: AppColors.white, size: 20),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: AppColors.white,
               ),
             ),
           ],
@@ -874,7 +874,7 @@ class _ErrorState extends StatelessWidget {
               label: const Text('Thử lại'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

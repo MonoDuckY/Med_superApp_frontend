@@ -60,7 +60,7 @@ class _AddWorkoutBottomSheetState extends State<AddWorkoutBottomSheet> {
       builder: (_, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -90,7 +90,7 @@ class _AddWorkoutBottomSheetState extends State<AddWorkoutBottomSheet> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.fitness_center_rounded,
-                          color: Colors.white, size: 20),
+                          color: AppColors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -221,7 +221,7 @@ class _AddWorkoutBottomSheetState extends State<AddWorkoutBottomSheet> {
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.orange,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       disabledBackgroundColor:
                           AppColors.orange.withAlpha(100),
                       shape: RoundedRectangleBorder(
@@ -238,7 +238,7 @@ class _AddWorkoutBottomSheetState extends State<AddWorkoutBottomSheet> {
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2.5, color: Colors.white),
+                                strokeWidth: 2.5, color: AppColors.white),
                           )
                         : const Text('Lưu bài tập'),
                   ),

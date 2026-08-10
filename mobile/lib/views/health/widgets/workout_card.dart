@@ -23,7 +23,7 @@ class WorkoutCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDone
@@ -81,7 +81,7 @@ class WorkoutCard extends StatelessWidget {
                           color: AppColors.amber600,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.check, size: 10, color: Colors.white),
+                        child: const Icon(Icons.check, size: 10, color: AppColors.white),
                       ),
                   ],
                 ),

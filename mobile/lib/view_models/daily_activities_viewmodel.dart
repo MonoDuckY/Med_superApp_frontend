@@ -3,13 +3,12 @@ import '../models/dto/meal_response.dart';
 import '../models/dto/workout_response.dart';
 import '../services/abstract/care_plan_service_abstract.dart';
 import '../services/remote/remote_care_plan_service.dart';
-
+import '../services/mock/mock_care_plan_service.dart';
 /// UC-08 — ViewModel quản lý dữ liệu hoạt động sức khỏe hàng ngày.
 ///
 /// Business Rule BR-02: Chỉ cho phép chọn hôm nay và 2 ngày trước.
 class DailyActivitiesViewModel extends ChangeNotifier {
-  // ignore: TODO inject via get_it trong tương lai
-  final CarePlanServiceAbstract _service = RemoteCarePlanService();
+  final CarePlanServiceAbstract _service = MockCarePlanService();
 
   DailyActivitiesViewModel() {
     _load();

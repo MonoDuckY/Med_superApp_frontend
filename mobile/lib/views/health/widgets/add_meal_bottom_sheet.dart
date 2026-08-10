@@ -62,7 +62,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
       builder: (_, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -92,7 +92,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.restaurant_rounded,
-                          color: Colors.white, size: 20),
+                          color: AppColors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -247,7 +247,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       disabledBackgroundColor:
                           AppColors.success.withAlpha(100),
                       shape: RoundedRectangleBorder(
@@ -264,7 +264,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2.5, color: Colors.white),
+                                strokeWidth: 2.5, color: AppColors.white),
                           )
                         : const Text('Lưu bữa ăn'),
                   ),
@@ -432,7 +432,7 @@ class _DishFormField extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
@@ -556,7 +556,7 @@ class _DishFormField extends StatelessWidget {
       hintText: hint,
       hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.white,
       isDense: true,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -623,7 +623,7 @@ class _MacroField extends StatelessWidget {
             hintStyle:
                 GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.white,
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -698,7 +698,7 @@ class _PresetChip extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            color: isSelected ? AppColors.white : AppColors.textSecondary,
           ),
         ),
       ),

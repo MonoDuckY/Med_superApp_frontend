@@ -31,7 +31,7 @@ class _MealCardState extends State<MealCard> {
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDone
@@ -92,7 +92,7 @@ class _MealCardState extends State<MealCard> {
                             color: AppColors.success,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.check, size: 10, color: Colors.white),
+                          child: const Icon(Icons.check, size: 10, color: AppColors.white),
                         ),
                     ],
                   ),
