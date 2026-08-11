@@ -457,6 +457,12 @@ function CertsTab({ user }: { user: any }) {
           className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed outline-none"
         />
       </div>
+      <div className="mt-2 p-3 bg-amber-50/60 border border-amber-200 rounded-xl text-amber-700 text-xs flex items-start gap-2.5">
+        <Ico d={ic.shieldCheck} cls="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
+        <span className="leading-relaxed">
+          <strong>Thông tin bảo mật:</strong> Ảnh chụp chứng chỉ hành nghề đã tải lên chỉ có thể được xem bởi Quản trị viên hệ thống (Admin) để bảo vệ quyền riêng tư thông tin y khoa.
+        </span>
+      </div>
     </div>
   );
 }
