@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
+import Logo from "@/components/Logo";
 
 /* ─── Types ─── */
 type Status = "Active" | "Inactive" | "";
@@ -271,10 +272,7 @@ export default function CreateUserPage() {
       {/* ─── Sidebar ─── */}
       <aside className="flex flex-col shrink-0 h-full w-[220px] bg-[#0C1A2E]">
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
-          <div className="flex items-center justify-center rounded-lg shrink-0 w-8 h-8 bg-[#0EA5E9]"
-            style={{ boxShadow: "0 0 16px rgba(14,165,233,0.4)" }}>
-            <span className="text-white text-base font-bold">+</span>
-          </div>
+          <Logo size="sm" />
           <div>
             <p className="text-white font-bold leading-none text-[13px]">HMS</p>
             <p className="leading-none mt-1 tracking-wide text-[10px] text-[#475569]">Admin Console</p>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FlaskConical, LogOut, Shield, User, CheckCircle2, Check, Stethoscope, ClipboardList } from "lucide-react";
 import { logoutApiCall } from "@/lib/auth";
 import DatasetPanel from "@/components/researcher/DatasetPanel";
+import Logo from "@/components/Logo";
 
 export default function ResearcherDashboard() {
   const router = useRouter();
@@ -89,10 +90,7 @@ export default function ResearcherDashboard() {
       {/* Top Header Navigation */}
       <header className="h-16 bg-white border-b border-[#E2E8F0] flex items-center justify-between px-8">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#8B5CF6] flex items-center justify-center text-white"
-            style={{ boxShadow: "0 0 16px rgba(139,92,246,0.3)" }}>
-            <FlaskConical size={18} strokeWidth={2} />
-          </div>
+          <Logo size="sm" />
           <div>
             <p className="text-[#0F172A] font-bold text-[14px] leading-none">HMS NextGen</p>
             <p className="text-[#8B5CF6] text-[10px] font-semibold mt-0.5 tracking-wide uppercase">Phân hệ Nghiên cứu</p>
