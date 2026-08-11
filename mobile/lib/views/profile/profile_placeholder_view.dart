@@ -67,10 +67,8 @@ class ProfilePlaceholderView extends StatelessWidget {
                       icon: Icons.person_outline_rounded,
                       iconColor: AppColors.purple,
                       title: 'Thông tin cá nhân',
-                      subtitle: 'Tên, số điện thoại, địa chỉ',
-                      badge: 'Sắp có',
-                      onTap: () => _showComingSoon(
-                          context, 'Chỉnh sửa hồ sơ đang được phát triển'),
+                      subtitle: 'Tên, số điện thoại, ngày sinh',
+                      onTap: () => context.push('/profile/personal-info'),
                     ),
                     const SizedBox(height: 8),
                     _ProfileMenuItem(

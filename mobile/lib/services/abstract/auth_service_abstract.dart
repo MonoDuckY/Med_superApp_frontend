@@ -9,4 +9,11 @@ abstract class AuthServiceAbstract {
   Future<ApiResponse<UserModel>> getProfile();
   Future<ApiResponse<UserModel?>> requestOtp(String phoneNumber, {String? deviceId});
   Future<ApiResponse<UserModel>> verifyOtp(String phoneNumber, String code, {String? deviceId});
+  /// Cập nhật thông tin cá nhân của user đang đăng nhập.
+  /// Chỉ cho phép thay đổi: fullName, gender, dateOfBirth.
+  Future<ApiResponse<UserModel>> updateProfile({
+    required String fullName,
+    required String gender,
+    required String dateOfBirth,
+  });
 }

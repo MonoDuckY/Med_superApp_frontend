@@ -47,7 +47,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
   @override
   Future<ApiResponse<List<MealResponse>>> getMeals() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return ApiResponse.success(_meals, message: 'Thành công');
+    return ApiResponse.success(List.from(_meals), message: 'Thành công');
   }
 
   @override
@@ -98,7 +98,7 @@ class MockCarePlanService implements CarePlanServiceAbstract {
   @override
   Future<ApiResponse<List<WorkoutResponse>>> getWorkouts() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return ApiResponse.success(_workouts, message: 'Thành công');
+    return ApiResponse.success(List.from(_workouts), message: 'Thành công');
   }
 
   @override
