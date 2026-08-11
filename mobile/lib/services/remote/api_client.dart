@@ -19,7 +19,10 @@ class ApiClient {
       baseUrl: AppConstants.baseUrl,
       connectTimeout: AppConstants.connectTimeout,
       receiveTimeout: AppConstants.receiveTimeout,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true', // Bỏ qua trang cảnh báo của Ngrok bản free
+      },
     ));
 
     dio.interceptors.addAll([

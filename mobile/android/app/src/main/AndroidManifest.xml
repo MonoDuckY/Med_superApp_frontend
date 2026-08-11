@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Cấp quyền truy cập Internet cho bản Release (bắt buộc) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="med_superapp_frontend"
         android:name="${applicationName}"
