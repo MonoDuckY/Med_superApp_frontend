@@ -34,7 +34,7 @@ import AppointmentTable, { Appointment } from "@/components/staff/AppointmentTab
 import BookingDrawer from "@/components/staff/BookingDrawer";
 import ScheduleApprovals from "@/components/staff/ScheduleApprovals";
 
-type Status = "Confirmed" | "Cancelled" | "No-show" | "Completed" | "Chờ xác nhận";
+type Status = "Confirmed" | "Cancelled" | "No-show" | "Completed" | "Chờ xác nhận" | "In-progress";
 
 interface DoctorSchedule {
   id: string;
@@ -220,9 +220,9 @@ export default function StaffDashboard() {
         const result = await res.json();
         if (result.success && result.data) {
           const mapped: Appointment[] = result.data.map((a: any) => {
-            const timeStr = a.startTime && a.endTime 
-              ? `${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`
-              : "08:00–08:30";
+            const start = a.slot?.startTime?.slice(0, 5) || "";
+            const end = a.slot?.endTime?.slice(0, 5) || "";
+            const timeStr = start && end ? `${start}–${end}` : "08:00–08:30";
             
             let displayStatus: Status = "Chờ xác nhận";
             const apiStatus = a.status ? a.status.toUpperCase() : "PENDING";
@@ -230,14 +230,25 @@ export default function StaffDashboard() {
             else if (apiStatus.includes("CANCEL")) displayStatus = "Cancelled";
             else if (apiStatus.includes("COMPLET")) displayStatus = "Completed";
             else if (apiStatus.includes("NO_SHOW")) displayStatus = "No-show";
+            else if (apiStatus.includes("PROGRESS")) displayStatus = "In-progress";
+
+            let formattedDate = "";
+            if (a.doctorWorkSlot?.workDate) {
+              const [y, m, d] = a.doctorWorkSlot.workDate.split("-");
+              if (y && m && d) {
+                formattedDate = `${d}/${m}/${y}`;
+              } else {
+                formattedDate = a.doctorWorkSlot.workDate;
+              }
+            }
 
             return {
               id: a.appointmentCode || `#APT-${a.id.slice(-4)}`,
-              patient: a.patientName || "Bệnh nhân",
-              phone: a.patientPhone || "",
-              doctor: a.doctorName ? `BS. ${a.doctorName}` : "Bác sĩ",
-              room: a.roomName || "Phòng khám",
-              date: a.workDate || "",
+              patient: a.patient?.fullName || "Bệnh nhân",
+              phone: a.patient?.phoneNumber || "N/A",
+              doctor: a.doctor?.fullName ? `BS. ${a.doctor.fullName}` : "Bác sĩ",
+              room: a.room?.roomCode || "Phòng khám",
+              date: formattedDate,
               time: timeStr,
               status: displayStatus,
               type: "Standard"
@@ -621,7 +632,6 @@ export default function StaffDashboard() {
                     setSelectedAppointment(apt);
                     setIsCancelModalOpen(true);
                   }}
-                  onScanNoShow={handleAutoScanNoShow}
                   stats={stats}
                 />
               )}

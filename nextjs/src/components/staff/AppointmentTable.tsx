@@ -22,7 +22,6 @@ interface AppointmentTableProps {
   onAddBooking: () => void;
   onReschedule: (appointment: Appointment) => void;
   onCancel: (appointment: Appointment) => void;
-  onScanNoShow: () => void;
   stats: { total: number; confirmed: number; cancelled: number; noShow: number };
 }
 
@@ -35,7 +34,6 @@ export default function AppointmentTable({
   onAddBooking,
   onReschedule,
   onCancel,
-  onScanNoShow,
   stats
 }: AppointmentTableProps) {
   // Client side filtering for search & status
@@ -60,13 +58,6 @@ export default function AppointmentTable({
           <p className="text-xs text-[#64748B] mt-0.5">Đặt lịch khám mới, thay đổi thời gian hoặc hủy lịch hẹn của bệnh nhân.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={onScanNoShow}
-            className="flex items-center gap-1.5 h-9 px-4 text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100/70 transition-all cursor-pointer outline-none active:scale-[0.98]"
-          >
-            <RotateCw size={13} className="text-sky-500" />
-            Tự động quét No-show
-          </button>
           <button
             onClick={onAddBooking}
             className="flex items-center gap-2 h-9 px-4 text-xs font-semibold text-white rounded-lg hover:bg-sky-600 transition-colors shadow-sm cursor-pointer outline-none active:scale-[0.98] border-none"
@@ -166,7 +157,7 @@ export default function AppointmentTable({
                   <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">Không tìm thấy lịch hẹn phù hợp.</td>
                 </tr>
               ) : filteredAppointments.map(a => {
-                const isActionDisabled = a.status === "Cancelled" || a.status === "No-show" || a.status === "Completed";
+                const isActionDisabled = a.status === "Cancelled" || a.status === "No-show" || a.status === "Completed" || a.status === "In-progress";
                 return (
                   <tr key={a.id} className="hover:bg-[#F8FAFC] transition-colors">
                     <td className="px-5 py-3.5 whitespace-nowrap">
@@ -175,7 +166,15 @@ export default function AppointmentTable({
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div>
                         <p className="font-bold text-slate-900">{a.patient}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{a.phone || "N/A"}</p>
+                        <p className="text-[10px] mt-0.5">
+                          {a.phone ? (
+                            <a href={`tel:${a.phone}`} className="text-sky-600 hover:underline font-semibold">
+                              {a.phone}
+                            </a>
+                          ) : (
+                            <span className="text-slate-400">N/A</span>
+                          )}
+                        </p>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
@@ -213,6 +212,18 @@ export default function AppointmentTable({
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-400 border border-slate-200">
                           <Clock size={11} strokeWidth={2.5} />
                           Quá hạn (No-show)
+                        </span>
+                      )}
+                      {a.status === "Completed" && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+                          <Check size={11} strokeWidth={2.5} />
+                          Đã hoàn thành
+                        </span>
+                      )}
+                      {a.status === "In-progress" && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-600 border border-violet-200">
+                          <Clock size={11} strokeWidth={2.5} />
+                          Đang khám
                         </span>
                       )}
                     </td>
