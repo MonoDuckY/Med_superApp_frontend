@@ -29,6 +29,7 @@ export default function DoctorDashboard() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("schedule");
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
 
   const getInitials = (name?: string) => {
     if (!name) return "DR";
@@ -246,14 +247,20 @@ export default function DoctorDashboard() {
       )}
 
       {activeTab === "list" && (
-        <main className="flex-1 flex items-center justify-center p-6 bg-[#F8FAFC]">
-          <AppointmentGrid onBackToSchedule={() => setActiveTab("schedule")} />
+        <main className="flex-1 overflow-hidden px-8 py-5 min-h-0 flex flex-col">
+          <AppointmentGrid 
+            onStartExam={(id) => { setSelectedAppointmentId(id); setActiveTab("records"); }}
+            onBackToSchedule={() => setActiveTab("schedule")} 
+          />
         </main>
       )}
 
       {activeTab === "records" && (
         <main className="flex-1 flex items-center justify-center p-6 bg-[#F8FAFC]">
-          <MedicalWorkspace onBackToSchedule={() => setActiveTab("schedule")} />
+          <MedicalWorkspace 
+            appointmentId={selectedAppointmentId}
+            onBackToSchedule={() => setActiveTab("schedule")} 
+          />
         </main>
       )}
     </div>
