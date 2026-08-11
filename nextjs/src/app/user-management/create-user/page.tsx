@@ -171,12 +171,17 @@ export default function CreateUserPage() {
 
     console.log("HMS Frontend Sending Payload:", JSON.stringify(payload, null, 2));
 
+    const formData = new FormData();
+    const userBlob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+    formData.append("user", userBlob);
+    
+    if (role === "DOCTOR" && licenseFile) {
+      formData.append("certificate", licenseFile);
+    }
+
     fetchWithAuth(`${apiUrl}/api/admin/users`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
+      body: formData
     })
       .then(async (res: Response) => {
         const contentType = res.headers.get("content-type");
@@ -224,12 +229,28 @@ export default function CreateUserPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file) { setLicenseFile(file); setErrors((p) => ({ ...p, license: "" })); }
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((p) => ({ ...p, license: "Kích thước chứng chỉ không được vượt quá 5MB." }));
+        setLicenseFile(null);
+      } else {
+        setLicenseFile(file);
+        setErrors((p) => ({ ...p, license: "" }));
+      }
+    }
   };
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) { setLicenseFile(file); setErrors((p) => ({ ...p, license: "" })); }
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((p) => ({ ...p, license: "Kích thước chứng chỉ không được vượt quá 5MB." }));
+        setLicenseFile(null);
+      } else {
+        setLicenseFile(file);
+        setErrors((p) => ({ ...p, license: "" }));
+      }
+    }
   };
 
   if (checkingAuth) {
