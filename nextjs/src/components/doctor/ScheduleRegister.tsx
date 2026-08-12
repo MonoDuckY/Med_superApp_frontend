@@ -49,10 +49,21 @@ export default function ScheduleRegister() {
 
   // Get date range labels for current week
   const getWeekDates = (offset: number) => {
-    const today = new Date();
-    const day = today.getDay(); // 0 for Sunday, 1 for Monday...
-    const diff = today.getDate() - (day === 0 ? 6 : day - 1) + (offset * 7);
-    const startOfWeek = new Date(today.setDate(diff));
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parseInt(parts.find(p => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find(p => p.type === "month")!.value, 10) - 1;
+    const date = parseInt(parts.find(p => p.type === "day")!.value, 10);
+    
+    const localToday = new Date(year, month, date);
+    const day = localToday.getDay(); // 0 for Sunday, 1 for Monday...
+    const diff = localToday.getDate() - (day === 0 ? 6 : day - 1) + (offset * 7);
+    const startOfWeek = new Date(localToday.setDate(diff));
     
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -66,16 +77,18 @@ export default function ScheduleRegister() {
   const currentWeekDates = getWeekDates(weekOffset);
 
   const formatDateISO = (d: Date) => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
+    return d.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
   };
 
   const formatDateDM = (d: Date) => {
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${dd}/${mm}`;
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      day: "2-digit",
+      month: "2-digit",
+    }).formatToParts(d);
+    const day = parts.find(p => p.type === "day")?.value || "01";
+    const month = parts.find(p => p.type === "month")?.value || "01";
+    return `${day}/${month}`;
   };
 
   const weekLabel = `Tuần: ${formatDateDM(currentWeekDates[0])} – ${formatDateDM(currentWeekDates[6])}`;

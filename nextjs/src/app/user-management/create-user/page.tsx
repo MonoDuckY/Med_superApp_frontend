@@ -573,7 +573,7 @@ export default function CreateUserPage() {
                       <input 
                         type="date" 
                         value={dob}
-                        max={new Date().toISOString().split("T")[0]}
+                        max={new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" })}
                         onChange={(e) => { setDob(e.target.value); setErrors(p => ({ ...p, dob: "" })); }}
                         className={INPUT_CLASS} 
                         style={{ borderColor: errors.dob ? "#EF4444" : undefined }}
