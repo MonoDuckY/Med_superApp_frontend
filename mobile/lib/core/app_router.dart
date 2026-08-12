@@ -9,9 +9,11 @@ import '../views/appointment/appointment_booking_view.dart';
 import '../views/feedback/feedback_view.dart';
 import '../views/health/health_dashboard_view.dart';
 import '../views/health/medicine_schedule_view.dart';
+import '../views/health/daily_activities_view.dart';
 import '../views/profile/profile_placeholder_view.dart';
 import '../views/profile/medical_record_list_view.dart';
 import '../views/profile/medical_record_detail_view.dart';
+import '../views/profile/personal_info_view.dart';
 import '../views/shared/main_shell.dart';
 import '../view_models/medicine_schedule_viewmodel.dart';
 
@@ -100,6 +102,12 @@ class AppRouter {
         builder: (context, state) => const MedicalRecordListView(),
       ),
 
+      // UC-04: Thông tin cá nhân
+      GoRoute(
+        path: '/profile/personal-info',
+        builder: (context, state) => const PersonalInfoView(),
+      ),
+
       // UC-06: Hồ sơ bệnh án — chi tiết
       GoRoute(
         path: '/profile/medical-records/:id',
@@ -116,6 +124,12 @@ class AppRouter {
           create: (_) => MedicineScheduleViewModel(),
           child: const MedicineScheduleView(),
         ),
+      ),
+
+      // UC-08: Theo dõi hoạt động sức khỏe hàng ngày
+      GoRoute(
+        path: '/health/daily-activities',
+        builder: (context, state) => const DailyActivitiesView(),
       ),
     ],
   );

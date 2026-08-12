@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment_models.dart';
 import '../services/remote/remote_appointment_service.dart';
+import '../services/mock/mock_appointment_service.dart';
+import '../services/abstract/appointment_service_abstract.dart';
+import '../core/config/environment_config.dart';
+import '../core/constants/app_constants.dart';
 
 /// Manages the Appointments List screen state.
 class AppointmentsListViewModel extends ChangeNotifier {
-  final _service = RemoteAppointmentService();
+  final IAppointmentService _service = EnvironmentConfig.isMock
+      ? MockAppointmentService()
+      : RemoteAppointmentService();
 
   DateTime _focusedMonth = DateTime.now();
   DateTime get focusedMonth => _focusedMonth;
@@ -16,6 +23,9 @@ class AppointmentsListViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  String _userName = 'Khách';
+  String get userName => _userName;
 
   // ── Derived getters ────────────────────────────────────────────────────────
 
@@ -52,6 +62,11 @@ class AppointmentsListViewModel extends ChangeNotifier {
   Future<void> loadAppointments() async {
     _isLoading = true;
     notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _userName = prefs.getString(AppConstants.keyUserData) ?? 'Khách';
+    } catch (_) {}
 
     final responses = await _service.getPatientAppointments();
     
