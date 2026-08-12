@@ -23,7 +23,7 @@ export default function BookingDrawer({
   onRefresh,
   triggerSmsToast
 }: BookingDrawerProps) {
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
 
   // Common states
   const [selectedDoctorId, setSelectedDoctorId] = useState("");

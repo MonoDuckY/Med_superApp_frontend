@@ -118,13 +118,23 @@ export default function StaffDashboard() {
   };
 
   const getVietnameseHeaderDate = () => {
-    const today = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parseInt(parts.find(p => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find(p => p.type === "month")!.value, 10) - 1;
+    const dateVal = parseInt(parts.find(p => p.type === "day")!.value, 10);
+    
+    const localToday = new Date(year, month, dateVal);
     const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const dayName = days[today.getDay()];
-    const date = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${dayName}, ${date}/${month}/${year}`;
+    const dayName = days[localToday.getDay()];
+    const dateStr = String(dateVal).padStart(2, "0");
+    const monthStr = String(month + 1).padStart(2, "0");
+    return `${dayName}, ${dateStr}/${monthStr}/${year}`;
   };
 
   const getInitials = (name?: string) => {
@@ -184,13 +194,29 @@ export default function StaffDashboard() {
             const matchedDoc = docs.find((d: any) => d.id === item.doctorId);
             const docName = matchedDoc ? matchedDoc.fullName : (item.doctorName || `Bác sĩ ID: ${item.doctorId}`);
 
-            let shiftDisplay = "";
-            const sessionUpper = (item.session || "").toUpperCase();
-            if (sessionUpper === "MORNING") shiftDisplay = "Ca sáng";
-            else if (sessionUpper === "AFTERNOON") shiftDisplay = "Ca chiều";
-            else if (sessionUpper === "NIGHT" || sessionUpper === "EVENING") shiftDisplay = "Ca tối (đêm)";
-            else if (sessionUpper === "FULL_TIME") shiftDisplay = "Cả ngày";
-            else shiftDisplay = "Ca làm việc";
+            const slotObjs = slots.filter((s: any) => s.slot).map((s: any) => s.slot);
+            let shiftDisplay = "Ca làm việc";
+            if (slotObjs.length > 0) {
+              let minStart = "23:59";
+              let maxEnd = "00:00";
+              slotObjs.forEach((s: any) => {
+                if (s.startTime && s.startTime < minStart) minStart = s.startTime;
+                if (s.endTime && s.endTime > maxEnd) maxEnd = s.endTime;
+              });
+              
+              const startHour = parseInt(minStart.slice(0, 2), 10);
+              const endHour = parseInt(maxEnd.slice(0, 2), 10);
+              
+              if (startHour >= 8 && endHour <= 12) {
+                shiftDisplay = "Ca sáng";
+              } else if (startHour >= 13 && endHour <= 17) {
+                shiftDisplay = "Ca chiều";
+              } else if (startHour >= 17 || endHour <= 8) {
+                shiftDisplay = "Ca tối (đêm)";
+              } else if (startHour >= 8 && endHour >= 17) {
+                shiftDisplay = "Cả ngày";
+              }
+            }
 
             return {
               id: item.submissionId,
