@@ -252,7 +252,8 @@ export default function StaffDashboard() {
             
             let displayStatus: Status = "Chờ xác nhận";
             const apiStatus = a.status ? a.status.toUpperCase() : "PENDING";
-            if (apiStatus.includes("CONFIRM")) displayStatus = "Confirmed";
+            if (apiStatus.includes("PENDING")) displayStatus = "Chờ xác nhận";
+            else if (apiStatus.includes("CONFIRM")) displayStatus = "Confirmed";
             else if (apiStatus.includes("CANCEL")) displayStatus = "Cancelled";
             else if (apiStatus.includes("COMPLET")) displayStatus = "Completed";
             else if (apiStatus.includes("NO_SHOW")) displayStatus = "No-show";
