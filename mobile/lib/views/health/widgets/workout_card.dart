@@ -4,15 +4,16 @@ import '../../../core/app_colors.dart';
 import '../../../models/dto/meal_response.dart';
 import '../../../models/dto/workout_response.dart';
 
-/// UC-08 — Card hiển thị một bài tập thể dục.
 class WorkoutCard extends StatelessWidget {
   final WorkoutResponse workout;
   final VoidCallback onComplete;
+  final bool isEditable;
 
   const WorkoutCard({
     super.key,
     required this.workout,
     required this.onComplete,
+    this.isEditable = true,
   });
 
   @override
@@ -173,8 +174,8 @@ class WorkoutCard extends StatelessWidget {
             ],
 
             // ── Action ────────────────────────────────────────────────────
-            const SizedBox(height: 12),
-            if (!isDone)
+            if (!isDone && isEditable) ...[
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -195,7 +196,7 @@ class WorkoutCard extends StatelessWidget {
                   ),
                 ),
               )
-            else
+            ] else if (isDone) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -212,6 +213,7 @@ class WorkoutCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ],
           ],
         ),
       ),

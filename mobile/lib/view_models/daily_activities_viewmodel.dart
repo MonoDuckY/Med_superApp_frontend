@@ -36,14 +36,15 @@ class DailyActivitiesViewModel extends ChangeNotifier {
 
   // ── Selectable dates (BR-02: hôm nay + 2 ngày trước) ─────────────────────
 
-  /// Danh sách 3 ngày được phép chọn: hôm nay, hôm qua, 2 ngày trước.
+  /// Danh sách 7 ngày được phép chọn: hôm nay và 6 ngày trước.
   List<DateTime> get allowedDates {
     final today = _dateOnly(DateTime.now());
-    return [
-      today,
-      today.subtract(const Duration(days: 1)),
-      today.subtract(const Duration(days: 2)),
-    ];
+    final dates = List.generate(7, (index) => today.subtract(Duration(days: index)));
+    if (!dates.any((d) => _isSameDay(d, _selectedDate))) {
+      dates.add(_selectedDate);
+      dates.sort((a, b) => b.compareTo(a));
+    }
+    return dates;
   }
 
   void selectDate(DateTime date) {

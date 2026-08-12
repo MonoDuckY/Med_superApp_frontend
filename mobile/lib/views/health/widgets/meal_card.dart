@@ -7,11 +7,13 @@ import '../../../models/dto/meal_response.dart';
 class MealCard extends StatefulWidget {
   final MealResponse meal;
   final VoidCallback onComplete;
+  final bool isEditable;
 
   const MealCard({
     super.key,
     required this.meal,
     required this.onComplete,
+    this.isEditable = true,
   });
 
   @override
@@ -181,6 +183,7 @@ class _MealCardState extends State<MealCard> {
             firstChild: const SizedBox.shrink(),
             secondChild: _DishesSection(
               meal: meal,
+              isEditable: widget.isEditable,
               onComplete: widget.onComplete,
             ),
             crossFadeState: _expanded
@@ -205,8 +208,13 @@ class _MealCardState extends State<MealCard> {
 class _DishesSection extends StatelessWidget {
   final MealResponse meal;
   final VoidCallback onComplete;
+  final bool isEditable;
 
-  const _DishesSection({required this.meal, required this.onComplete});
+  const _DishesSection({
+    required this.meal,
+    required this.onComplete,
+    required this.isEditable,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +270,7 @@ class _DishesSection extends StatelessWidget {
         ),
 
         // Complete button
-        if (!isDone)
+        if (!isDone && isEditable)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
             child: SizedBox(

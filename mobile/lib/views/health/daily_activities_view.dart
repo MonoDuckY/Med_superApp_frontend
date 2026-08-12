@@ -233,26 +233,67 @@ class _DatePickerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
-      child: Row(
-        children: dates.asMap().entries.map((entry) {
-          final date = entry.value;
-          final isSelected = _isSameDay(date, selectedDate);
-          final isToday = _isSameDay(date, DateTime.now());
+      padding: const EdgeInsets.only(top: 8, bottom: 14),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            ...dates.asMap().entries.map((entry) {
+              final date = entry.value;
+              final isSelected = _isSameDay(date, selectedDate);
+              final isToday = _isSameDay(date, DateTime.now());
 
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  right: entry.key < dates.length - 1 ? 8 : 0),
-              child: _DateChip(
-                date: date,
-                isSelected: isSelected,
-                isToday: isToday,
-                onTap: () => onSelectDate(date),
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: SizedBox(
+                  width: 96,
+                  child: _DateChip(
+                    date: date,
+                    isSelected: isSelected,
+                    isToday: isToday,
+                    onTap: () => onSelectDate(date),
+                  ),
+                ),
+              );
+            }),
+            Container(
+              width: 54,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.canvasColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.calendar_month_rounded, color: AppColors.textSecondary),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    lastDate: DateTime.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: AppColors.success,
+                            onPrimary: AppColors.white,
+                            onSurface: AppColors.textPrimary,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    onSelectDate(picked);
+                  }
+                },
               ),
             ),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -534,6 +575,8 @@ class _NutritionTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEditable = selectedDate.year == DateTime.now().year && selectedDate.month == DateTime.now().month && selectedDate.day == DateTime.now().day;
+
     return Stack(
       children: [
         meals.isEmpty
@@ -548,21 +591,23 @@ class _NutritionTab extends StatelessWidget {
                 itemCount: meals.length,
                 itemBuilder: (context, i) => MealCard(
                   meal: meals[i],
+                  isEditable: isEditable,
                   onComplete: () => _handleComplete(context, meals[i].id),
                 ),
               ),
 
         // FAB
-        Positioned(
-          right: 16,
-          bottom: 20,
-          child: _AddFab(
-            label: 'Thêm bữa ăn',
-            color: AppColors.success,
-            icon: Icons.add_rounded,
-            onTap: () => _openAddMeal(context),
+        if (isEditable)
+          Positioned(
+            right: 16,
+            bottom: 20,
+            child: _AddFab(
+              label: 'Thêm bữa ăn',
+              color: AppColors.success,
+              icon: Icons.add_rounded,
+              onTap: () => _openAddMeal(context),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -634,6 +679,8 @@ class _WorkoutTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEditable = selectedDate.year == DateTime.now().year && selectedDate.month == DateTime.now().month && selectedDate.day == DateTime.now().day;
+
     return Stack(
       children: [
         workouts.isEmpty
@@ -649,21 +696,23 @@ class _WorkoutTab extends StatelessWidget {
                 itemCount: workouts.length,
                 itemBuilder: (context, i) => WorkoutCard(
                   workout: workouts[i],
+                  isEditable: isEditable,
                   onComplete: () => _handleComplete(context, workouts[i].id),
                 ),
               ),
 
         // FAB
-        Positioned(
-          right: 16,
-          bottom: 20,
-          child: _AddFab(
-            label: 'Thêm bài tập',
-            color: AppColors.orange,
-            icon: Icons.add_rounded,
-            onTap: () => _openAddWorkout(context),
+        if (isEditable)
+          Positioned(
+            right: 16,
+            bottom: 20,
+            child: _AddFab(
+              label: 'Thêm bài tập',
+              color: AppColors.orange,
+              icon: Icons.add_rounded,
+              onTap: () => _openAddWorkout(context),
+            ),
           ),
-        ),
       ],
     );
   }

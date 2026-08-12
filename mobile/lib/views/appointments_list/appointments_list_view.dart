@@ -348,6 +348,161 @@ class _AppointmentCard extends StatelessWidget {
     );
   }
 
+  void _showAppointmentDetails(BuildContext context, AppointmentRecord record) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final date = record.dateTime;
+        final timeStr =
+            '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+            
+        Color statusColor;
+        Color statusBgColor;
+        
+        switch (record.status) {
+          case AppointmentStatus.confirmed:
+            statusColor = const Color(0xFF16A34A);
+            statusBgColor = AppColors.green100;
+            break;
+          case AppointmentStatus.cancelled:
+            statusColor = AppColors.error;
+            statusBgColor = AppColors.error.withAlpha(25);
+            break;
+          case AppointmentStatus.completed:
+            statusColor = AppColors.primary;
+            statusBgColor = const Color(0xFFEFF6FF);
+            break;
+          default:
+            statusColor = AppColors.amber600;
+            statusBgColor = AppColors.yellow100;
+        }
+
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Chi tiết lịch khám',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Summary details
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.receipt_long, size: 16, color: AppColors.primary),
+                                  SizedBox(width: 8),
+                                  Text('Tóm tắt lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: statusBgColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(record.status.label, style: TextStyle(
+                                  color: statusColor, 
+                                  fontSize: 11, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          _SummaryRow(
+                            icon: Icons.calendar_today,
+                            label: 'Ngày khám',
+                            value: '${date.day}/${date.month}/${date.year}',
+                          ),
+                          const SizedBox(height: 16),
+                          _SummaryRow(
+                            icon: Icons.access_time,
+                            label: 'Khung giờ',
+                            value: timeStr,
+                          ),
+                          const SizedBox(height: 16),
+                          _SummaryRow(
+                            icon: Icons.medical_services_outlined,
+                            label: 'Chuyên khoa',
+                            value: record.specialty,
+                          ),
+                          const SizedBox(height: 16),
+                          _SummaryRow(
+                            icon: Icons.person_outline,
+                            label: 'Bác sĩ',
+                            value: record.doctorName,
+                          ),
+                          const SizedBox(height: 16),
+                          _SummaryRow(
+                            icon: Icons.business, 
+                            label: 'Địa điểm', 
+                            value: record.location,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text('Đóng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -501,7 +656,7 @@ class _AppointmentCard extends StatelessWidget {
                       ),
                     const Spacer(),
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => _showAppointmentDetails(context, record),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 6),
@@ -528,6 +683,27 @@ class _AppointmentCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SummaryRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.primary),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(color: AppColors.textHint, fontSize: 14)),
+        const Spacer(),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+      ],
     );
   }
 }
