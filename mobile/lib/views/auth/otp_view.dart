@@ -159,7 +159,7 @@ class _OtpBodyState extends State<_OtpBody> {
 
               // ── Title ─────────────────────────────────────────────────────
               Text(
-                'Verification Code',
+                'Mã xác nhận',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -253,7 +253,7 @@ class _OtpBodyState extends State<_OtpBody> {
                           ),
                         )
                       : const Text(
-                          'Verify',
+                          'Xác nhận',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -270,7 +270,7 @@ class _OtpBodyState extends State<_OtpBody> {
                   ? GestureDetector(
                       onTap: vm.resendOtp,
                       child: Text(
-                        'Resend code',
+                        'Gửi lại mã',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -298,7 +298,7 @@ class _OtpBodyState extends State<_OtpBody> {
               const SizedBox(height: 8),
 
               Text(
-                "Didn't receive it? Check your SMS inbox or spam folder.",
+                "Chưa nhận được mã? Vui lòng kiểm tra hộp thư SMS.",
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary.withValues(alpha: 0.7),

@@ -525,7 +525,7 @@ class _DishFormField extends StatelessWidget {
                 child: _MacroField(
                   controller: data.proteinController,
                   label: 'g',
-                  hint: 'Protein',
+                  hint: 'Đạm',
                 ),
               ),
               const SizedBox(width: 6),
@@ -533,7 +533,7 @@ class _DishFormField extends StatelessWidget {
                 child: _MacroField(
                   controller: data.carbController,
                   label: 'g',
-                  hint: 'Carb',
+                  hint: 'Tinh bột',
                 ),
               ),
               const SizedBox(width: 6),
@@ -541,7 +541,7 @@ class _DishFormField extends StatelessWidget {
                 child: _MacroField(
                   controller: data.fatController,
                   label: 'g',
-                  hint: 'Fat',
+                  hint: 'Chất béo',
                 ),
               ),
             ],

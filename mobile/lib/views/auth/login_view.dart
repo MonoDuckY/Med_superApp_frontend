@@ -87,7 +87,7 @@ class _LoginBody extends StatelessWidget {
               const SizedBox(height: 12),
 
               Text(
-                'Welcome to HMS',
+                'Chào mừng đến với HMS',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -109,7 +109,7 @@ class _LoginBody extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Phone Number',
+                  'Số điện thoại',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
@@ -182,7 +182,7 @@ class _LoginBody extends StatelessWidget {
                           ),
                         )
                       : const Text(
-                          'Login',
+                          'Đăng nhập',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
