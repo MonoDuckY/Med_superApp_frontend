@@ -80,6 +80,70 @@ export default function ScheduleRegister() {
     return d.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
   };
 
+  const getTomorrowStr = () => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parseInt(parts.find(p => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find(p => p.type === "month")!.value, 10) - 1;
+    const date = parseInt(parts.find(p => p.type === "day")!.value, 10);
+    
+    const localTomorrow = new Date(year, month, date);
+    localTomorrow.setDate(localTomorrow.getDate() + 1);
+    
+    return localTomorrow.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  };
+
+  const handleDateChange = (val: string) => {
+    const isDeleting = val.length < date.length;
+    let clean = val.replace(/[^0-9/]/g, "");
+    if (!isDeleting) {
+      if (clean.length === 2 && !clean.includes("/")) {
+        clean = clean + "/";
+      } else if (clean.length === 5 && (clean.match(/\//g) || []).length === 1) {
+        clean = clean + "/";
+      }
+    }
+    if (clean.length > 10) {
+      clean = clean.substring(0, 10);
+    }
+    setDate(clean);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
+
+  const validateInputDate = (dStr: string) => {
+    if (!dStr) return "Vui lòng chọn ngày làm việc.";
+    const parts = dStr.split("/");
+    if (parts.length !== 3 || parts[0].length !== 2 || parts[1].length !== 2 || parts[2].length !== 4) {
+      return "Định dạng ngày làm việc phải là DD/MM/YYYY (Ví dụ: 15/08/2026).";
+    }
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return "Ngày làm việc không hợp lệ.";
+    }
+    if (month < 1 || month > 12) {
+      return "Tháng không hợp lệ.";
+    }
+    const maxDays = new Date(year, month, 0).getDate();
+    if (day < 1 || day > maxDays) {
+      return `Tháng ${month} chỉ có tối đa ${maxDays} ngày.`;
+    }
+    
+    const selected = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const tomorrowStr = getTomorrowStr();
+    if (selected < tomorrowStr) {
+      return "Bác sĩ phải đăng ký lịch làm việc trước tối thiểu một ngày (từ ngày mai trở đi).";
+    }
+    return null;
+  };
+
   const formatDateDM = (d: Date) => {
     const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: "Asia/Ho_Chi_Minh",
@@ -210,10 +274,12 @@ export default function ScheduleRegister() {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (!date) {
-      setErrorMsg("Vui lòng chọn ngày làm việc.");
+    const dateError = validateInputDate(date);
+    if (dateError) {
+      setErrorMsg(dateError);
       return;
     }
+
     if (!roomId) {
       setErrorMsg("Vui lòng chọn phòng khám.");
       return;
@@ -228,7 +294,10 @@ export default function ScheduleRegister() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          workDate: date,
+          workDate: (() => {
+            const [d, m, y] = date.split("/");
+            return `${y}-${m}-${d}`;
+          })(),
           session: shift,
           roomId,
           note: note.trim() || null,
@@ -406,10 +475,11 @@ export default function ScheduleRegister() {
             <div>
               <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wider">Ngày làm việc</label>
               <input
-                type="date"
+                type="text"
+                placeholder="DD/MM/YYYY"
                 required
                 value={date}
-                onChange={e => { setDate(e.target.value); setErrorMsg(null); setSuccessMsg(null); }}
+                onChange={e => handleDateChange(e.target.value)}
                 className="w-full h-9 px-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-sky-100 bg-white font-medium text-[#0F172A]"
               />
             </div>
