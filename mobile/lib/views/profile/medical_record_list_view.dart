@@ -81,6 +81,7 @@ class _Header extends StatelessWidget {
 class _PatientInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<MedicalRecordViewModel>();
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -100,7 +101,7 @@ class _PatientInfoCard extends StatelessWidget {
             ),
             child: const Center(
               child: Text(
-                'NVA',
+                'VN',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 13,
@@ -114,7 +115,7 @@ class _PatientInfoCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Nguyễn Văn An',
+                vm.userName,
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,

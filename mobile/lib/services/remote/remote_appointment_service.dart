@@ -4,12 +4,14 @@ import '../../models/dto/appointment_response.dart';
 import '../../models/dto/available_appointment_slot_response.dart';
 import '../../models/dto/book_appointment_request.dart';
 import '../../models/dto/patient_doctor_response.dart';
+import '../abstract/appointment_service_abstract.dart';
 
-class RemoteAppointmentService {
+class RemoteAppointmentService implements IAppointmentService {
   final Dio _dio = ApiClient.instance;
 
   /// Lấy danh sách các khung giờ trống.
   /// Có thể filter theo date hoặc doctorName (hoặc cả hai).
+  @override
   Future<List<AvailableAppointmentSlotResponse>> getAvailableSlots({
     String? date,
     String? doctorName,
@@ -38,6 +40,7 @@ class RemoteAppointmentService {
   }
 
   /// Đặt lịch khám
+  @override
   Future<AppointmentResponse> bookAppointment(
       BookAppointmentRequest request) async {
     try {
@@ -64,6 +67,7 @@ class RemoteAppointmentService {
   }
 
   /// Lấy danh sách lịch khám của bệnh nhân
+  @override
   Future<List<AppointmentResponse>> getPatientAppointments() async {
     try {
       final response = await _dio.get('/api/patient/appointments');
@@ -79,6 +83,7 @@ class RemoteAppointmentService {
   }
 
   /// Lấy danh sách bác sĩ (Dùng cho tab Đặt theo bác sĩ)
+  @override
   Future<List<PatientDoctorResponse>> getDoctors() async {
     try {
       final response = await _dio.get('/api/patient/doctors');
@@ -94,6 +99,7 @@ class RemoteAppointmentService {
   }
 
   /// Hủy lịch khám (Bệnh nhân tự hủy)
+  @override
   Future<void> cancelAppointment(String appointmentId, String reason) async {
     try {
       final response = await _dio.patch(

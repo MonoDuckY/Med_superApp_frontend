@@ -275,7 +275,9 @@ class _TodaySummaryBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
                   children: [
                     _StatChip(
                       value: '${vm.todayTaken}/${vm.todayTotal}',
@@ -283,24 +285,20 @@ class _TodaySummaryBanner extends StatelessWidget {
                       icon: Icons.check_circle_outline_rounded,
                       color: AppColors.success,
                     ),
-                    if (vm.todayRemaining > 0) ...[
-                      const SizedBox(width: 10),
+                    if (vm.todayRemaining > 0)
                       _StatChip(
                         value: '${vm.todayRemaining}',
                         label: 'Còn lại',
                         icon: Icons.alarm_outlined,
                         color: Colors.white,
                       ),
-                    ],
-                    if (vm.todayOverdue > 0) ...[
-                      const SizedBox(width: 10),
+                    if (vm.todayOverdue > 0)
                       _StatChip(
                         value: '${vm.todayOverdue}',
                         label: 'Quá giờ',
                         icon: Icons.warning_amber_rounded,
                         color: AppColors.amber400,
                       ),
-                    ],
                   ],
                 ),
               ],

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../core/constants/app_constants.dart';
 import '../models/medical_record_model.dart';
 import '../services/abstract/medical_record_service_abstract.dart';
 import '../services/mock/mock_medical_record_service.dart';
@@ -16,6 +18,9 @@ class MedicalRecordViewModel extends ChangeNotifier {
   MedicalRecordFilter _filter = MedicalRecordFilter.all;
   bool _isLoading = false;
   String? _errorMessage;
+
+  String _userName = 'Khách';
+  String get userName => _userName;
 
   // ── Getters ────────────────────────────────────────────────────────────────
   bool get isLoading => _isLoading;
@@ -58,6 +63,11 @@ class MedicalRecordViewModel extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _userName = prefs.getString(AppConstants.keyUserData) ?? 'Khách';
+    } catch (_) {}
 
     try {
       _allRecords = await _service.getRecords();

@@ -133,4 +133,29 @@ class RemoteAuthService implements AuthServiceAbstract {
       );
     }
   }
+
+  @override
+  Future<ApiResponse<UserModel>> updateProfile({
+    required String fullName,
+    required String gender,
+    required String dateOfBirth,
+  }) async {
+    try {
+      // TODO: Backend cần bổ sung PATCH /api/auth/me cho patient tự update
+      final response = await _dio.patch('/api/auth/me', data: {
+        'fullName':    fullName,
+        'gender':      gender,
+        'dateOfBirth': dateOfBirth,
+      });
+      return ApiResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => UserModel.fromJson(json as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      return ApiResponse.failure(
+        e.response?.data?['message'] ?? 'Lỗi kết nối',
+        errorCode: e.response?.data?['errorCode'],
+      );
+    }
+  }
 }

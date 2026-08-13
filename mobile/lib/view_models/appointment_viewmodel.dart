@@ -4,11 +4,16 @@ import '../models/dto/available_appointment_slot_response.dart';
 import '../models/dto/book_appointment_request.dart';
 import '../models/dto/patient_doctor_response.dart';
 import '../services/remote/remote_appointment_service.dart';
+import '../services/mock/mock_appointment_service.dart';
+import '../services/abstract/appointment_service_abstract.dart';
+import '../core/config/environment_config.dart';
 
 enum BookingMode { byTime, byDoctor }
 
 class AppointmentViewModel extends ChangeNotifier {
-  final _service = RemoteAppointmentService();
+  final IAppointmentService _service = EnvironmentConfig.isMock
+      ? MockAppointmentService()
+      : RemoteAppointmentService();
 
   AppointmentViewModel() {
     _fetchDoctors();
