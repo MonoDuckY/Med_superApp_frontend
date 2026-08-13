@@ -282,30 +282,28 @@ class _MedicineHighlightCard extends StatelessWidget {
                           style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withAlpha(180)),
                         )
                       else
-                        Row(
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
                           children: [
                             _MiniStat(
                               label: 'đã uống',
                               value: '${vm.todayTaken}/${vm.todayTotal}',
                               icon: Icons.check_circle_outline_rounded,
                             ),
-                            if (vm.todayRemaining > 0) ...[
-                              const SizedBox(width: 12),
+                            if (vm.todayRemaining > 0)
                               _MiniStat(
                                 label: 'còn lại',
                                 value: '${vm.todayRemaining}',
                                 icon: Icons.alarm_outlined,
                               ),
-                            ],
-                            if (vm.todayOverdue > 0) ...[
-                              const SizedBox(width: 12),
+                            if (vm.todayOverdue > 0)
                               _MiniStat(
                                 label: 'quá giờ',
                                 value: '${vm.todayOverdue}',
                                 icon: Icons.warning_amber_rounded,
                                 isWarning: true,
                               ),
-                            ],
                           ],
                         ),
                     ],
