@@ -23,9 +23,11 @@ export default function BookingDrawer({
   onRefresh,
   triggerSmsToast
 }: BookingDrawerProps) {
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+
   // Common states
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
-  const [formDate, setFormDate] = useState("2026-08-03");
+  const [formDate, setFormDate] = useState(todayStr);
   const [formTimeSlot, setFormTimeSlot] = useState("");
   const [formReason, setFormReason] = useState("");
   const [formDeposit, setFormDeposit] = useState(false);
@@ -48,7 +50,7 @@ export default function BookingDrawer({
     if (isOpen) {
       if (mode === "ADD") {
         setSelectedDoctorId("");
-        setFormDate("2026-08-03");
+        setFormDate(todayStr);
         setFormTimeSlot("");
         setFormReason("");
         setFormDeposit(false);
@@ -62,12 +64,12 @@ export default function BookingDrawer({
         // Find doctor id
         const docMatch = doctorsList.find(d => d.fullName === selectedAppointment.doctor);
         setSelectedDoctorId(docMatch ? docMatch.id : "");
-        setFormDate("2026-08-03");
+        setFormDate(todayStr);
         setFormTimeSlot("");
         setRescheduleReason("");
       }
     }
-  }, [isOpen, mode, selectedAppointment, doctorsList]);
+  }, [isOpen, mode, selectedAppointment, doctorsList, todayStr]);
 
   // Compute available slots
   const availableSlotsForBooking = useMemo(() => {
@@ -286,7 +288,7 @@ export default function BookingDrawer({
                         onClick={() => {
                           setSelectedPatientId(p.id);
                           setFormPatientName(p.fullName);
-                          setFormPatientPhone(`Đã liên kết ID: ${p.id}${p.phoneNumber ? ` - SĐT: ${p.phoneNumber}` : ""}`);
+                          setFormPatientPhone(p.phoneNumber || "Không có số điện thoại");
                           setPatientSearchResults([]);
                         }}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors border-none bg-transparent cursor-pointer"
@@ -296,7 +298,6 @@ export default function BookingDrawer({
                           {p.phoneNumber && <span>SĐT: {p.phoneNumber}</span>}
                           {p.citizenIdentificationCode && <span className="ml-3">CCCD: {p.citizenIdentificationCode}</span>}
                         </p>
-                        <p className="text-[9px] text-slate-400 font-mono">ID: {p.id}</p>
                       </button>
                     ))}
                   </div>
@@ -353,6 +354,7 @@ export default function BookingDrawer({
             <input
               type="date"
               value={formDate}
+              min={todayStr}
               required
               onChange={(e) => { setFormDate(e.target.value); setFormTimeSlot(""); }}
               className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 bg-white"
@@ -407,15 +409,6 @@ export default function BookingDrawer({
               </div>
 
               <div className="flex gap-4 pt-1">
-                <label className="flex items-center gap-2 text-xs text-[#0F172A] font-semibold cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={formDeposit}
-                    onChange={(e) => setFormDeposit(e.target.checked)}
-                    className="w-3.5 h-3.5 text-sky-500 border-slate-300 rounded focus:ring-sky-400"
-                  />
-                  Đã đóng tiền cọc
-                </label>
                 <label className="flex items-center gap-2 text-xs text-[#0F172A] font-semibold cursor-pointer select-none">
                   <input
                     type="checkbox"

@@ -296,13 +296,19 @@ export default function CreateUserPage() {
             </button>
             {expandedNav === "Quản lý người dùng" && (
               <div className="ml-4 mt-0.5 flex flex-col gap-0.5 pl-3 border-l border-white/8">
-                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer">
+                <button 
+                  onClick={() => router.push("/user-management")}
+                  className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer"
+                >
                   <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
                   <span className="text-[11px]">Tất cả người dùng</span>
                 </button>
-                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#38BDF8] cursor-pointer">
+                <button 
+                  onClick={() => router.push("/user-management/create-user")}
+                  className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#38BDF8] cursor-pointer font-semibold"
+                >
                   <span className="rounded-full shrink-0 w-1.5 h-1.5 bg-[#38BDF8]" />
-                  <span className="text-[11px] font-semibold">Tạo người dùng</span>
+                  <span className="text-[11px]">Tạo người dùng</span>
                 </button>
                 <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer">
                   <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
@@ -335,14 +341,23 @@ export default function CreateUserPage() {
         </nav>
 
         <div className="px-4 py-4 border-t border-white/8">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center rounded-full shrink-0 font-bold text-[#38BDF8] bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-xs w-8 h-8">
-              {getInitials(currentUser?.fullName)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex items-center justify-center rounded-full shrink-0 font-bold text-[#38BDF8] bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-[10px] w-7 h-7">
+                {getInitials(currentUser?.fullName)}
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold truncate text-[10px] text-[#CBD5E1]">{currentUser?.fullName || "Super Admin"}</p>
+                <p className="truncate text-[9px] text-[#475569]">{currentUser?.phoneNumber || "ADM-20241105"}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="font-bold truncate text-[11px] text-[#CBD5E1]">{currentUser?.fullName || "Super Admin"}</p>
-              <p className="truncate text-[10px] text-[#475569]">{currentUser?.phoneNumber || "ADM-20241105"}</p>
-            </div>
+            <button 
+              onClick={handleLogout}
+              className="text-slate-500 hover:text-rose-400 transition-colors cursor-pointer shrink-0 ml-1"
+              title="Đăng xuất"
+            >
+              <LogOut size={13} />
+            </button>
           </div>
         </div>
       </aside>
@@ -573,7 +588,7 @@ export default function CreateUserPage() {
                       <input 
                         type="date" 
                         value={dob}
-                        max={new Date().toISOString().split("T")[0]}
+                        max={new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" })}
                         onChange={(e) => { setDob(e.target.value); setErrors(p => ({ ...p, dob: "" })); }}
                         className={INPUT_CLASS} 
                         style={{ borderColor: errors.dob ? "#EF4444" : undefined }}

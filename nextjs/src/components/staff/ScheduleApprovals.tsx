@@ -116,7 +116,12 @@ export default function ScheduleApprovals({ schedules, onRefresh }: ScheduleAppr
                           Chờ duyệt
                         </span>
                       )}
-                      {sch.status === "APPROVED" && (
+                      {(sch.status === "APPROVED" ||
+                        sch.status === "AVAILABLE" ||
+                        sch.status === "SCHEDULING" ||
+                        sch.status === "BOOKED" ||
+                        sch.status === "IN_PROGRESS" ||
+                        sch.status === "CLOSED") && (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-200">
                           Đã duyệt
                         </span>

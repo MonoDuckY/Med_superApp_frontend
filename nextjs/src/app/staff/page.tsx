@@ -34,7 +34,7 @@ import AppointmentTable, { Appointment } from "@/components/staff/AppointmentTab
 import BookingDrawer from "@/components/staff/BookingDrawer";
 import ScheduleApprovals from "@/components/staff/ScheduleApprovals";
 
-type Status = "Confirmed" | "Cancelled" | "No-show" | "Completed" | "Chờ xác nhận";
+type Status = "Confirmed" | "Cancelled" | "No-show" | "Completed" | "Chờ xác nhận" | "In-progress";
 
 interface DoctorSchedule {
   id: string;
@@ -118,13 +118,23 @@ export default function StaffDashboard() {
   };
 
   const getVietnameseHeaderDate = () => {
-    const today = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parseInt(parts.find(p => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find(p => p.type === "month")!.value, 10) - 1;
+    const dateVal = parseInt(parts.find(p => p.type === "day")!.value, 10);
+    
+    const localToday = new Date(year, month, dateVal);
     const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const dayName = days[today.getDay()];
-    const date = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${dayName}, ${date}/${month}/${year}`;
+    const dayName = days[localToday.getDay()];
+    const dateStr = String(dateVal).padStart(2, "0");
+    const monthStr = String(month + 1).padStart(2, "0");
+    return `${dayName}, ${dateStr}/${monthStr}/${year}`;
   };
 
   const getInitials = (name?: string) => {
@@ -184,13 +194,29 @@ export default function StaffDashboard() {
             const matchedDoc = docs.find((d: any) => d.id === item.doctorId);
             const docName = matchedDoc ? matchedDoc.fullName : (item.doctorName || `Bác sĩ ID: ${item.doctorId}`);
 
-            let shiftDisplay = "";
-            const sessionUpper = (item.session || "").toUpperCase();
-            if (sessionUpper === "MORNING") shiftDisplay = "Ca sáng";
-            else if (sessionUpper === "AFTERNOON") shiftDisplay = "Ca chiều";
-            else if (sessionUpper === "NIGHT" || sessionUpper === "EVENING") shiftDisplay = "Ca tối (đêm)";
-            else if (sessionUpper === "FULL_TIME") shiftDisplay = "Cả ngày";
-            else shiftDisplay = "Ca làm việc";
+            const slotObjs = slots.filter((s: any) => s.slot).map((s: any) => s.slot);
+            let shiftDisplay = "Ca làm việc";
+            if (slotObjs.length > 0) {
+              let minStart = "23:59";
+              let maxEnd = "00:00";
+              slotObjs.forEach((s: any) => {
+                if (s.startTime && s.startTime < minStart) minStart = s.startTime;
+                if (s.endTime && s.endTime > maxEnd) maxEnd = s.endTime;
+              });
+              
+              const startHour = parseInt(minStart.slice(0, 2), 10);
+              const endHour = parseInt(maxEnd.slice(0, 2), 10);
+              
+              if (startHour >= 8 && endHour <= 12) {
+                shiftDisplay = "Ca sáng";
+              } else if (startHour >= 13 && endHour <= 17) {
+                shiftDisplay = "Ca chiều";
+              } else if (startHour >= 17 || endHour <= 8) {
+                shiftDisplay = "Ca tối (đêm)";
+              } else if (startHour >= 8 && endHour >= 17) {
+                shiftDisplay = "Cả ngày";
+              }
+            }
 
             return {
               id: item.submissionId,
@@ -220,9 +246,9 @@ export default function StaffDashboard() {
         const result = await res.json();
         if (result.success && result.data) {
           const mapped: Appointment[] = result.data.map((a: any) => {
-            const timeStr = a.startTime && a.endTime 
-              ? `${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`
-              : "08:00–08:30";
+            const start = a.slot?.startTime?.slice(0, 5) || "";
+            const end = a.slot?.endTime?.slice(0, 5) || "";
+            const timeStr = start && end ? `${start}–${end}` : "08:00–08:30";
             
             let displayStatus: Status = "Chờ xác nhận";
             const apiStatus = a.status ? a.status.toUpperCase() : "PENDING";
@@ -230,14 +256,25 @@ export default function StaffDashboard() {
             else if (apiStatus.includes("CANCEL")) displayStatus = "Cancelled";
             else if (apiStatus.includes("COMPLET")) displayStatus = "Completed";
             else if (apiStatus.includes("NO_SHOW")) displayStatus = "No-show";
+            else if (apiStatus.includes("PROGRESS")) displayStatus = "In-progress";
+
+            let formattedDate = "";
+            if (a.doctorWorkSlot?.workDate) {
+              const [y, m, d] = a.doctorWorkSlot.workDate.split("-");
+              if (y && m && d) {
+                formattedDate = `${d}/${m}/${y}`;
+              } else {
+                formattedDate = a.doctorWorkSlot.workDate;
+              }
+            }
 
             return {
               id: a.appointmentCode || `#APT-${a.id.slice(-4)}`,
-              patient: a.patientName || "Bệnh nhân",
-              phone: a.patientPhone || "",
-              doctor: a.doctorName ? `BS. ${a.doctorName}` : "Bác sĩ",
-              room: a.roomName || "Phòng khám",
-              date: a.workDate || "",
+              patient: a.patient?.fullName || "Bệnh nhân",
+              phone: a.patient?.phoneNumber || "N/A",
+              doctor: a.doctor?.fullName ? `BS. ${a.doctor.fullName}` : "Bác sĩ",
+              room: a.room?.roomCode || "Phòng khám",
+              date: formattedDate,
               time: timeStr,
               status: displayStatus,
               type: "Standard"
@@ -621,7 +658,6 @@ export default function StaffDashboard() {
                     setSelectedAppointment(apt);
                     setIsCancelModalOpen(true);
                   }}
-                  onScanNoShow={handleAutoScanNoShow}
                   stats={stats}
                 />
               )}
