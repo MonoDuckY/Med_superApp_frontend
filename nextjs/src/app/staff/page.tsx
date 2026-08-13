@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Plus,
   Calendar,
+  UserPlus,
   Check,
   XCircle,
   Clock,
@@ -472,6 +473,7 @@ export default function StaffDashboard() {
   const sidebarItems = [
     { label: "Quản lý Lịch hẹn",     icon: Calendar,    id: "appointments"  },
     { label: "Phê duyệt Lịch Bác sĩ",icon: ClipboardList,   id: "schedules" },
+    { label: "Tạo hồ sơ bệnh nhân",  icon: UserPlus,    id: "create-patient", path: "/staff/create-patient" },
     { label: "Báo cáo",              icon: FileText,    id: "reports" },
     { label: "Cấu hình",             icon: Settings,    id: "settings" },
   ];
@@ -497,7 +499,13 @@ export default function StaffDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.path) {
+                      router.push(item.path);
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left text-xs font-semibold transition-all border-none bg-transparent cursor-pointer outline-none
                     ${active ? "bg-[#0EA5E9]/15 text-[#38BDF8] shadow-sm" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
                 >
