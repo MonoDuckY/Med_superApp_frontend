@@ -7,10 +7,11 @@ import '../core/utils/device_utils.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
+import '../core/config/environment_config.dart';
 
 class OtpViewModel extends ChangeNotifier {
   final String phoneNumber;
-  final AuthServiceAbstract _authService = AppConstants.useMockServices 
+  final AuthServiceAbstract _authService = EnvironmentConfig.isMock 
       ? MockAuthService() 
       : RemoteAuthService();
 

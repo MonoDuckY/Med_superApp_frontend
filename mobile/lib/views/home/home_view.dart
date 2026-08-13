@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_colors.dart';
 
 class HomeView extends StatelessWidget {
@@ -54,53 +52,6 @@ class HomeView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── [DEV] Hint banner ─────────────────────────────────────────────
-            if (kDebugMode)
-              FutureBuilder<SharedPreferences>(
-                future: SharedPreferences.getInstance(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final isDevLogin = snapshot.data!.getBool('is_dev_login') ?? false;
-                    if (isDevLogin) {
-                      return Column(
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.orange50,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.orange200),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.bolt,
-                                    size: 14, color: AppColors.orange),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'DEV MODE  ·  Mock OTP: 123456  ·  Phone: 0123456789',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.orange700,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      );
-                    }
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-
             // ── Section: UC-03 Đặt lịch khám ─────────────────────────────────
             Text(
               'UC-03 · Đặt lịch khám',
@@ -296,3 +247,4 @@ class _NavCard extends StatelessWidget {
     );
   }
 }
+

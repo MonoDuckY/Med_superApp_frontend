@@ -14,6 +14,7 @@ class AppColors {
   static const Color canvasColor = Color(0xFFF8FAFC); // Off-white canvas (#F8FAFC)
   static const Color white = Colors.white;
   static const Color black = Colors.black;
+  static const Color transparent = Colors.transparent;
 
   // Text Colors (HMS Slate Scale)
   static const Color textPrimary = Color(0xFF0F172A); // Slate 900 (#0F172A)
@@ -85,6 +86,19 @@ class AppColors {
 
   static const LinearGradient warningGradient = LinearGradient(
     colors: [error, orange],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // UC-08: Daily Activities gradients
+  static const LinearGradient successGradient = LinearGradient(
+    colors: [success, teal600],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient orangeGradient = LinearGradient(
+    colors: [orange, amber600],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

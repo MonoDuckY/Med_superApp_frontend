@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import '../models/dto/medicine_schedule_response.dart';
 import '../services/abstract/medicine_schedule_service_abstract.dart';
 import '../services/remote/remote_medicine_schedule_service.dart';
+import '../services/mock/mock_medicine_schedule_service.dart';
+import '../core/config/environment_config.dart';
 
 class MedicineScheduleViewModel extends ChangeNotifier {
   // TODO: Inject via get_it or similar in the future.
-  final MedicineScheduleServiceAbstract _service = RemoteMedicineScheduleService();
+  final MedicineScheduleServiceAbstract _service = EnvironmentConfig.isMock
+      ? MockMedicineScheduleService()
+      : RemoteMedicineScheduleService();
 
   MedicineScheduleViewModel() {
     _load();
