@@ -107,7 +107,17 @@ export default function ScheduleApprovals({ schedules, onRefresh }: ScheduleAppr
                 schedules.map((sch) => (
                   <tr key={sch.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-900">{sch.doctorName}</td>
-                    <td className="px-6 py-4">{sch.workDate}</td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        if (!sch.workDate || sch.workDate === "N/A") return sch.workDate;
+                        const parts = sch.workDate.split("-");
+                        if (parts.length === 3) {
+                          const [y, m, d] = parts;
+                          return `${d}/${m}/${y}`;
+                        }
+                        return sch.workDate;
+                      })()}
+                    </td>
                     <td className="px-6 py-4">{sch.shift}</td>
                     <td className="px-6 py-4">{sch.roomName}</td>
                     <td className="px-6 py-4">

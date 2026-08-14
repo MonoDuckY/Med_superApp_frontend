@@ -193,7 +193,17 @@ export default function AppointmentTable({
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div>
                         <p className="text-slate-800 font-bold">{a.time}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5 font-medium">{a.date}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                          {(() => {
+                            if (!a.date || a.date === "N/A") return a.date;
+                            const parts = a.date.split("-");
+                            if (parts.length === 3) {
+                              const [y, m, d] = parts;
+                              return `${d}/${m}/${y}`;
+                            }
+                            return a.date;
+                          })()}
+                        </p>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
