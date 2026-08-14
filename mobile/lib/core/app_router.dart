@@ -14,6 +14,7 @@ import '../views/profile/profile_placeholder_view.dart';
 import '../views/profile/medical_record_list_view.dart';
 import '../views/profile/medical_record_detail_view.dart';
 import '../views/profile/personal_info_view.dart';
+import '../views/health/health_news_view.dart';
 import '../views/shared/main_shell.dart';
 import '../view_models/medicine_schedule_viewmodel.dart';
 
@@ -90,9 +91,13 @@ class AppRouter {
         builder: (context, state) => const AppointmentBookingView(),
       ),
 
-      // UC-12: Gửi phản hồi (phát sinh từ lịch khám đã hoàn thành)
+      // UC-13: Gửi phản hồi (phát sinh từ lịch khám đã hoàn thành)
       GoRoute(
         path: '/schedule/feedback',
+        builder: (context, state) => const FeedbackView(),
+      ),
+      GoRoute(
+        path: '/profile/feedback',
         builder: (context, state) => const FeedbackView(),
       ),
 
@@ -130,6 +135,19 @@ class AppRouter {
       GoRoute(
         path: '/health/daily-activities',
         builder: (context, state) => const DailyActivitiesView(),
+      ),
+
+      // UC-12: Tin tức & Kiến thức sức khỏe
+      GoRoute(
+        path: '/health/news',
+        builder: (context, state) => const HealthNewsListView(),
+      ),
+      GoRoute(
+        path: '/health/news/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return HealthNewsDetailView(articleId: id);
+        },
       ),
     ],
   );

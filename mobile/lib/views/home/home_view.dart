@@ -871,20 +871,7 @@ class _NewsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '\uD83D\uDCF0 T\xEDnh n\u0103ng \u0111\u1ECDc tin t\u1EE9c s\u1EAFp ra m\u1EAFt!',
-                  style: GoogleFonts.inter(fontSize: 13),
-                ),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
+          onTap: () => context.push('/health/news/${article.id}'),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(

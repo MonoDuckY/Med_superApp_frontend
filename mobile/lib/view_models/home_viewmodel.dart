@@ -6,14 +6,21 @@ import '../models/health_news_model.dart';
 import '../models/vital_chart_model.dart';
 import '../services/mock/mock_health_news_service.dart';
 import '../services/mock/mock_medical_record_service.dart';
+import '../services/abstract/auth_service_abstract.dart';
+import '../services/mock/mock_auth_service.dart';
+import '../services/remote/auth_service.dart';
+import '../core/config/environment_config.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final MockMedicalRecordService _medService = MockMedicalRecordService();
   final MockHealthNewsService _newsService = MockHealthNewsService();
+  final AuthServiceAbstract _authService = EnvironmentConfig.isMock
+      ? MockAuthService()
+      : RemoteAuthService();
 
   // ── State ──────────────────────────────────────────────────────────────────
   bool _isLoading = true;
-  String _userName = 'Bạn';
+  String _userName = 'Nguyễn Văn A';
   List<VitalChartPoint> _vitalHistory = [];
   List<HealthNewsArticle> _news = [];
 
@@ -53,7 +60,22 @@ class HomeViewModel extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      _userName = prefs.getString(AppConstants.keyUserData) ?? 'Bạn';
+      var name = prefs.getString(AppConstants.keyUserName) ??
+          prefs.getString(AppConstants.keyUserData) ??
+          'Nguyễn Văn A';
+      if (RegExp(r'^\d+$').hasMatch(name.trim())) {
+        name = 'Nguyễn Văn A';
+      }
+      _userName = name;
+    } catch (_) {}
+
+    try {
+      final res = await _authService.getProfile();
+      if (res.success && res.data?.fullName != null && res.data!.fullName!.isNotEmpty) {
+        _userName = res.data!.fullName!;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AppConstants.keyUserName, _userName);
+      }
     } catch (_) {}
 
     _vitalHistory = await _buildVitalHistory();

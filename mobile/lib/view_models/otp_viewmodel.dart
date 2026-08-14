@@ -109,10 +109,17 @@ class OtpViewModel extends ChangeNotifier {
     final response = await _authService.verifyOtp(phoneNumber, otp, deviceId: deviceId);
 
     if (response.success) {
+      final user = response.data;
+      final name = (user?.fullName != null && user!.fullName!.isNotEmpty)
+          ? user.fullName!
+          : 'Nguyễn Văn A';
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', true);
       await prefs.setBool('is_dev_login', false);
       await prefs.setString(AppConstants.keyUserData, phoneNumber);
+      await prefs.setString(AppConstants.keyUserPhone, phoneNumber);
+      await prefs.setString(AppConstants.keyUserName, name);
 
       isLoading = false;
       notifyListeners();

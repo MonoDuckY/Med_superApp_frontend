@@ -10,6 +10,8 @@ class HealthNewsArticle {
 
   final String title;
   final String summary;
+  final String? content;
+  final String? author;
 
   /// Human-readable read time (e.g. '3 phút đọc').
   final String readTime;
@@ -21,6 +23,8 @@ class HealthNewsArticle {
     required this.category,
     required this.title,
     required this.summary,
+    this.content,
+    this.author,
     required this.readTime,
     required this.publishedAt,
   });

@@ -65,7 +65,13 @@ class AppointmentsListViewModel extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      _userName = prefs.getString(AppConstants.keyUserData) ?? 'Khách';
+      var name = prefs.getString(AppConstants.keyUserName) ??
+          prefs.getString(AppConstants.keyUserData) ??
+          'Nguyễn Văn A';
+      if (RegExp(r'^\d+$').hasMatch(name.trim())) {
+        name = 'Nguyễn Văn A';
+      }
+      _userName = name;
     } catch (_) {}
 
     final responses = await _service.getPatientAppointments();

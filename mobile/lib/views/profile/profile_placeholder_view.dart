@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/config/environment_config.dart';
+import '../../services/mock/mock_auth_service.dart';
+import '../../services/remote/auth_service.dart';
 
 /// Tab 4 — Hồ sơ
 /// Thông tin cá nhân, hồ sơ bệnh án (UC-06), cài đặt tài khoản.
@@ -79,6 +83,19 @@ class ProfilePlaceholderView extends StatelessWidget {
                       badge: 'Sắp có',
                       onTap: () => _showComingSoon(
                           context, 'Cài đặt thông báo đang được phát triển'),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Hỗ trợ & Đánh giá (UC-13) ───────────────────────────────
+                    _SectionLabel(label: 'Hỗ trợ & Đánh giá'),
+                    const SizedBox(height: 12),
+                    _ProfileMenuItem(
+                      icon: Icons.rate_review_outlined,
+                      iconColor: AppColors.orange,
+                      title: 'Đánh giá & Góp ý',
+                      subtitle: 'Phản hồi chất lượng dịch vụ và khám bệnh',
+                      onTap: () => context.push('/profile/feedback'),
                     ),
 
                     const SizedBox(height: 24),
@@ -207,7 +224,7 @@ class _AvatarCard extends StatefulWidget {
 }
 
 class _AvatarCardState extends State<_AvatarCard> {
-  String _userName = 'Khách';
+  String _userName = 'Nguyễn Văn A';
 
   @override
   void initState() {
@@ -217,9 +234,35 @@ class _AvatarCardState extends State<_AvatarCard> {
 
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('user_data') ?? 'Khách'; // AppConstants.keyUserData == 'user_data'
-    });
+    var name = prefs.getString(AppConstants.keyUserName) ??
+        prefs.getString(AppConstants.keyUserData) ??
+        'Nguyễn Văn A';
+    if (RegExp(r'^\d+$').hasMatch(name.trim())) {
+      name = 'Nguyễn Văn A';
+    }
+    if (mounted) {
+      setState(() {
+        _userName = name;
+      });
+    }
+
+    try {
+      final authService = EnvironmentConfig.isMock
+          ? MockAuthService()
+          : RemoteAuthService();
+      final res = await authService.getProfile();
+      if (res.success && res.data != null) {
+        final u = res.data!;
+        if (u.fullName != null && u.fullName!.isNotEmpty) {
+          await prefs.setString(AppConstants.keyUserName, u.fullName!);
+          if (mounted) {
+            setState(() {
+              _userName = u.fullName!;
+            });
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -272,6 +315,7 @@ class _AvatarCardState extends State<_AvatarCard> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   _userName,
@@ -285,25 +329,8 @@ class _AvatarCardState extends State<_AvatarCard> {
                 Text(
                   'Bệnh nhân',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withAlpha(12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'ID: BN-00123',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
                   ),
                 ),
               ],
