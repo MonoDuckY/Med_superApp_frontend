@@ -22,6 +22,7 @@ interface AppointmentTableProps {
   onAddBooking: () => void;
   onReschedule: (appointment: Appointment) => void;
   onCancel: (appointment: Appointment) => void;
+  onConfirm: (appointment: Appointment) => void;
   stats: { total: number; confirmed: number; cancelled: number; noShow: number };
 }
 
@@ -34,6 +35,7 @@ export default function AppointmentTable({
   onAddBooking,
   onReschedule,
   onCancel,
+  onConfirm,
   stats
 }: AppointmentTableProps) {
   // Client side filtering for search & status
@@ -158,6 +160,11 @@ export default function AppointmentTable({
                 </tr>
               ) : filteredAppointments.map(a => {
                 const isActionDisabled = a.status === "Cancelled" || a.status === "No-show" || a.status === "Completed" || a.status === "In-progress";
+                let isPast = false;
+                try {
+                  const [startTimeStr] = a.time.split("-");
+                  isPast = new Date(`${a.date}T${startTimeStr}:00`).getTime() < new Date().getTime();
+                } catch (e) {}
                 return (
                   <tr key={a.id} className="hover:bg-[#F8FAFC] transition-colors">
                     <td className="px-5 py-3.5 whitespace-nowrap">
@@ -234,6 +241,19 @@ export default function AppointmentTable({
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
+                        {a.status === "Chờ xác nhận" && (
+                          <button
+                            onClick={() => !isPast && onConfirm(a)}
+                            disabled={isPast}
+                            title={isPast ? "Không thể phê duyệt lịch hẹn trong quá khứ" : ""}
+                            className={`h-7 px-3 text-xs font-bold rounded-lg border-none transition-all outline-none 
+                              ${isPast 
+                                ? "bg-slate-100 text-slate-300 cursor-not-allowed" 
+                                : "bg-[#0EA5E9] hover:bg-[#0284C7] text-white cursor-pointer active:scale-[0.98]"}`}
+                          >
+                            Duyệt
+                          </button>
+                        )}
                         <button
                           onClick={() => onReschedule(a)}
                           disabled={isActionDisabled}
