@@ -818,7 +818,7 @@ export default function CreateUserPage() {
                               {dragOver ? "Thả tệp để tải lên" : "Tải lên chứng chỉ hành nghề Bác sĩ"}
                             </p>
                             <p className="text-[11px] text-[#94A3B8] mt-1">
-                              Kéo & thả hoặc <span className="text-[#0EA5E9] font-medium">chọn tệp</span> · PDF, JPG, PNG tối đa 10 MB
+                              Kéo & thả hoặc <span className="text-[#0EA5E9] font-medium">chọn tệp</span> · PDF, JPG, PNG tối đa 5 MB
                             </p>
                             <p className="text-[10px] text-[#CBD5E1] mt-1.5 italic">Chỉ bắt buộc đối với Bác sĩ</p>
                           </div>
