@@ -950,16 +950,6 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
     return "Khác";
   };
 
-  const calculateBMI = (hStr: string, wStr: string) => {
-    const h = parseFloat(hStr);
-    const w = parseFloat(wStr);
-    if (!h || !w) return "";
-    const bmi = w / ((h / 100) * (h / 100));
-    let cat = "Bình thường";
-    if (bmi < 18.5) cat = "Thiếu cân";
-    else if (bmi >= 25) cat = "Thừa cân";
-    return ` · BMI ${bmi.toFixed(1)} — ${cat}`;
-  };
 
   if (loading) {
     return (
@@ -1030,7 +1020,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
                 <div>
                   <p className="text-[10px] text-slate-400 font-semibold uppercase">Chiều cao / Cân nặng</p>
                   <p className="text-xs font-bold text-[#0F172A]">
-                    {height && weight ? `${height} cm / ${weight} kg` : "N/A"}{calculateBMI(height, weight)}
+                    {height && weight ? `${height} cm / ${weight} kg` : "N/A"}
                   </p>
                 </div>
               </div>
