@@ -24,12 +24,68 @@ export default function StaffAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
   const [rawSubmissions, setRawSubmissions] = useState<any[]>([]);
+  const [roomsList, setRoomsList] = useState<any[]>([]);
+
+  // View mode and overview selections
+  const [activeView, setActiveView] = useState<"list" | "overview">("list");
+  const [selectedOverviewDate, setSelectedOverviewDate] = useState<string | null>(null);
+
+  const getOccupancyData = () => {
+    const data: Record<string, { date: Date; dateStr: string; slots: any[] }> = {};
+    
+    // Initialize next 14 days in Vietnam timezone
+    const today = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+    const parts = formatter.formatToParts(today);
+    const year = parseInt(parts.find(p => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find(p => p.type === "month")!.value, 10) - 1;
+    const dateVal = parseInt(parts.find(p => p.type === "day")!.value, 10);
+    
+    const localToday = new Date(year, month, dateVal);
+    
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(localToday);
+      d.setDate(d.getDate() + i);
+      const isoStr = d.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }); // "YYYY-MM-DD"
+      data[isoStr] = {
+        date: d,
+        dateStr: isoStr,
+        slots: []
+      };
+    }
+
+    // Distribute slots from rawSubmissions
+    rawSubmissions.forEach(sub => {
+      const sDate = sub.workDate; // "YYYY-MM-DD"
+      if (data[sDate]) {
+        const slots = sub.slots || [];
+        slots.forEach((s: any) => {
+          const matchedRoom = roomsList.find((r: any) => r.id === s.roomId);
+          const rName = matchedRoom ? matchedRoom.name : `Phòng ID: ${s.roomId || "N/A"}`;
+          
+          data[sDate].slots.push({
+            ...s,
+            doctorId: sub.doctorId,
+            doctorName: sub.doctor?.fullName || "Bác sĩ",
+            roomName: rName
+          });
+        });
+      }
+    });
+
+    return Object.values(data).sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+  };
 
   // Modals & Drawers
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
   const [isRescheduleDrawerOpen, setIsRescheduleDrawerOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState("");
 
   // SMS simulated toast state
@@ -123,9 +179,27 @@ export default function StaffAppointmentsPage() {
     }
   };
 
+  const fetchRooms = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/clinic-rooms`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setRoomsList(result.data || []);
+          return result.data || [];
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch clinic rooms:", e);
+    }
+    return [];
+  };
+
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
+      await fetchRooms();
       await fetchDoctors();
       await fetchAppointments();
       await fetchDoctorSchedules();
@@ -180,12 +254,30 @@ export default function StaffAppointmentsPage() {
 
   return (
     <main className="flex-1 overflow-y-auto px-8 py-6 space-y-5">
+      {/* View Selector Tabs */}
+      <div className="flex items-center gap-2 border-b border-[#E2E8F0] pb-2 shrink-0">
+        <button
+          onClick={() => setActiveView("list")}
+          className={`px-4 py-2 text-xs font-bold transition-all border-none bg-transparent cursor-pointer rounded-lg
+            ${activeView === "list" ? "bg-[#0EA5E9]/15 text-[#0EA5E9]" : "text-slate-400 hover:text-slate-600"}`}
+        >
+          Danh sách lịch hẹn
+        </button>
+        <button
+          onClick={() => setActiveView("overview")}
+          className={`px-4 py-2 text-xs font-bold transition-all border-none bg-transparent cursor-pointer rounded-lg
+            ${activeView === "overview" ? "bg-[#0EA5E9]/15 text-[#0EA5E9]" : "text-slate-400 hover:text-slate-600"}`}
+        >
+          Lịch xem tổng thể (Occupancy Calendar)
+        </button>
+      </div>
+
       {loading ? (
         <div className="min-h-[400px] flex flex-col items-center justify-center gap-2.5">
           <Loader2 className="animate-spin text-[#0EA5E9] h-8 w-8" />
           <p className="text-slate-400 text-xs font-semibold">Đang đồng bộ dữ liệu hệ thống...</p>
         </div>
-      ) : (
+      ) : activeView === "list" ? (
         <AppointmentTable
           appointments={appointments}
           searchQuery={searchQuery}
@@ -203,6 +295,177 @@ export default function StaffAppointmentsPage() {
           }}
           stats={stats}
         />
+      ) : (
+        <div className="space-y-6">
+          <div className="text-left">
+            <h2 className="text-lg font-bold text-[#0F172A]">Lịch xem tổng thể ca trực &amp; lịch khám</h2>
+            <p className="text-xs text-slate-400 mt-1">Giúp kiểm tra mật độ lịch hẹn trong 14 ngày tới để điều phối và sắp xếp lịch tối ưu.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {getOccupancyData().map(day => {
+              const total = day.slots.length;
+              const booked = day.slots.filter(s => s.status === "BOOKED").length;
+              const available = day.slots.filter(s => s.status === "AVAILABLE").length;
+              const percent = total > 0 ? (booked / total) * 100 : 0;
+
+              // Format date: e.g. "Thứ Bảy, 15/08"
+              const dayName = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][day.date.getDay()];
+              const dateDM = `${String(day.date.getDate()).padStart(2, "0")}/${String(day.date.getMonth() + 1).padStart(2, "0")}`;
+
+              // Determine visual color of progress bar & status badge
+              let statusLabel = "Trống ca";
+              let colorClass = "bg-emerald-500";
+              let bgClass = "bg-emerald-50";
+              let textClass = "text-emerald-700";
+              let borderClass = "border-emerald-200";
+
+              if (total > 0) {
+                if (percent >= 90) {
+                  statusLabel = "Rất bận (Đầy)";
+                  colorClass = "bg-rose-500";
+                  bgClass = "bg-rose-50";
+                  textClass = "text-rose-700";
+                  borderClass = "border-rose-200";
+                } else if (percent >= 50) {
+                  statusLabel = "Vừa phải";
+                  colorClass = "bg-amber-500";
+                  bgClass = "bg-amber-50";
+                  textClass = "text-amber-700";
+                  borderClass = "border-amber-200";
+                } else {
+                  statusLabel = "Còn nhiều ca trống";
+                  colorClass = "bg-emerald-500";
+                  bgClass = "bg-emerald-50";
+                  textClass = "text-emerald-700";
+                  borderClass = "border-emerald-200";
+                }
+              } else {
+                statusLabel = "Không có ca trực";
+                colorClass = "bg-slate-300";
+                bgClass = "bg-slate-50";
+                textClass = "text-slate-500";
+                borderClass = "border-slate-200";
+              }
+
+              const isSelected = selectedOverviewDate === day.dateStr;
+
+              return (
+                <div
+                  key={day.dateStr}
+                  onClick={() => {
+                    if (total > 0) {
+                      setSelectedOverviewDate(isSelected ? null : day.dateStr);
+                    }
+                  }}
+                  className={`bg-white border rounded-2xl p-5 shadow-sm transition-all select-none text-left
+                    ${total > 0 ? "cursor-pointer hover:shadow-md hover:border-[#0EA5E9]" : "opacity-60 cursor-not-allowed"}
+                    ${isSelected ? "border-[#0EA5E9] ring-2 ring-sky-100" : "border-[#E2E8F0]"}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-[#0F172A] text-sm">{dayName}</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">{dateDM}/{day.date.getFullYear()}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${bgClass} ${textClass} ${borderClass}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+
+                  {total > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${colorClass} transition-all duration-300`} style={{ width: `${percent}%` }} />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                        <span>Đã đặt: {booked}/{total}</span>
+                        <span>Trống: {available} ca</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Details Section for Selected Date */}
+          {selectedOverviewDate && (() => {
+            const dayData = getOccupancyData().find(d => d.dateStr === selectedOverviewDate);
+            if (!dayData || dayData.slots.length === 0) return null;
+
+            const dayName = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][dayData.date.getDay()];
+            const [y, m, d] = selectedOverviewDate.split("-");
+            const dateDMY = `${d}/${m}/${y}`;
+
+            return (
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm space-y-4 animate-[fadeIn_0.2s_ease-out]">
+                <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3">
+                  <div className="text-left">
+                    <h3 className="font-bold text-[#0F172A] text-base">Chi tiết ca trực &amp; Lịch trống</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">{dayName}, ngày {dateDMY}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedOverviewDate(null)}
+                    className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {dayData.slots.map((slotObj: any, index: number) => {
+                    const timeRange = slotObj.slot ? `${slotObj.slot.startTime.slice(0, 5)} - ${slotObj.slot.endTime.slice(0, 5)}` : "N/A";
+                    
+                    let bg = "bg-slate-50 border-slate-200 text-slate-700";
+                    let statusLabel = "Khóa";
+                    let isAvailable = slotObj.status === "AVAILABLE";
+
+                    if (slotObj.status === "AVAILABLE") {
+                      bg = "bg-emerald-50 border-emerald-100 text-emerald-700";
+                      statusLabel = "Trống ca";
+                    } else if (slotObj.status === "BOOKED") {
+                      bg = "bg-sky-50 border-sky-100 text-sky-700";
+                      statusLabel = "Đã đặt";
+                    } else if (slotObj.status === "PENDING") {
+                      bg = "bg-amber-50 border-amber-100 text-amber-700";
+                      statusLabel = "Chờ duyệt";
+                    }
+
+                    return (
+                      <div key={index} className={`border rounded-xl p-4 flex flex-col justify-between gap-3 ${bg}`}>
+                        <div className="space-y-1.5 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold font-mono">{timeRange}</span>
+                            <span className="text-[10px] font-bold uppercase">{statusLabel}</span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-900">{slotObj.doctorName}</p>
+                          <p className="text-[10px] opacity-75 font-medium">{slotObj.roomName}</p>
+                        </div>
+
+                        {isAvailable && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAppointment({
+                                doctorId: slotObj.doctorId,
+                                date: selectedOverviewDate,
+                                slotId: slotObj.id
+                              });
+                              setIsAddDrawerOpen(true);
+                            }}
+                            className="w-full py-1.5 bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-xs font-bold rounded-lg border-none cursor-pointer transition-all active:scale-[0.98] mt-1 shadow-sm"
+                          >
+                            Đặt lịch hẹn tại đây
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       )}
 
       {/* DRAWER: ADD / RESCHEDULE APPOINTMENT */}

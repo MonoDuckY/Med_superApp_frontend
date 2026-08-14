@@ -49,9 +49,9 @@ export default function BookingDrawer({
   useEffect(() => {
     if (isOpen) {
       if (mode === "ADD") {
-        setSelectedDoctorId("");
-        setFormDate(todayStr);
-        setFormTimeSlot("");
+        setSelectedDoctorId(selectedAppointment?.doctorId || "");
+        setFormDate(selectedAppointment?.date || todayStr);
+        setFormTimeSlot(selectedAppointment?.slotId || "");
         setFormReason("");
         setFormDeposit(false);
         setFormFollowUp(false);
