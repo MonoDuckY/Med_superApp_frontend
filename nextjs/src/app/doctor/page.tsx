@@ -252,7 +252,7 @@ export default function DoctorDashboard() {
       )}
 
       {activeTab === "records" && (
-        <main className="flex-1 flex items-center justify-center p-6 bg-[#F8FAFC]">
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
           <MedicalWorkspace onBackToSchedule={() => setActiveTab("schedule")} />
         </main>
       )}
