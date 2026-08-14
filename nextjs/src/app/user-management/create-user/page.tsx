@@ -743,17 +743,6 @@ export default function CreateUserPage() {
                       />
                     </div>
                   </div>
-
-                  {/* Info callout */}
-                  <div className="mt-5 flex items-start gap-3 px-4 py-4 rounded-xl border border-[#BAE6FD] bg-[#F0F9FF]">
-                    <span className="w-4 h-4 rounded-full bg-[#0EA5E9]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-[#0EA5E9] text-[9px] font-bold">i</span>
-                    </span>
-                    <p className="text-xs leading-relaxed text-[#0369A1]">
-                      Hệ thống sẽ gửi mã số nhân viên và mật khẩu tạm thời qua SMS. Người dùng bắt buộc phải đổi mật khẩu ở lần đăng nhập đầu tiên. Mọi sự kiện đều được ghi nhật ký theo{" "}
-                      <strong>Nghị định 13/2023/NĐ-CP</strong>.
-                    </p>
-                  </div>
                 </section>
 
                 {/* ── Section: Chứng chỉ hành nghề (Bác sĩ) ── */}
