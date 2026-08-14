@@ -86,3 +86,22 @@ class AppointmentRecord {
     required this.status,
   });
 }
+
+/// Lightweight view-model data class representing the next upcoming
+/// appointment displayed on the Home screen hero card.
+/// Populated from mock data until a dedicated API endpoint is available.
+class NextAppointmentInfo {
+  final String doctorName;
+  final String specialty;
+  final String location;
+  final DateTime dateTime;
+  final String status;
+
+  const NextAppointmentInfo({
+    required this.doctorName,
+    required this.specialty,
+    required this.location,
+    required this.dateTime,
+    required this.status,
+  });
+}
