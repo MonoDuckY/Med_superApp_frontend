@@ -168,7 +168,7 @@ export default function ResearcherDashboard() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center p-6">
+      <main className="flex-1 flex overflow-hidden min-h-0 bg-[#F8FAFC]">
         <DatasetPanel user={user} />
       </main>
     </div>
