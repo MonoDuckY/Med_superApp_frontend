@@ -6,10 +6,13 @@ import '../models/health_news_model.dart';
 import '../models/vital_chart_model.dart';
 import '../services/mock/mock_health_news_service.dart';
 import '../services/mock/mock_medical_record_service.dart';
+import '../core/config/environment_config.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
-import '../core/config/environment_config.dart';
+import '../services/abstract/notification_service_abstract.dart';
+import '../services/mock/mock_notification_service.dart';
+import '../services/remote/remote_notification_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final MockMedicalRecordService _medService = MockMedicalRecordService();
@@ -17,18 +20,23 @@ class HomeViewModel extends ChangeNotifier {
   final AuthServiceAbstract _authService = EnvironmentConfig.isMock
       ? MockAuthService()
       : RemoteAuthService();
+  final NotificationServiceAbstract _notificationService = EnvironmentConfig.isMock
+      ? MockNotificationService()
+      : RemoteNotificationService();
 
   // ── State ──────────────────────────────────────────────────────────────────
   bool _isLoading = true;
   String _userName = 'Nguyễn Văn A';
   List<VitalChartPoint> _vitalHistory = [];
   List<HealthNewsArticle> _news = [];
+  int _unreadNotificationCount = 0;
 
   // ── Getters ────────────────────────────────────────────────────────────────
   bool get isLoading => _isLoading;
   String get userName => _userName;
   List<VitalChartPoint> get vitalHistory => _vitalHistory;
   List<HealthNewsArticle> get news => _news;
+  int get unreadNotificationCount => _unreadNotificationCount;
 
   /// Greeting string based on current hour.
   String get greeting {
@@ -78,11 +86,29 @@ class HomeViewModel extends ChangeNotifier {
       }
     } catch (_) {}
 
+    try {
+      final notifRes = await _notificationService.getUnreadCount();
+      if (notifRes.success && notifRes.data != null) {
+        _unreadNotificationCount = notifRes.data!;
+      }
+    } catch (_) {}
+
     _vitalHistory = await _buildVitalHistory();
     _news = await _newsService.getArticles();
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Làm mới số lượng thông báo chưa đọc khi quay lại màn hình Home
+  Future<void> refreshUnreadCount() async {
+    try {
+      final notifRes = await _notificationService.getUnreadCount();
+      if (notifRes.success && notifRes.data != null) {
+        _unreadNotificationCount = notifRes.data!;
+        notifyListeners();
+      }
+    } catch (_) {}
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

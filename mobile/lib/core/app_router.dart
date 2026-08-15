@@ -15,8 +15,10 @@ import '../views/profile/medical_record_list_view.dart';
 import '../views/profile/medical_record_detail_view.dart';
 import '../views/profile/personal_info_view.dart';
 import '../views/health/health_news_view.dart';
+import '../views/notification/notification_list_view.dart';
 import '../views/shared/main_shell.dart';
 import '../view_models/medicine_schedule_viewmodel.dart';
+import '../view_models/notification_viewmodel.dart';
 
 class AppRouter {
   AppRouter._();
@@ -148,6 +150,15 @@ class AppRouter {
           final id = state.pathParameters['id'] ?? '';
           return HealthNewsDetailView(articleId: id);
         },
+      ),
+
+      // UC-09: Thông báo bệnh nhân
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => NotificationViewModel(),
+          child: const NotificationListView(),
+        ),
       ),
     ],
   );

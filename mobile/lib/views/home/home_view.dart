@@ -131,7 +131,15 @@ class _HomeHeader extends StatelessWidget {
           ),
 
           // Notification bell
-          _NotifBell(),
+          _NotifBell(
+            unreadCount: vm.unreadNotificationCount,
+            onTap: () async {
+              await context.push('/notifications');
+              if (context.mounted) {
+                vm.refreshUnreadCount();
+              }
+            },
+          ),
         ],
       ),
     );
@@ -139,36 +147,68 @@ class _HomeHeader extends StatelessWidget {
 }
 
 class _NotifBell extends StatelessWidget {
+  final int unreadCount;
+  final VoidCallback onTap;
+
+  const _NotifBell({
+    required this.unreadCount,
+    required this.onTap,
+  });
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '\uD83D\uDD14 Th\xF4ng b\xE1o s\u1EAFp ra m\u1EAFt!',
-              style: GoogleFonts.inter(fontSize: 13),
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.canvasColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.borderLight),
             ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-            duration: const Duration(seconds: 2),
+            child: Icon(
+              unreadCount > 0
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_outlined,
+              size: 20,
+              color: unreadCount > 0
+                  ? AppColors.primary
+                  : AppColors.textSecondary,
+            ),
           ),
-        );
-      },
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: AppColors.canvasColor,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: const Icon(
-          Icons.notifications_outlined,
-          size: 20,
-          color: AppColors.textSecondary,
-        ),
+          if (unreadCount > 0)
+            Positioned(
+              top: -2,
+              right: -2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    unreadCount > 99 ? '99+' : '$unreadCount',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.white,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
