@@ -326,12 +326,23 @@ export default function ScheduleApprovals({ schedules, onRefresh }: ScheduleAppr
                            sch.status === "IN_PROGRESS" ||
                            sch.status === "CLOSED") ? (
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleOpenEdit(sch)}
-                            className="h-7 px-3 bg-[#E0F2FE] text-[#0369A1] hover:bg-[#B9E6FE] rounded-md text-[11px] font-bold active:scale-[0.98] transition-all outline-none border-none cursor-pointer"
-                          >
-                            Chỉnh sửa
-                          </button>
+                          {(() => {
+                            const hasNonAvailableSlots = sch.slots && sch.slots.some((s: any) => s.status !== "AVAILABLE");
+                            return (
+                              <button
+                                disabled={hasNonAvailableSlots}
+                                onClick={() => handleOpenEdit(sch)}
+                                title={hasNonAvailableSlots ? "Không thể chỉnh sửa lịch trực vì có khung giờ trực đã bị chặn hoặc đã được đặt lịch hẹn" : "Chỉnh sửa lịch trực"}
+                                className={`h-7 px-3 rounded-md text-[11px] font-bold transition-all outline-none border-none ${
+                                  hasNonAvailableSlots 
+                                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                                    : "bg-[#E0F2FE] text-[#0369A1] hover:bg-[#B9E6FE] active:scale-[0.98] cursor-pointer"
+                                }`}
+                              >
+                                Chỉnh sửa
+                              </button>
+                            );
+                          })()}
                           <button
                             onClick={() => { setDetailSchedule(sch); setIsDetailsModalOpen(true); }}
                             className="h-7 px-3 border border-slate-200 text-slate-600 rounded-md text-[11px] font-bold hover:bg-slate-50 active:scale-[0.98] transition-all outline-none bg-transparent cursor-pointer"
