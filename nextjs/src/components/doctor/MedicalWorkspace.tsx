@@ -367,12 +367,10 @@ function PrescriptionTab({
                   </td>
                   <td className="p-1">
                     <div className="relative w-full h-7">
-                      {/* Stylized display format dd/mm/yyyy HH:mm */}
-                      <div className="absolute inset-0 flex items-center justify-between px-2 py-1 text-xs border border-[#E2E8F0] rounded-md bg-white text-[#0F172A] pointer-events-none group-hover:border-sky-300">
+                      <div className="absolute inset-0 flex items-center justify-between px-2.5 py-1 text-xs border border-[#E2E8F0] rounded-md bg-white text-[#0F172A] pointer-events-none group-hover:border-sky-300">
                         <span className="truncate">{d.scheduledAt}</span>
                         <Ico d={ic.calendar} cls="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                       </div>
-                      {/* Hidden native datetime-local picker acting as trigger */}
                       <input
                         type="datetime-local"
                         disabled={locked}
@@ -418,6 +416,435 @@ function PrescriptionTab({
       )}
     </div>
   )
+}
+
+type Dish = {
+  dishName: string;
+  quantity: number;
+  unit: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbohydrates: number;
+  totalFat: number;
+}
+
+type Meal = {
+  mealName: string;
+  scheduledAt: string;
+  note: string;
+  dishes: Dish[];
+}
+
+function MealTab({
+  meals,
+  setMeals,
+  locked
+}: {
+  meals: Meal[];
+  setMeals: React.Dispatch<React.SetStateAction<Meal[]>>;
+  locked: boolean;
+}) {
+  function addMeal() {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = formatDateTimeDDMMYYYY_HHMM(tomorrow);
+    setMeals(prev => [...prev, {
+      mealName: "",
+      scheduledAt: tomorrowStr,
+      note: "",
+      dishes: []
+    }]);
+  }
+
+  function removeMeal(mealIdx: number) {
+    setMeals(prev => prev.filter((_, i) => i !== mealIdx));
+  }
+
+  function updateMealField(mealIdx: number, key: keyof Meal, val: any) {
+    setMeals(prev => prev.map((m, i) => i === mealIdx ? { ...m, [key]: val } : m));
+  }
+
+  function addDish(mealIdx: number) {
+    setMeals(prev => prev.map((m, i) => {
+      if (i === mealIdx) {
+        return {
+          ...m,
+          dishes: [...m.dishes, {
+            dishName: "",
+            quantity: 1,
+            unit: "phần",
+            totalCalories: 0,
+            totalProtein: 0,
+            totalCarbohydrates: 0,
+            totalFat: 0
+          }]
+        };
+      }
+      return m;
+    }));
+  }
+
+  // Define dynamic updates safely for nested key properties
+  function removeDish(mealIdx: number, dishIdx: number) {
+    setMeals(prev => prev.map((m, i) => {
+      if (i === mealIdx) {
+        return {
+          ...m,
+          dishes: m.dishes.filter((_, j) => j !== dishIdx)
+        };
+      }
+      return m;
+    }));
+  }
+
+  function updateDishField(mealIdx: number, dishIdx: number, key: keyof Dish, val: any) {
+    setMeals(prev => prev.map((m, i) => {
+      if (i === mealIdx) {
+        const newDishes = m.dishes.map((d, j) => j === dishIdx ? { ...d, [key]: val } : d);
+        return { ...m, dishes: newDishes };
+      }
+      return m;
+    }));
+  }
+
+  return (
+    <div className="flex flex-col gap-4 text-left">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-bold text-slate-700">Thực đơn ăn uống (Meals)</label>
+        {!locked && (
+          <button
+            type="button"
+            onClick={addMeal}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-[#0284C7] hover:bg-[#025a87] rounded-lg transition-colors border-none cursor-pointer"
+          >
+            <Ico d={ic.plus} cls="w-3 h-3" />
+            Thêm bữa ăn
+          </button>
+        )}
+      </div>
+
+      {meals.length === 0 ? (
+        <div className="text-center py-10 text-xs text-slate-400 border border-dashed border-[#E2E8F0] rounded-xl bg-white">
+          Chưa có bữa ăn nào. Nhấp "Thêm bữa ăn" để bắt đầu thiết lập.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {meals.map((m, mealIdx) => (
+            <div key={mealIdx} className="p-4 border border-[#E2E8F0] rounded-xl bg-white shadow-sm flex flex-col gap-3 relative">
+              {!locked && (
+                <button
+                  type="button"
+                  onClick={() => removeMeal(mealIdx)}
+                  className="absolute top-3 right-3 text-rose-500 hover:text-rose-700 transition-colors border-none bg-transparent cursor-pointer"
+                >
+                  <Ico d={ic.trash} cls="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Meal header fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Tên bữa ăn *</label>
+                  <input
+                    type="text"
+                    placeholder="vd: Bữa sáng, Bữa trưa..."
+                    value={m.mealName}
+                    disabled={locked}
+                    onChange={e => updateMealField(mealIdx, "mealName", e.target.value)}
+                    className="w-full h-8 px-2.5 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 disabled:bg-slate-50 disabled:text-slate-400 bg-white text-[#0F172A]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1">Thời gian ăn *</label>
+                  <div className="relative w-full h-8">
+                    <div className="absolute inset-0 flex items-center justify-between px-2.5 py-1 text-xs border border-[#E2E8F0] rounded-md bg-white text-[#0F172A] pointer-events-none group-hover:border-sky-300">
+                      <span className="truncate">{m.scheduledAt}</span>
+                      <Ico d={ic.calendar} cls="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+                    </div>
+                    <input
+                      type="datetime-local"
+                      disabled={locked}
+                      value={localToDatetimeValue(m.scheduledAt)}
+                      onChange={e => {
+                        const val = e.target.value
+                        if (!val) return
+                        const picked = new Date(val)
+                        const formatted = formatDateTimeDDMMYYYY_HHMM(picked)
+                        updateMealField(mealIdx, "scheduledAt", formatted)
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1">Ghi chú bữa ăn</label>
+                <input
+                  type="text"
+                  placeholder="vd: Ăn ít tinh bột, nhiều rau..."
+                  value={m.note}
+                  disabled={locked}
+                  onChange={e => updateMealField(mealIdx, "note", e.target.value)}
+                  className="w-full h-8 px-2.5 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 disabled:bg-slate-50 disabled:text-slate-400 bg-white text-[#0F172A]"
+                />
+              </div>
+
+              {/* Dishes list */}
+              <div className="mt-2">
+                <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-1.5 mb-2">
+                  <span className="text-[11px] font-bold text-slate-600">Danh sách món ăn</span>
+                  {!locked && (
+                    <button
+                      type="button"
+                      onClick={() => addDish(mealIdx)}
+                      className="flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded border-none cursor-pointer"
+                    >
+                      <Ico d={ic.plus} cls="w-2.5 h-2.5" />
+                      Thêm món
+                    </button>
+                  )}
+                </div>
+
+                {m.dishes.length === 0 ? (
+                  <p className="text-[10px] text-slate-400 italic text-center py-2">Chưa ghi món ăn nào.</p>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {m.dishes.map((dish, dishIdx) => (
+                      <div key={dishIdx} className="flex flex-col gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        {/* Row 1: Basic dish info */}
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="Tên món"
+                            value={dish.dishName}
+                            disabled={locked}
+                            onChange={e => updateDishField(mealIdx, dishIdx, "dishName", e.target.value)}
+                            className="flex-1 h-7 px-2 text-[11px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-[#0F172A]"
+                          />
+                          <input
+                            type="number"
+                            placeholder="SL"
+                            value={dish.quantity || ""}
+                            disabled={locked}
+                            onChange={e => updateDishField(mealIdx, dishIdx, "quantity", parseFloat(e.target.value))}
+                            className="w-10 h-7 px-1.5 text-[11px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-center text-[#0F172A]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Đơn vị"
+                            value={dish.unit}
+                            disabled={locked}
+                            onChange={e => updateDishField(mealIdx, dishIdx, "unit", e.target.value)}
+                            className="w-12 h-7 px-1.5 text-[11px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-center text-[#0F172A]"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Kcal"
+                            value={dish.totalCalories || ""}
+                            disabled={locked}
+                            onChange={e => updateDishField(mealIdx, dishIdx, "totalCalories", parseFloat(e.target.value))}
+                            className="w-14 h-7 px-1.5 text-[11px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-center text-[#0F172A]"
+                          />
+                          {!locked && (
+                            <button
+                              type="button"
+                              onClick={() => removeDish(mealIdx, dishIdx)}
+                              className="text-rose-500 hover:text-rose-700 transition-colors border-none bg-transparent cursor-pointer p-0.5"
+                            >
+                              <Ico d={ic.x} cls="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* Row 2: Macros (Protein, Carbohydrates, Fat) */}
+                        <div className="flex gap-2 items-center pl-1">
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className="flex items-center gap-1 flex-1">
+                              <span className="text-[9px] text-slate-500 font-semibold shrink-0">Đạm (g):</span>
+                              <input
+                                type="number"
+                                placeholder="Protein"
+                                value={dish.totalProtein || ""}
+                                disabled={locked}
+                                onChange={e => updateDishField(mealIdx, dishIdx, "totalProtein", parseFloat(e.target.value))}
+                                className="w-full h-6 px-1 text-[10px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-center text-[#0F172A]"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1 flex-1">
+                              <span className="text-[9px] text-slate-500 font-semibold shrink-0">Đường (g):</span>
+                              <input
+                                type="number"
+                                placeholder="Carbs"
+                                value={dish.totalCarbohydrates || ""}
+                                disabled={locked}
+                                onChange={e => updateDishField(mealIdx, dishIdx, "totalCarbohydrates", parseFloat(e.target.value))}
+                                className="w-full h-6 px-1 text-[10px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-center text-[#0F172A]"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1 flex-1">
+                              <span className="text-[9px] text-slate-500 font-semibold shrink-0">Béo (g):</span>
+                              <input
+                                type="number"
+                                placeholder="Fats"
+                                value={dish.totalFat || ""}
+                                disabled={locked}
+                                onChange={e => updateDishField(mealIdx, dishIdx, "totalFat", parseFloat(e.target.value))}
+                                className="w-full h-6 px-1 text-[10px] border border-[#E2E8F0] rounded outline-none focus:border-sky-400 bg-white text-center text-[#0F172A]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Workout = {
+  workoutName: string;
+  content: string;
+  scheduledAt: string;
+  note: string;
+}
+
+function WorkoutTab({
+  workouts,
+  setWorkouts,
+  locked
+}: {
+  workouts: Workout[];
+  setWorkouts: React.Dispatch<React.SetStateAction<Workout[]>>;
+  locked: boolean;
+}) {
+  function addWorkout() {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = formatDateTimeDDMMYYYY_HHMM(tomorrow);
+    setWorkouts(prev => [...prev, {
+      workoutName: "",
+      content: "",
+      scheduledAt: tomorrowStr,
+      note: ""
+    }]);
+  }
+
+  function removeWorkout(idx: number) {
+    setWorkouts(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateWorkout(idx: number, key: keyof Workout, val: string) {
+    setWorkouts(prev => prev.map((w, i) => i === idx ? { ...w, [key]: val } : w));
+  }
+
+  return (
+    <div className="flex flex-col gap-3 text-left">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-bold text-slate-700">Chế độ tập luyện (Workouts)</label>
+        {!locked && (
+          <button
+            type="button"
+            onClick={addWorkout}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-[#0284C7] hover:bg-[#025a87] rounded-lg transition-colors border-none cursor-pointer"
+          >
+            <Ico d={ic.plus} cls="w-3 h-3" />
+            Thêm bài tập
+          </button>
+        )}
+      </div>
+
+      {workouts.length === 0 ? (
+        <div className="text-center py-10 text-xs text-slate-400 border border-dashed border-[#E2E8F0] rounded-xl bg-white">
+          Chưa có chế độ tập luyện nào. Nhấp "Thêm bài tập" để bắt đầu thiết lập.
+        </div>
+      ) : (
+        <div className="border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm bg-white">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr style={{ background: "#FAFAFA", borderBottom: "1px solid #E2E8F0" }}>
+                {["Tên bài tập *", "Nội dung", "Thời gian tập *", "Note", ""].map(h => (
+                  <th key={h} className="text-left text-xs font-bold px-3 py-2 text-slate-500" style={{ color: "#64748B" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F1F5F9]">
+              {workouts.map((w, idx) => (
+                <tr key={idx} className="group hover:bg-[#FAFAFA] transition-colors">
+                  <td className="p-1">
+                    <input
+                      type="text"
+                      placeholder="vd: Đi bộ nhẹ"
+                      value={w.workoutName}
+                      disabled={locked}
+                      onChange={e => updateWorkout(idx, "workoutName", e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 bg-white text-[#0F172A] disabled:bg-slate-50 disabled:text-slate-400"
+                    />
+                  </td>
+                  <td className="p-1">
+                    <input
+                      type="text"
+                      placeholder="vd: 30 phút buổi chiều"
+                      value={w.content}
+                      disabled={locked}
+                      onChange={e => updateWorkout(idx, "content", e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 bg-white text-[#0F172A] disabled:bg-slate-50 disabled:text-slate-400"
+                    />
+                  </td>
+                  <td className="p-1">
+                    <div className="relative w-full h-7">
+                      <div className="absolute inset-0 flex items-center justify-between px-2.5 py-1 text-xs border border-[#E2E8F0] rounded-md bg-white text-[#0F172A] pointer-events-none group-hover:border-sky-300">
+                        <span className="truncate">{w.scheduledAt}</span>
+                        <Ico d={ic.calendar} cls="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+                      </div>
+                      <input
+                        type="datetime-local"
+                        disabled={locked}
+                        value={localToDatetimeValue(w.scheduledAt)}
+                        onChange={e => {
+                          const val = e.target.value
+                          if (!val) return
+                          const picked = new Date(val)
+                          const formatted = formatDateTimeDDMMYYYY_HHMM(picked)
+                          updateWorkout(idx, "scheduledAt", formatted)
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </div>
+                  </td>
+                  <td className="p-1">
+                    <input
+                      type="text"
+                      placeholder="vd: Không vận động nặng"
+                      value={w.note}
+                      disabled={locked}
+                      onChange={e => updateWorkout(idx, "note", e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 bg-white text-[#0F172A] disabled:bg-slate-50 disabled:text-slate-400"
+                    />
+                  </td>
+                  <td className="p-1 text-center w-6">
+                    {!locked && (
+                      <button
+                        type="button"
+                        onClick={() => removeWorkout(idx)}
+                        className="cursor-pointer border-none bg-transparent text-rose-500 hover:text-rose-700 transition-colors p-1"
+                      >
+                        <Ico d={ic.trash} cls="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function QueuePanel({ 
@@ -605,13 +1032,15 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
   
   const [showConfirm, setShowConfirm] = useState(false)
   const [qSearch, setQSearch]       = useState("")
-  const [rightTab, setRightTab]     = useState<"img" | "rx">("img")
+  const [rightTab, setRightTab]     = useState<"img" | "rx" | "meal" | "workout">("img")
 
   // Form fields
   const [diagnosis, setDiagnosis]   = useState("")
   const [notes, setNotes]           = useState("")
   const [prescriptionId, setPrescriptionId] = useState<string | null>(null)
   const [drugs, setDrugs]           = useState<Drug[]>([])
+  const [meals, setMeals]           = useState<Meal[]>([])
+  const [workouts, setWorkouts]     = useState<Workout[]>([])
 
   // Vitals
   const [bloodPressure, setBloodPressure] = useState("")
@@ -733,6 +1162,44 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
     } else {
       setDrugs([])
     }
+
+    if (firstRx.meals) {
+      const mappedMeals = firstRx.meals.map((m: any) => {
+        const d = m.scheduledAt ? new Date(m.scheduledAt) : new Date(Date.now() + 24 * 60 * 60 * 1000)
+        return {
+          mealName: m.mealName || "",
+          scheduledAt: formatDateTimeDDMMYYYY_HHMM(d),
+          note: m.note || "",
+          dishes: (m.dishes || []).map((dish: any) => ({
+            dishName: dish.dishName || "",
+            quantity: dish.quantity || 0,
+            unit: dish.unit || "",
+            totalCalories: dish.totalCalories || 0,
+            totalProtein: dish.totalProtein || 0,
+            totalCarbohydrates: dish.totalCarbohydrates || 0,
+            totalFat: dish.totalFat || 0
+          }))
+        }
+      })
+      setMeals(mappedMeals)
+    } else {
+      setMeals([])
+    }
+
+    if (firstRx.workouts) {
+      const mappedWorkouts = firstRx.workouts.map((w: any) => {
+        const d = w.scheduledAt ? new Date(w.scheduledAt) : new Date(Date.now() + 24 * 60 * 60 * 1000)
+        return {
+          workoutName: w.workoutName || "",
+          content: w.content || "",
+          scheduledAt: formatDateTimeDDMMYYYY_HHMM(d),
+          note: w.note || ""
+        }
+      })
+      setWorkouts(mappedWorkouts)
+    } else {
+      setWorkouts([])
+    }
   }
 
   useEffect(() => {
@@ -835,8 +1302,11 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
 
       // 3. Save prescription
       const validDrugs = drugs.filter(d => d.name.trim() !== "")
-      if (validDrugs.length > 0) {
-        // Validate dates are in dd/mm/yyyy HH:mm format and in the future
+      const validMeals = meals.filter(m => m.mealName.trim() !== "")
+      const validWorkouts = workouts.filter(w => w.workoutName.trim() !== "")
+
+      if (validDrugs.length > 0 || validMeals.length > 0 || validWorkouts.length > 0 || notes.trim()) {
+        // Validate drug dates
         for (const d of validDrugs) {
           const parsed = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)
           if (!parsed || isNaN(parsed.getTime())) {
@@ -851,19 +1321,80 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
           }
         }
 
+        // Validate meal dates
+        for (const m of validMeals) {
+          const parsed = parseDateTimeDDMMYYYY_HHMM(m.scheduledAt)
+          if (!parsed || isNaN(parsed.getTime())) {
+            alert(`Thời gian ăn bữa "${m.mealName}" không đúng định dạng dd/mm/yyyy HH:mm!`)
+            setSaving(false)
+            return
+          }
+          if (parsed.getTime() <= Date.now()) {
+            alert(`Thời gian ăn bữa "${m.mealName}" phải là thời gian trong tương lai!`)
+            setSaving(false)
+            return
+          }
+        }
+
+        // Validate workout dates
+        for (const w of validWorkouts) {
+          const parsed = parseDateTimeDDMMYYYY_HHMM(w.scheduledAt)
+          if (!parsed || isNaN(parsed.getTime())) {
+            alert(`Thời gian tập bài "${w.workoutName}" không đúng định dạng dd/mm/yyyy HH:mm!`)
+            setSaving(false)
+            return
+          }
+          if (parsed.getTime() <= Date.now()) {
+            alert(`Thời gian tập bài "${w.workoutName}" phải là thời gian trong tương lai!`)
+            setSaving(false)
+            return
+          }
+        }
+
         const prescriptionPayload = {
           content: "Đơn thuốc khám bệnh",
-          medicineSchedules: validDrugs.map((d) => {
-            const parsedDate = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)!
+          medicineSchedules: validDrugs.length > 0 
+            ? validDrugs.map((d) => {
+                const parsedDate = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)!
+                return {
+                  medicineName: d.name.trim(),
+                  dosage: d.dose.trim() || "Theo hướng dẫn",
+                  scheduledAt: parsedDate.toISOString(),
+                  note: d.note.trim() || "Uống đúng giờ"
+                }
+              })
+            : [{
+                medicineName: "Theo chỉ định ăn uống & tập luyện",
+                dosage: "Không có thuốc uống",
+                scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                note: "Kiểm tra chế độ dinh dưỡng và bài tập luyện tương ứng"
+              }],
+          meals: validMeals.map((m) => {
+            const parsedDate = parseDateTimeDDMMYYYY_HHMM(m.scheduledAt)!
             return {
-              medicineName: d.name.trim(),
-              dosage: d.dose.trim() || "Theo hướng dẫn",
+              mealName: m.mealName.trim(),
               scheduledAt: parsedDate.toISOString(),
-              note: d.note.trim() || "Uống đúng giờ"
+              note: m.note.trim(),
+              dishes: m.dishes.filter(dish => dish.dishName.trim() !== "").map((dish) => ({
+                dishName: dish.dishName.trim(),
+                quantity: Number(dish.quantity) || 1,
+                unit: dish.unit.trim() || "phần",
+                totalCalories: Number(dish.totalCalories) || 0,
+                totalProtein: Number(dish.totalProtein) || 0,
+                totalCarbohydrates: Number(dish.totalCarbohydrates) || 0,
+                totalFat: Number(dish.totalFat) || 0
+              }))
             }
           }),
-          meals: [],
-          workouts: []
+          workouts: validWorkouts.map((w) => {
+            const parsedDate = parseDateTimeDDMMYYYY_HHMM(w.scheduledAt)!
+            return {
+              workoutName: w.workoutName.trim(),
+              content: w.content.trim() || "Tập luyện theo hướng dẫn",
+              scheduledAt: parsedDate.toISOString(),
+              note: w.note.trim()
+            }
+          })
         }
 
         const rxMethod = prescriptionId ? "PATCH" : "POST"
@@ -937,8 +1468,11 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
 
       // 3. Save prescription
       const validDrugs = drugs.filter(d => d.name.trim() !== "")
-      if (validDrugs.length > 0) {
-        // Validate dates are in dd/mm/yyyy HH:mm format and in the future
+      const validMeals = meals.filter(m => m.mealName.trim() !== "")
+      const validWorkouts = workouts.filter(w => w.workoutName.trim() !== "")
+
+      if (validDrugs.length > 0 || validMeals.length > 0 || validWorkouts.length > 0) {
+        // Validate drug dates
         for (const d of validDrugs) {
           const parsed = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)
           if (!parsed || isNaN(parsed.getTime())) {
@@ -953,19 +1487,80 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
           }
         }
 
+        // Validate meal dates
+        for (const m of validMeals) {
+          const parsed = parseDateTimeDDMMYYYY_HHMM(m.scheduledAt)
+          if (!parsed || isNaN(parsed.getTime())) {
+            alert(`Thời gian ăn bữa "${m.mealName}" không đúng định dạng dd/mm/yyyy HH:mm!`)
+            setSaving(false)
+            return
+          }
+          if (parsed.getTime() <= Date.now()) {
+            alert(`Thời gian ăn bữa "${m.mealName}" phải là thời gian trong tương lai!`)
+            setSaving(false)
+            return
+          }
+        }
+
+        // Validate workout dates
+        for (const w of validWorkouts) {
+          const parsed = parseDateTimeDDMMYYYY_HHMM(w.scheduledAt)
+          if (!parsed || isNaN(parsed.getTime())) {
+            alert(`Thời gian tập bài "${w.workoutName}" không đúng định dạng dd/mm/yyyy HH:mm!`)
+            setSaving(false)
+            return
+          }
+          if (parsed.getTime() <= Date.now()) {
+            alert(`Thời gian tập bài "${w.workoutName}" phải là thời gian trong tương lai!`)
+            setSaving(false)
+            return
+          }
+        }
+
         const prescriptionPayload = {
           content: "Đơn thuốc khám bệnh",
-          medicineSchedules: validDrugs.map((d) => {
-            const parsedDate = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)!
+          medicineSchedules: validDrugs.length > 0 
+            ? validDrugs.map((d) => {
+                const parsedDate = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)!
+                return {
+                  medicineName: d.name.trim(),
+                  dosage: d.dose.trim() || "Theo hướng dẫn",
+                  scheduledAt: parsedDate.toISOString(),
+                  note: d.note.trim() || "Uống đúng giờ"
+                }
+              })
+            : [{
+                medicineName: "Theo chỉ định ăn uống & tập luyện",
+                dosage: "Không có thuốc uống",
+                scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                note: "Kiểm tra chế độ dinh dưỡng và bài tập luyện tương ứng"
+              }],
+          meals: validMeals.map((m) => {
+            const parsedDate = parseDateTimeDDMMYYYY_HHMM(m.scheduledAt)!
             return {
-              medicineName: d.name.trim(),
-              dosage: d.dose.trim() || "Theo hướng dẫn",
+              mealName: m.mealName.trim(),
               scheduledAt: parsedDate.toISOString(),
-              note: d.note.trim() || "Uống đúng giờ"
+              note: m.note.trim(),
+              dishes: m.dishes.filter(dish => dish.dishName.trim() !== "").map((dish) => ({
+                dishName: dish.dishName.trim(),
+                quantity: Number(dish.quantity) || 1,
+                unit: dish.unit.trim() || "phần",
+                totalCalories: Number(dish.totalCalories) || 0,
+                totalProtein: Number(dish.totalProtein) || 0,
+                totalCarbohydrates: Number(dish.totalCarbohydrates) || 0,
+                totalFat: Number(dish.totalFat) || 0
+              }))
             }
           }),
-          meals: [],
-          workouts: []
+          workouts: validWorkouts.map((w) => {
+            const parsedDate = parseDateTimeDDMMYYYY_HHMM(w.scheduledAt)!
+            return {
+              workoutName: w.workoutName.trim(),
+              content: w.content.trim() || "Tập luyện theo hướng dẫn",
+              scheduledAt: parsedDate.toISOString(),
+              note: w.note.trim()
+            }
+          })
         }
 
         const rxMethod = prescriptionId ? "PATCH" : "POST"
@@ -1094,7 +1689,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
               <div className="flex items-center gap-2 text-left">
                 <Ico d={ic.thermo} cls="w-4 h-4 shrink-0" style={{ color: "#F59E0B" }} />
                 <div>
-                  <p className="text-xs text-slate-400" style={{ color: "#94A3B8" }}>Thân nhiệt</p>
+                  <p className="text-xs text-slate-400" style={{ color: "#94A3B8" }}>Nhiệt độ</p>
                   <p className="text-xs font-bold" style={{ color: "#0F172A" }}>{bodyTemperature || "N/A"} <span className="font-normal text-slate-400">°C</span></p>
                 </div>
               </div>
@@ -1219,11 +1814,11 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
             <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden flex flex-col">
               {/* Tabs */}
               <div className="flex border-b border-[#E2E8F0] shrink-0">
-                {([["img", "Hình ảnh"], ["rx", "Đơn thuốc"]] as const).map(([key, label]) => {
+                {([["img", "Hình ảnh"], ["rx", "Đơn thuốc"], ["meal", "Ăn uống"], ["workout", "Tập luyện"]] as const).map(([key, label]) => {
                   const active = rightTab === key
                   return (
                     <button key={key} onClick={() => setRightTab(key)}
-                      className="flex-1 py-3 text-xs font-semibold transition-colors cursor-pointer relative border-none bg-transparent outline-none"
+                      className="flex-1 py-3 text-xs font-semibold transition-colors cursor-pointer relative border-none bg-transparent outline-none truncate px-1"
                       style={{ color: active ? "#0284C7" : "#64748B" }}>
                       {label}
                       {active && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full" style={{ background: "#0284C7" }} />}
@@ -1233,20 +1828,37 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
               </div>
 
               <div className="p-4 flex-1 overflow-y-auto">
-                {rightTab === "img"
-                  ? <ImageTab 
-                      locked={locked} 
-                      images={images}
-                      onUploadImage={handleUploadImage}
-                      onDeleteImage={handleDeleteImage}
-                      uploadingImage={uploadingImage}
-                      patientName={patient.fullName}
-                    />
-                  : <PrescriptionTab 
-                      drugs={drugs} 
-                      setDrugs={setDrugs} 
-                      locked={locked} 
-                    />}
+                {rightTab === "img" && (
+                  <ImageTab 
+                    locked={locked} 
+                    images={images}
+                    onUploadImage={handleUploadImage}
+                    onDeleteImage={handleDeleteImage}
+                    uploadingImage={uploadingImage}
+                    patientName={patient.fullName}
+                  />
+                )}
+                {rightTab === "rx" && (
+                  <PrescriptionTab 
+                    drugs={drugs} 
+                    setDrugs={setDrugs} 
+                    locked={locked} 
+                  />
+                )}
+                {rightTab === "meal" && (
+                  <MealTab 
+                    meals={meals} 
+                    setMeals={setMeals} 
+                    locked={locked} 
+                  />
+                )}
+                {rightTab === "workout" && (
+                  <WorkoutTab 
+                    workouts={workouts} 
+                    setWorkouts={setWorkouts} 
+                    locked={locked} 
+                  />
+                )}
               </div>
             </div>
           ) : (
