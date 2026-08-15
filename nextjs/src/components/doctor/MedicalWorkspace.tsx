@@ -122,23 +122,6 @@ function UsSvg({ variant, patientName = "Tạ Hoàng Minh" }: { variant: number;
   )
 }
 
-function Thumb({ variant, active, onClick }: { variant: number; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="rounded-lg overflow-hidden transition-all cursor-pointer shrink-0"
-      style={{
-        width: 72, height: 56,
-        background: "#0A0A0A",
-        border: active ? "2px solid #0284C7" : "2px solid transparent",
-        boxShadow: active ? "0 0 0 1px rgba(2,132,199,0.3)" : "none",
-      }}
-    >
-      <UsSvg variant={variant} />
-    </button>
-  )
-}
-
 function ImageTab({ 
   locked, 
   images, 
@@ -155,132 +138,211 @@ function ImageTab({
   patientName?: string;
 }) {
   const [activeImg, setActiveImg] = useState(0)
+  const [showLightbox, setShowLightbox] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const combinedImages = [
-    { type: "mock", variant: 0, label: "Gan", caption: "Siêu âm gan — Phát hiện vùng tổn thương 2.4cm", url: "" },
-    { type: "mock", variant: 1, label: "Thận", caption: "Siêu âm thận — Theo dõi kết cấu nhu mô", url: "" },
-    { type: "mock", variant: 2, label: "Mật", caption: "Siêu âm túi mật — Kiểm tra dịch mật", url: "" },
-    ...images.map((img: any, idx: number) => ({
-      type: "real",
-      variant: idx + 3,
-      label: `Ảnh #${idx + 1}`,
-      caption: `Hình ảnh y khoa tải lên ngày ${new Date().toLocaleDateString("vi-VN")}`,
-      url: img.url,
-      imageId: img.imageId
-    }))
-  ]
+  const combinedImages = images.map((img: any, idx: number) => ({
+    type: "real",
+    variant: idx,
+    label: `Ảnh #${idx + 1}`,
+    caption: `Hình ảnh y khoa tải lên ngày ${new Date().toLocaleDateString("vi-VN")}`,
+    url: img.url,
+    imageId: img.imageId
+  }))
 
-  const currentImg = combinedImages[activeImg] || combinedImages[0]
+  const currentImg = combinedImages[activeImg]
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Main viewer */}
-      <div className="relative rounded-xl overflow-hidden" style={{ background: "#0A0A0A", aspectRatio: "4/3" }}>
-        {currentImg.type === "mock" ? (
-          <UsSvg variant={currentImg.variant} patientName={patientName} />
-        ) : (
-          <img src={currentImg.url} alt="Medical Record Scan" className="w-full h-full object-contain" />
-        )}
-        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-md"
-          style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
-          <Ico d={ic.scan} cls="w-3 h-3" style={{ color: "#5ab4d4" }} />
-          <span className="font-mono text-white" style={{ color: "#5ab4d4", fontSize: 10 }}>
-            {currentImg.label.toUpperCase()}
-          </span>
-        </div>
-        {locked && (
-          <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.3)" }}>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "rgba(0,0,0,0.6)" }}>
-              <Ico d={ic.lock} cls="w-3.5 h-3.5" style={{ color: "#94A3B8" }} />
-              <span className="text-xs" style={{ color: "#94A3B8" }}>Hồ sơ đã khóa</span>
-            </div>
+      {combinedImages.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4 border border-dashed border-[#E2E8F0] rounded-xl bg-white text-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
           </div>
-        )}
-      </div>
+          <div>
+            <p className="text-xs font-bold text-slate-700">Chưa có hình ảnh y khoa</p>
+            <p className="text-[10px] text-slate-400 mt-1">Vui lòng tải lên kết quả siêu âm hoặc phim chụp của bệnh nhân.</p>
+          </div>
+          {!locked && (
+            <>
+              <input 
+                ref={fileRef} 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={onUploadImage} 
+                disabled={uploadingImage} 
+              />
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadingImage}
+                className="h-8 px-4 flex items-center gap-1.5 text-xs font-semibold text-white bg-[#0284C7] hover:bg-[#025a87] rounded-lg transition-colors border-none cursor-pointer disabled:opacity-50"
+              >
+                {uploadingImage ? (
+                  <Ico d={ic.loader} cls="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <>
+                    <Ico d={ic.plus} cls="w-3.5 h-3.5" />
+                    Tải ảnh lên
+                  </>
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Main viewer */}
+          <div 
+            onClick={() => setShowLightbox(true)}
+            className="relative rounded-xl overflow-hidden cursor-zoom-in group/viewer" 
+            style={{ background: "#0A0A0A", aspectRatio: "4/3" }}
+          >
+            <img src={currentImg.url} alt="Medical Record Scan" className="w-full h-full object-contain transition-transform duration-300 group-hover/viewer:scale-[1.02]" />
+            <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-md"
+              style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+              <Ico d={ic.scan} cls="w-3 h-3" style={{ color: "#5ab4d4" }} />
+              <span className="font-mono text-white" style={{ color: "#5ab4d4", fontSize: 10 }}>
+                {currentImg.label.toUpperCase()}
+              </span>
+            </div>
+            
+            {/* Hover instruction overlay */}
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/viewer:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+              <span className="px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs font-semibold backdrop-blur-sm">
+                Nhấp để xem chi tiết
+              </span>
+            </div>
 
-      {/* Thumbnail strip */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {combinedImages.map((img, i) => {
-          const isActive = activeImg === i
-          if (img.type === "mock") {
-            return (
-              <Thumb key={i} variant={img.variant} active={isActive} onClick={() => setActiveImg(i)} />
-            )
-          } else {
-            return (
-              <div key={i} className="relative group shrink-0">
+            {locked && (
+              <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.3)" }}>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "rgba(0,0,0,0.6)" }}>
+                  <Ico d={ic.lock} cls="w-3.5 h-3.5" style={{ color: "#94A3B8" }} />
+                  <span className="text-xs" style={{ color: "#94A3B8" }}>Hồ sơ đã khóa</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Thumbnail strip */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {combinedImages.map((img, i) => {
+              const isActive = activeImg === i
+              return (
+                <div key={i} className="relative group shrink-0">
+                  <button
+                    onClick={() => setActiveImg(i)}
+                    className="rounded-lg overflow-hidden transition-all cursor-pointer block p-0"
+                    style={{
+                      width: 72, height: 56,
+                      background: "#0A0A0A",
+                      border: isActive ? "2px solid #0284C7" : "2px solid transparent",
+                      boxShadow: isActive ? "0 0 0 1px rgba(2,132,199,0.3)" : "none",
+                    }}
+                  >
+                    <img src={img.url} alt="Medical record thumbnail" className="w-full h-full object-cover" />
+                  </button>
+                  {!locked && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDeleteImage((img as any).imageId)
+                        if (activeImg >= combinedImages.length - 1) {
+                          setActiveImg(0)
+                        }
+                      }}
+                      className="absolute -top-1 -right-1 p-0.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow transition-opacity opacity-0 group-hover:opacity-100"
+                    >
+                      <Ico d={ic.x} cls="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Add image card */}
+            {!locked && (
+              <>
+                <input 
+                  ref={fileRef} 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={onUploadImage} 
+                  disabled={uploadingImage} 
+                />
                 <button
-                  onClick={() => setActiveImg(i)}
-                  className="rounded-lg overflow-hidden transition-all cursor-pointer block p-0"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="rounded-lg flex flex-col items-center justify-center gap-1 shrink-0 transition-all cursor-pointer hover:border-blue-400 hover:bg-blue-50"
                   style={{
                     width: 72, height: 56,
-                    background: "#0A0A0A",
-                    border: isActive ? "2px solid #0284C7" : "2px solid transparent",
-                    boxShadow: isActive ? "0 0 0 1px rgba(2,132,199,0.3)" : "none",
+                    border: "2px dashed #CBD5E1",
+                    color: "#94A3B8",
+                    background: "transparent"
                   }}
                 >
-                  <img src={img.url} alt="Medical record thumbnail" className="w-full h-full object-cover" />
+                  {uploadingImage ? (
+                    <Ico d={ic.loader} cls="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Ico d={ic.plus} cls="w-4 h-4" />
+                      <span style={{ fontSize: 9, fontWeight: 600 }}>Thêm</span>
+                    </>
+                  )}
                 </button>
-                {!locked && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDeleteImage((img as any).imageId)
-                      if (activeImg >= combinedImages.length - 1) {
-                        setActiveImg(0)
-                      }
-                    }}
-                    className="absolute -top-1 -right-1 p-0.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow transition-opacity opacity-0 group-hover:opacity-100"
-                  >
-                    <Ico d={ic.x} cls="w-2.5 h-2.5" />
-                  </button>
-                )}
-              </div>
-            )
-          }
-        })}
+              </>
+            )}
+          </div>
+        </>
+      )}
 
-        {/* Add image card */}
-        {!locked && (
-          <>
-            <input 
-              ref={fileRef} 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              onChange={onUploadImage} 
-              disabled={uploadingImage} 
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploadingImage}
-              className="rounded-lg flex flex-col items-center justify-center gap-1 shrink-0 transition-all cursor-pointer hover:border-blue-400 hover:bg-blue-50"
-              style={{
-                width: 72, height: 56,
-                border: "2px dashed #CBD5E1",
-                color: "#94A3B8",
-                background: "transparent"
-              }}
+      {/* Lightbox Modal Overlay */}
+      {showLightbox && currentImg && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm cursor-zoom-out select-none"
+          onClick={() => setShowLightbox(false)}
+        >
+          <button 
+            type="button"
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer border-none transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowLightbox(false)
+            }}
+          >
+            <Ico d={ic.x} cls="w-6 h-6" />
+          </button>
+          
+          <img 
+            src={currentImg.url} 
+            alt="Medical Scan Full Size" 
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl transition-transform duration-300 ease-out cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
+          
+          <div 
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>{currentImg.label.toUpperCase()}</span>
+            <span className="text-slate-400">·</span>
+            <a 
+              href={currentImg.url} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-sky-400 hover:underline"
             >
-              {uploadingImage ? (
-                <Ico d={ic.loader} cls="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <Ico d={ic.plus} cls="w-4 h-4" />
-                  <span style={{ fontSize: 9, fontWeight: 600 }}>Thêm</span>
-                </>
-              )}
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Caption */}
-      <p className="text-xs italic text-left" style={{ color: "#94A3B8" }}>
-        {currentImg.caption}
-      </p>
+              Mở trong tab mới
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
