@@ -1722,7 +1722,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
         </div>
 
         {/* Middle — 50% */}
-        <div className="flex flex-col gap-4 overflow-y-auto pb-4 min-h-0" style={{ flex: 1 }}>
+        <div className="flex flex-col gap-4 overflow-y-auto pb-4 h-full min-h-0" style={{ flex: 1 }}>
           {loadingDetails ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-2 bg-white rounded-xl border border-[#E2E8F0] min-h-[300px]">
               <svg className="animate-spin h-6 w-6 text-[#0EA5E9]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1734,7 +1734,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
           ) : activeAppointmentId && activeExam ? (
             <>
               {/* Section 1: Vital signs */}
-              <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm shrink-0">
                 <div className="px-5 py-3 font-bold text-sm border-b border-[#F1F5F9] text-left" style={{ color: "#0F172A" }}>
                   Chỉ số sinh hiệu
                 </div>
@@ -1751,7 +1751,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
               </div>
 
               {/* Section 2: Diagnosis & notes */}
-              <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm shrink-0">
                 <div className="px-5 py-3 font-bold text-sm border-b border-[#F1F5F9] text-left" style={{ color: "#0F172A" }}>
                   Chẩn đoán &amp; Ghi chú
                 </div>
@@ -1809,7 +1809,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
         </div>
 
         {/* Right — 30% */}
-        <div style={{ width: "29%" }} className="flex flex-col min-h-0 overflow-y-auto pb-4">
+        <div style={{ width: "29%" }} className="flex flex-col min-h-0 overflow-y-auto pb-4 h-full">
           {activeAppointmentId && activeExam && !loadingDetails ? (
             <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden flex flex-col">
               {/* Tabs */}
