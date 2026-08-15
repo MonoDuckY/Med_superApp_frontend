@@ -1689,7 +1689,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
               <div className="flex items-center gap-2 text-left">
                 <Ico d={ic.thermo} cls="w-4 h-4 shrink-0" style={{ color: "#F59E0B" }} />
                 <div>
-                  <p className="text-xs text-slate-400" style={{ color: "#94A3B8" }}>Nhiệt độ</p>
+                  <p className="text-xs text-slate-400" style={{ color: "#94A3B8" }}>Thân nhiệt</p>
                   <p className="text-xs font-bold" style={{ color: "#0F172A" }}>{bodyTemperature || "N/A"} <span className="font-normal text-slate-400">°C</span></p>
                 </div>
               </div>
