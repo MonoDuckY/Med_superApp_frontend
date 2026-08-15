@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, Loader2 } from "lucide-react";
 import { fetchWithAuth } from "@/lib/auth";
 
@@ -37,6 +37,7 @@ export default function ScheduleRegister() {
   const [allSlots, setAllSlots] = useState<any[]>([]);
   const [allRooms, setAllRooms] = useState<any[]>([]);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   // Form registration states
   const [date, setDate] = useState("");
@@ -78,6 +79,71 @@ export default function ScheduleRegister() {
 
   const formatDateISO = (d: Date) => {
     return d.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  };
+
+  const getTomorrowStr = () => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parseInt(parts.find(p => p.type === "year")!.value, 10);
+    const month = parseInt(parts.find(p => p.type === "month")!.value, 10) - 1;
+    const date = parseInt(parts.find(p => p.type === "day")!.value, 10);
+    
+    const localTomorrow = new Date(year, month, date);
+    localTomorrow.setDate(localTomorrow.getDate() + 1);
+    
+    return localTomorrow.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  };
+
+  const handleTextClick = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === "function") {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.click();
+      }
+    }
+  };
+
+  const handleDatePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    const [y, m, d] = val.split("-");
+    setDate(`${d}/${m}/${y}`);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
+
+  const validateInputDate = (dStr: string) => {
+    if (!dStr) return "Vui lòng chọn ngày làm việc.";
+    const parts = dStr.split("/");
+    if (parts.length !== 3 || parts[0].length !== 2 || parts[1].length !== 2 || parts[2].length !== 4) {
+      return "Định dạng ngày làm việc phải là dd/mm/yyyy (Ví dụ: 15/08/2026).";
+    }
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return "Ngày làm việc không hợp lệ.";
+    }
+    if (month < 1 || month > 12) {
+      return "Tháng không hợp lệ.";
+    }
+    const maxDays = new Date(year, month, 0).getDate();
+    if (day < 1 || day > maxDays) {
+      return `Tháng ${month} chỉ có tối đa ${maxDays} ngày.`;
+    }
+    
+    const selected = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const tomorrowStr = getTomorrowStr();
+    if (selected < tomorrowStr) {
+      return "Bác sĩ phải đăng ký lịch làm việc trước tối thiểu một ngày (từ ngày mai trở đi).";
+    }
+    return null;
   };
 
   const formatDateDM = (d: Date) => {
@@ -210,12 +276,9 @@ export default function ScheduleRegister() {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (!date) {
-      setErrorMsg("Vui lòng chọn ngày làm việc.");
-      return;
-    }
-    if (!roomId) {
-      setErrorMsg("Vui lòng chọn phòng khám.");
+    const dateError = validateInputDate(date);
+    if (dateError) {
+      setErrorMsg(dateError);
       return;
     }
 
@@ -228,9 +291,11 @@ export default function ScheduleRegister() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          workDate: date,
+          workDate: (() => {
+            const [d, m, y] = date.split("/");
+            return `${y}-${m}-${d}`;
+          })(),
           session: shift,
-          roomId,
           note: note.trim() || null,
         }),
       });
@@ -240,7 +305,6 @@ export default function ScheduleRegister() {
         setSuccessMsg("Gửi đăng ký lịch thành công! Đang chờ duyệt.");
         setDate("");
         setNote("");
-        setRoomId("");
         fetchSchedules();
       } else {
         let msg = result.message || "Gửi đăng ký lịch thất bại.";
@@ -404,14 +468,25 @@ export default function ScheduleRegister() {
 
             {/* Date Input */}
             <div>
-              <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wider">Ngày làm việc</label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={e => { setDate(e.target.value); setErrorMsg(null); setSuccessMsg(null); }}
-                className="w-full h-9 px-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-sky-100 bg-white font-medium text-[#0F172A]"
-              />
+              <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wider">Ngày làm việc (dd/mm/yyyy)</label>
+              <div className="relative w-full h-9">
+                <input
+                  type="text"
+                  placeholder="Chọn ngày làm việc..."
+                  readOnly
+                  required
+                  value={date}
+                  onClick={handleTextClick}
+                  className="w-full h-full px-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-sky-100 bg-white font-medium text-[#0F172A] cursor-pointer"
+                />
+                <input
+                  type="date"
+                  ref={dateInputRef}
+                  min={getTomorrowStr()}
+                  onChange={handleDatePicked}
+                  className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
+                />
+              </div>
             </div>
 
             {/* Session Segmented Control */}
@@ -446,25 +521,6 @@ export default function ScheduleRegister() {
                 >
                   Cả ngày (8h-17h)
                 </button>
-              </div>
-            </div>
-
-            {/* Clinic Room Selector */}
-            <div>
-              <label className="block text-xs font-bold text-[#475569] mb-1.5 uppercase tracking-wider">Phòng khám</label>
-              <div className="relative">
-                <select
-                  required
-                  value={roomId}
-                  onChange={e => { setRoomId(e.target.value); setErrorMsg(null); setSuccessMsg(null); }}
-                  className="w-full h-9 pl-3 pr-8 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-sky-100 bg-white appearance-none cursor-pointer transition-all font-medium text-[#0F172A]"
-                >
-                  <option value="">Chọn phòng khám đăng ký...</option>
-                  {allRooms.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-2.5 pointer-events-none text-slate-400" />
               </div>
             </div>
 
