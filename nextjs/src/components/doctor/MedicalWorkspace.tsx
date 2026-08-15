@@ -27,6 +27,44 @@ const ic = {
   scan:       ["M3 7V5a2 2 0 0 1 2-2h2", "M17 3h2a2 2 0 0 1 2 2v2", "M21 17v2a2 2 0 0 1-2 2h-2", "M7 21H5a2 2 0 0 1-2-2v-2"],
   loader:     "M21 12a9 9 0 1 1-6.219-8.56",
   x:          "M18 6 6 18M6 6l12 12",
+  calendar:   ["M19 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z", "M16 2v4", "M8 2v4", "M3 10h18"]
+}
+
+// ─── Date Formatter Helper ───────────────────────────────────────────────────
+function formatDateTimeDDMMYYYY_HHMM(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0')
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const y = date.getFullYear()
+  const h = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${d}/${m}/${y} ${h}:${min}`
+}
+
+function parseDateTimeDDMMYYYY_HHMM(str: string): Date | null {
+  const match = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/)
+  if (!match) return null
+  const day = parseInt(match[1], 10)
+  const month = parseInt(match[2], 10) - 1
+  const year = parseInt(match[3], 10)
+  const hour = parseInt(match[4], 10)
+  const minute = parseInt(match[5], 10)
+  if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute)) return null
+  
+  if (day < 1 || day > 31) return null
+  if (month < 0 || month > 11) return null
+  if (year < 1900 || year > 2100) return null
+  if (hour < 0 || hour > 23) return null
+  if (minute < 0 || minute > 59) return null
+  
+  return new Date(year, month, day, hour, minute, 0)
+}
+
+function localToDatetimeValue(str: string): string {
+  const parsed = parseDateTimeDDMMYYYY_HHMM(str)
+  if (!parsed || isNaN(parsed.getTime())) return ""
+  const offset = parsed.getTimezoneOffset() * 60000
+  const localDate = new Date(parsed.getTime() - offset)
+  return localDate.toISOString().slice(0, 16)
 }
 
 // ─── Ultrasound SVG scenes ────────────────────────────────────────────────────
@@ -247,62 +285,127 @@ function ImageTab({
   )
 }
 
-type Drug = { name: string; dose: string; instruction: string; days: string }
+type Drug = { name: string; dose: string; scheduledAt: string; note: string }
 
-const DRUG_SUGGESTIONS = [
-  "Paracetamol 500mg", "Amoxicillin 500mg", "Ibuprofen 400mg",
-  "Omeprazole 20mg", "Metformin 500mg", "Atorvastatin 10mg",
-  "Ciprofloxacin 500mg", "Cetirizine 10mg", "Aspirin 81mg", "Losartan 50mg",
-]
-
-function PrescriptionTab({ drugs, setDrugs, locked }: {
-  drugs: Drug[]; setDrugs: React.Dispatch<React.SetStateAction<Drug[]>>; locked: boolean
+function PrescriptionTab({ 
+  drugs, 
+  setDrugs, 
+  locked 
+}: {
+  drugs: Drug[]; 
+  setDrugs: React.Dispatch<React.SetStateAction<Drug[]>>; 
+  locked: boolean 
 }) {
-  const [showDrop, setShowDrop] = useState(false)
-  const [drugQ, setDrugQ]       = useState("")
-  const dropRef                 = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setShowDrop(false)
-    }
-    document.addEventListener("mousedown", onDoc)
-    return () => document.removeEventListener("mousedown", onDoc)
-  }, [])
-
-  function addDrug(name: string) {
-    setDrugs(p => [...p, { name, dose: "2 viên/ngày", instruction: "Uống sau khi ăn no", days: "5 ngày" }])
-    setShowDrop(false); setDrugQ("")
+  function addRow() {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = formatDateTimeDDMMYYYY_HHMM(tomorrow)
+    setDrugs(prev => [...prev, { name: "", dose: "", scheduledAt: tomorrowStr, note: "" }])
   }
 
-  const matches = DRUG_SUGGESTIONS.filter(d => !drugQ || d.toLowerCase().includes(drugQ.toLowerCase()))
+  function removeRow(idx: number) {
+    setDrugs(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  function updateRow(idx: number, key: keyof Drug, val: string) {
+    setDrugs(prev => prev.map((d, i) => i === idx ? { ...d, [key]: val } : d))
+  }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 text-left">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-bold text-slate-700">Chi tiết đơn thuốc</label>
+        {!locked && (
+          <button
+            type="button"
+            onClick={addRow}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-[#0284C7] hover:bg-[#025a87] rounded-lg transition-colors border-none cursor-pointer"
+          >
+            <Ico d={ic.plus} cls="w-3 h-3" />
+            Thêm dòng
+          </button>
+        )}
+      </div>
+
       {drugs.length === 0 ? (
-        <div className="text-center py-10 text-xs text-slate-300" style={{ color: "#CBD5E1" }}>Chưa có thuốc nào trong đơn.</div>
+        <div className="text-center py-10 text-xs text-slate-400 border border-dashed border-[#E2E8F0] rounded-xl bg-white">
+          Chưa có thuốc nào. Nhấp "Thêm dòng" để bắt đầu nhập.
+        </div>
       ) : (
-        <div className="border border-[#E2E8F0] rounded-lg overflow-hidden">
-          <table className="w-full">
+        <div className="border border-[#E2E8F0] rounded-xl overflow-hidden shadow-sm bg-white">
+          <table className="w-full border-collapse">
             <thead>
               <tr style={{ background: "#FAFAFA", borderBottom: "1px solid #E2E8F0" }}>
-                {["Tên thuốc", "Liều lượng", "Cách dùng", "Ngày", ""].map(h => (
+                {["Tên thuốc *", "Liều lượng", "Thời gian uống *", "Note", ""].map(h => (
                   <th key={h} className="text-left text-xs font-bold px-3 py-2 text-slate-500" style={{ color: "#64748B" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F1F5F9]">
-              {drugs.map((d, i) => (
-                <tr key={i} className="group hover:bg-[#FAFAFA] transition-colors">
-                  <td className="px-3 py-2.5 text-xs font-semibold text-[#0F172A]" style={{ color: "#0F172A" }}>{d.name}</td>
-                  <td className="px-3 py-2.5 text-xs text-slate-500" style={{ color: "#64748B" }}>{d.dose}</td>
-                  <td className="px-3 py-2.5 text-xs text-slate-500" style={{ color: "#64748B" }}>{d.instruction}</td>
-                  <td className="px-3 py-2.5 text-xs text-slate-500" style={{ color: "#64748B" }}>{d.days}</td>
-                  <td className="px-3 py-2.5 text-right w-8">
+              {drugs.map((d, idx) => (
+                <tr key={idx} className="group hover:bg-[#FAFAFA] transition-colors">
+                  <td className="p-1">
+                    <input
+                      type="text"
+                      placeholder="vd: Paracetamol"
+                      value={d.name}
+                      readOnly={locked}
+                      onChange={e => updateRow(idx, "name", e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 bg-white text-[#0F172A] disabled:bg-slate-50 disabled:text-slate-400"
+                      disabled={locked}
+                    />
+                  </td>
+                  <td className="p-1">
+                    <input
+                      type="text"
+                      placeholder="vd: 2 viên/ngày"
+                      value={d.dose}
+                      readOnly={locked}
+                      onChange={e => updateRow(idx, "dose", e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 bg-white text-[#0F172A] disabled:bg-slate-50 disabled:text-slate-400"
+                      disabled={locked}
+                    />
+                  </td>
+                  <td className="p-1">
+                    <div className="relative w-full h-7">
+                      {/* Stylized display format dd/mm/yyyy HH:mm */}
+                      <div className="absolute inset-0 flex items-center justify-between px-2 py-1 text-xs border border-[#E2E8F0] rounded-md bg-white text-[#0F172A] pointer-events-none group-hover:border-sky-300">
+                        <span className="truncate">{d.scheduledAt}</span>
+                        <Ico d={ic.calendar} cls="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+                      </div>
+                      {/* Hidden native datetime-local picker acting as trigger */}
+                      <input
+                        type="datetime-local"
+                        disabled={locked}
+                        value={localToDatetimeValue(d.scheduledAt)}
+                        onChange={e => {
+                          const val = e.target.value
+                          if (!val) return
+                          const picked = new Date(val)
+                          const formatted = formatDateTimeDDMMYYYY_HHMM(picked)
+                          updateRow(idx, "scheduledAt", formatted)
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </div>
+                  </td>
+                  <td className="p-1">
+                    <input
+                      type="text"
+                      placeholder="vd: Uống sau ăn"
+                      value={d.note}
+                      readOnly={locked}
+                      onChange={e => updateRow(idx, "note", e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-[#E2E8F0] rounded-md outline-none focus:border-sky-400 bg-white text-[#0F172A] disabled:bg-slate-50 disabled:text-slate-400"
+                      disabled={locked}
+                    />
+                  </td>
+                  <td className="p-1 text-center w-6">
                     {!locked && (
-                      <button onClick={() => setDrugs(p => p.filter((_, idx) => idx !== i))}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none bg-transparent"
-                        style={{ color: "#EF4444" }}>
+                      <button
+                        type="button"
+                        onClick={() => removeRow(idx)}
+                        className="cursor-pointer border-none bg-transparent text-rose-500 hover:text-rose-700 transition-colors p-1"
+                      >
                         <Ico d={ic.trash} cls="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -311,40 +414,6 @@ function PrescriptionTab({ drugs, setDrugs, locked }: {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {!locked && (
-        <div className="relative" ref={dropRef}>
-          <button type="button" onClick={() => setShowDrop(s => !s)}
-            className="w-full flex items-center justify-center gap-2 h-8 text-xs font-semibold border border-dashed border-[#CBD5E1] rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer text-slate-500 bg-transparent"
-            style={{ color: "#64748B" }}>
-            <Ico d={ic.plus} cls="w-3.5 h-3.5" />
-            Thêm thuốc vào đơn
-          </button>
-
-          {showDrop && (
-            <div className="absolute bottom-10 left-0 right-0 bg-white border border-[#E2E8F0] rounded-xl shadow-xl z-20 overflow-hidden">
-              <div className="p-2 border-b border-[#F1F5F9]">
-                <div className="relative">
-                  <Ico d={ic.search} cls="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
-                  <input autoFocus value={drugQ} onChange={e => setDrugQ(e.target.value)}
-                    placeholder="Tìm tên thuốc..."
-                    className="w-full h-8 pl-8 pr-2 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-400 transition-all bg-white" />
-                </div>
-              </div>
-              <div className="max-h-44 overflow-y-auto">
-                {matches.map(s => (
-                  <button key={s} onClick={() => addDrug(s)}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-[#EFF6FF] transition-colors cursor-pointer border-none bg-transparent"
-                    style={{ color: "#0F172A" }}>{s}</button>
-                ))}
-                {matches.length === 0 && (
-                  <p className="px-3 py-3 text-xs text-center text-slate-300" style={{ color: "#CBD5E1" }}>Không tìm thấy thuốc.</p>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -471,6 +540,7 @@ function VitalInput({ label, placeholder, unit, value, onChange, locked }: {
             color: "#0F172A",
             background: locked ? "#FAFAFA" : "white",
           }}
+          disabled={locked}
         />
         <span className="absolute right-2.5 text-xs font-semibold pointer-events-none whitespace-nowrap"
           style={{ color: "#94A3B8" }}>
@@ -635,7 +705,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
 
     setMedicalHistory(p.medicalHistory || "")
     setDiagnosis(r.diagnosis || "")
-    setNotes(firstRx.content || "")
+    setNotes(r.note || "")
     
     // Vitals
     setBloodPressure(r.bloodPressure || "")
@@ -650,12 +720,15 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
     setPrescriptionId(firstRx.id || null)
 
     if (firstRx.medicineSchedules) {
-      const mappedDrugs = firstRx.medicineSchedules.map((s: any) => ({
-        name: s.medicineName,
-        dose: s.dosage,
-        instruction: s.note || "",
-        days: "5 ngày"
-      }))
+      const mappedDrugs = firstRx.medicineSchedules.map((s: any) => {
+        const d = s.scheduledAt ? new Date(s.scheduledAt) : new Date(Date.now() + 24 * 60 * 60 * 1000)
+        return {
+          name: s.medicineName || "",
+          dose: s.dosage || "",
+          scheduledAt: formatDateTimeDDMMYYYY_HHMM(d),
+          note: s.note || ""
+        }
+      })
       setDrugs(mappedDrugs)
     } else {
       setDrugs([])
@@ -727,7 +800,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
       // 1. Save clinical info
       const clinicalPayload = {
         medicalHistory: medicalHistory || null,
-        note: record.note || null, // preserve or save notes
+        note: notes.trim() || null,
         bloodPressure: bloodPressure || null,
         heartRate: heartRate ? parseInt(heartRate, 10) : null,
         breathingRate: breathingRate ? parseInt(breathingRate, 10) : null,
@@ -761,15 +834,34 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
       }
 
       // 3. Save prescription
-      if (notes.trim() || drugs.length > 0) {
+      const validDrugs = drugs.filter(d => d.name.trim() !== "")
+      if (validDrugs.length > 0) {
+        // Validate dates are in dd/mm/yyyy HH:mm format and in the future
+        for (const d of validDrugs) {
+          const parsed = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)
+          if (!parsed || isNaN(parsed.getTime())) {
+            alert(`Thời gian uống "${d.scheduledAt}" không đúng định dạng dd/mm/yyyy HH:mm!`)
+            setSaving(false)
+            return
+          }
+          if (parsed.getTime() <= Date.now()) {
+            alert(`Thời gian uống "${d.scheduledAt}" phải là thời gian trong tương lai!`)
+            setSaving(false)
+            return
+          }
+        }
+
         const prescriptionPayload = {
-          content: notes.trim(),
-          medicineSchedules: drugs.map(d => ({
-            medicineName: d.name,
-            dosage: d.dose,
-            scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            note: d.instruction
-          })),
+          content: "Đơn thuốc khám bệnh",
+          medicineSchedules: validDrugs.map((d) => {
+            const parsedDate = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)!
+            return {
+              medicineName: d.name.trim(),
+              dosage: d.dose.trim() || "Theo hướng dẫn",
+              scheduledAt: parsedDate.toISOString(),
+              note: d.note.trim() || "Uống đúng giờ"
+            }
+          }),
           meals: [],
           workouts: []
         }
@@ -813,7 +905,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
       // 1. Save clinical info
       const clinicalPayload = {
         medicalHistory: medicalHistory || null,
-        note: record.note || null,
+        note: notes.trim() || null,
         bloodPressure: bloodPressure || null,
         heartRate: heartRate ? parseInt(heartRate, 10) : null,
         breathingRate: breathingRate ? parseInt(breathingRate, 10) : null,
@@ -844,15 +936,34 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
       })
 
       // 3. Save prescription
-      if (notes.trim() || drugs.length > 0) {
+      const validDrugs = drugs.filter(d => d.name.trim() !== "")
+      if (validDrugs.length > 0) {
+        // Validate dates are in dd/mm/yyyy HH:mm format and in the future
+        for (const d of validDrugs) {
+          const parsed = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)
+          if (!parsed || isNaN(parsed.getTime())) {
+            alert(`Thời gian uống "${d.scheduledAt}" không đúng định dạng dd/mm/yyyy HH:mm!`)
+            setSaving(false)
+            return
+          }
+          if (parsed.getTime() <= Date.now()) {
+            alert(`Thời gian uống "${d.scheduledAt}" phải là thời gian trong tương lai!`)
+            setSaving(false)
+            return
+          }
+        }
+
         const prescriptionPayload = {
-          content: notes.trim(),
-          medicineSchedules: drugs.map(d => ({
-            medicineName: d.name,
-            dosage: d.dose,
-            scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            note: d.instruction
-          })),
+          content: "Đơn thuốc khám bệnh",
+          medicineSchedules: validDrugs.map((d) => {
+            const parsedDate = parseDateTimeDDMMYYYY_HHMM(d.scheduledAt)!
+            return {
+              medicineName: d.name.trim(),
+              dosage: d.dose.trim() || "Theo hướng dẫn",
+              scheduledAt: parsedDate.toISOString(),
+              note: d.note.trim() || "Uống đúng giờ"
+            }
+          }),
           meals: [],
           workouts: []
         }
@@ -1060,6 +1171,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
                       onChange={e => setMedicalHistory(e.target.value)}
                       className="w-full p-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 transition-all resize-none leading-relaxed bg-white"
                       style={{ color: "#0F172A", background: locked ? "#FAFAFA" : "white" }}
+                      disabled={locked}
                     />
                   </div>
                   <div>
@@ -1074,10 +1186,11 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
                       onChange={e => setDiagnosis(e.target.value)}
                       className="w-full p-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 transition-all resize-none leading-relaxed bg-white"
                       style={{ color: "#0F172A", background: locked ? "#FAFAFA" : "white" }}
+                      disabled={locked}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: "#0F172A" }}>Ghi chú dặn dặn &amp; Kế hoạch điều trị (Prescription Advice)</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: "#0F172A" }}>Ghi chú dặn dò &amp; Kế hoạch điều trị (Prescription Advice)</label>
                     <textarea
                       rows={3}
                       placeholder="Ghi chú thêm về điều trị, dặn dò uống thuốc hoặc lịch hẹn..."
@@ -1086,6 +1199,7 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
                       onChange={e => setNotes(e.target.value)}
                       className="w-full p-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 transition-all resize-none leading-relaxed bg-white"
                       style={{ color: "#0F172A", background: locked ? "#FAFAFA" : "white" }}
+                      disabled={locked}
                     />
                   </div>
                 </div>
@@ -1128,7 +1242,11 @@ export default function MedicalWorkspace({ onBackToSchedule }: MedicalWorkspaceP
                       uploadingImage={uploadingImage}
                       patientName={patient.fullName}
                     />
-                  : <PrescriptionTab drugs={drugs} setDrugs={setDrugs} locked={locked} />}
+                  : <PrescriptionTab 
+                      drugs={drugs} 
+                      setDrugs={setDrugs} 
+                      locked={locked} 
+                    />}
               </div>
             </div>
           ) : (
