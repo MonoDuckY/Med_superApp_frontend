@@ -108,11 +108,16 @@ export default function StaffSchedulesPage() {
             return {
               id: item.submissionId,
               doctorName: docName,
+              doctorId: item.doctorId,
               workDate: item.workDate,
               shift: shiftDisplay,
+              session: item.session,
               roomName: item.roomId || (slots[0]?.roomId || "N/A"),
+              roomId: item.roomId || slots[0]?.roomId || "",
               status: item.status,
-              rejectionReason: item.rejectionReason
+              rejectionReason: item.rejectionReason,
+              note: item.note || "",
+              slots: slots
             };
           });
           setSchedules(mapped);
