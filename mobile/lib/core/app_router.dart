@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +24,13 @@ import '../view_models/notification_viewmodel.dart';
 class AppRouter {
   AppRouter._();
 
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'root');
+  static final GlobalKey<NavigatorState> shellNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'shell');
+
   static final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/home',
     redirect: (context, state) async {
       final prefs = await SharedPreferences.getInstance();
@@ -44,10 +51,12 @@ class AppRouter {
     routes: [
       // ── Auth routes (no Bottom Nav) ───────────────────────────────────────
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/login',
         builder: (context, state) => const LoginView(),
       ),
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/otp/:phoneNumber',
         builder: (context, state) {
           final phoneNumber = state.pathParameters['phoneNumber'] ?? '';
@@ -57,6 +66,7 @@ class AppRouter {
 
       // ── Authenticated shell — Bottom Navigation 4 tabs ────────────────────
       ShellRoute(
+        navigatorKey: shellNavigatorKey,
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           // Tab 1 — Trang chủ
@@ -89,34 +99,40 @@ class AppRouter {
 
       // UC-07: Đặt lịch mới
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/schedule/book',
         builder: (context, state) => const AppointmentBookingView(),
       ),
 
       // UC-13: Gửi phản hồi (phát sinh từ lịch khám đã hoàn thành)
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/schedule/feedback',
         builder: (context, state) => const FeedbackView(),
       ),
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/profile/feedback',
         builder: (context, state) => const FeedbackView(),
       ),
 
       // UC-06: Hồ sơ bệnh án — danh sách
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/profile/medical-records',
         builder: (context, state) => const MedicalRecordListView(),
       ),
 
       // UC-04: Thông tin cá nhân
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/profile/personal-info',
         builder: (context, state) => const PersonalInfoView(),
       ),
 
       // UC-06: Hồ sơ bệnh án — chi tiết
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/profile/medical-records/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
@@ -126,6 +142,7 @@ class AppRouter {
 
       // UC-10: Lịch uống thuốc
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/health/medicine-schedule',
         builder: (context, state) => ChangeNotifierProvider(
           create: (_) => MedicineScheduleViewModel(),
@@ -135,16 +152,19 @@ class AppRouter {
 
       // UC-08: Theo dõi hoạt động sức khỏe hàng ngày
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/health/daily-activities',
         builder: (context, state) => const DailyActivitiesView(),
       ),
 
       // UC-12: Tin tức & Kiến thức sức khỏe
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/health/news',
         builder: (context, state) => const HealthNewsListView(),
       ),
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/health/news/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
@@ -154,6 +174,7 @@ class AppRouter {
 
       // UC-09: Thông báo bệnh nhân
       GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: '/notifications',
         builder: (context, state) => ChangeNotifierProvider(
           create: (_) => NotificationViewModel(),

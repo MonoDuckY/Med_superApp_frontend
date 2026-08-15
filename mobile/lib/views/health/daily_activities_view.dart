@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -160,7 +161,13 @@ class _ActivityHeader extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/health');
+                    }
+                  },
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
                   color: AppColors.textPrimary,
                 ),

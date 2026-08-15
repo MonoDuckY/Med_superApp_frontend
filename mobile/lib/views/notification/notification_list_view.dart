@@ -184,10 +184,13 @@ class _NotificationScaffold extends StatelessWidget {
       await vm.markAsRead(item.id);
     }
 
-    // Điều hướng nếu có target route
     final route = item.targetRoute;
     if (route != null && context.mounted) {
-      context.push(route);
+      if (route == '/schedule') {
+        context.go(route);
+      } else {
+        context.push(route);
+      }
     }
   }
 }

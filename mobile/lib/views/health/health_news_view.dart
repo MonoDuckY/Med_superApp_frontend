@@ -62,7 +62,13 @@ class _HealthNewsListViewState extends State<HealthNewsListView> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
               size: 18, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/health');
+            }
+          },
         ),
         title: Text(
           'Kiến thức & Tin tức',
@@ -357,7 +363,13 @@ class HealthNewsDetailView extends StatelessWidget {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
                   size: 18, color: AppColors.textPrimary),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/health/news');
+                }
+              },
             ),
             title: Text(
               article.category,
