@@ -88,7 +88,7 @@ class _OtpBodyState extends State<_OtpBody> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: AppColors.borderLight),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -114,7 +114,7 @@ class _OtpBodyState extends State<_OtpBody> {
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF38BDF8), AppColors.primary],
+                        colors: [AppColors.sky400, AppColors.primary],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
@@ -131,9 +131,9 @@ class _OtpBodyState extends State<_OtpBody> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+                      color: AppColors.sky100,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFBAE6FD)),
+                      border: Border.all(color: AppColors.sky200),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -159,7 +159,7 @@ class _OtpBodyState extends State<_OtpBody> {
 
               // ── Title ─────────────────────────────────────────────────────
               Text(
-                'Verification Code',
+                'Mã xác nhận',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -237,7 +237,7 @@ class _OtpBodyState extends State<_OtpBody> {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: const Color(0xFFBAE6FD),
+                    disabledBackgroundColor: AppColors.sky200,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -253,7 +253,7 @@ class _OtpBodyState extends State<_OtpBody> {
                           ),
                         )
                       : const Text(
-                          'Verify',
+                          'Xác nhận',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -270,7 +270,7 @@ class _OtpBodyState extends State<_OtpBody> {
                   ? GestureDetector(
                       onTap: vm.resendOtp,
                       child: Text(
-                        'Resend code',
+                        'Gửi lại mã',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -298,7 +298,7 @@ class _OtpBodyState extends State<_OtpBody> {
               const SizedBox(height: 8),
 
               Text(
-                "Didn't receive it? Check your SMS inbox or spam folder.",
+                "Chưa nhận được mã? Vui lòng kiểm tra hộp thư SMS.",
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary.withValues(alpha: 0.7),
@@ -343,7 +343,7 @@ class _StepIndicator extends StatelessWidget {
           width: isActive ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : const Color(0xFFCBD5E0),
+            color: isActive ? AppColors.primary : AppColors.slate300Alt,
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -400,19 +400,19 @@ class _OtpBox extends StatelessWidget {
             counterText: '',
             filled: true,
             fillColor: isFilled
-                ? const Color(0xFFE0F2FE)
-                : const Color(0xFFF8FAFC),
+                ? AppColors.sky100
+                : AppColors.canvasColor,
             contentPadding: EdgeInsets.zero,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isFilled ? AppColors.primary : const Color(0xFFE2E8F0),
+                color: isFilled ? AppColors.primary : AppColors.borderLight,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isFilled ? AppColors.primary : const Color(0xFFE2E8F0),
+                color: isFilled ? AppColors.primary : AppColors.borderLight,
               ),
             ),
             focusedBorder: OutlineInputBorder(

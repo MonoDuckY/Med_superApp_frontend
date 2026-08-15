@@ -1,104 +1,146 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_colors.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
 
-  Future<void> _logout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', false);
-    if (context.mounted) {
-      context.go('/login');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvasColor,
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          'HMS — Trang chủ',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
+          // UC-10: Notification bell (placeholder — đang phát triển)
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.textSecondary),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '🔔 Thông báo sắp ra mắt!',
+                        style: GoogleFonts.inter(fontSize: 13),
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
-      drawer: Drawer(
-        backgroundColor: AppColors.deepNavy,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: AppColors.primary),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Bệnh nhân',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home, color: Colors.white),
-              title: const Text('Trang chủ', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month, color: Colors.white),
-              title: const Text('Lịch khám', style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.history, color: Colors.white),
-              title: const Text('Lịch sử khám', style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text('Cài đặt', style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-          ],
-        ),
-      ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.check_circle_outline,
-              size: 80,
-              color: AppColors.success,
-            ),
-            const SizedBox(height: 16),
+            // ── Section: UC-03 Đặt lịch khám ─────────────────────────────────
             Text(
-              'Đăng nhập thành công!',
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Chào mừng đến với hệ thống Y tế',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              'UC-03 · Đặt lịch khám',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
+                letterSpacing: 0.4,
               ),
+            ),
+            const SizedBox(height: 12),
+
+            _NavCard(
+              icon: Icons.calendar_month_outlined,
+              color: AppColors.primary,
+              title: 'Lịch khám của tôi',
+              subtitle: 'Xem danh sách lịch hẹn sắp tới',
+              onTap: () => context.go('/schedule'),
+            ),
+            const SizedBox(height: 10),
+            _NavCard(
+              icon: Icons.add_circle_outline,
+              color: AppColors.success,
+              title: 'Đặt lịch mới',
+              subtitle: 'Chọn thời gian → Bác sĩ → Thanh toán',
+              onTap: () => context.push('/schedule/book'),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Section: UC-12 Góp ý & Phản hồi ─────────────────────────────
+            Text(
+              'UC-12 · Góp ý & Phản hồi',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            _NavCard(
+              icon: Icons.rate_review_outlined,
+              color: AppColors.teal,
+              title: 'Góp ý & Phản hồi',
+              subtitle: 'Đánh giá chất lượng dịch vụ sau khám',
+              onTap: () => context.push('/schedule/feedback'),
+            ),
+
+            const SizedBox(height: 32),
+
+            // ── Placeholder sections ──────────────────────────────────────────
+            Text(
+              'Sắp có',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            _NavCard(
+              icon: Icons.person_outline,
+              color: AppColors.purple,
+              title: 'Hồ sơ bệnh án',
+              subtitle: 'Xem thông tin cá nhân và lịch sử khám',
+              onTap: null,
+              disabled: true,
+            ),
+            const SizedBox(height: 10),
+            _NavCard(
+              icon: Icons.medication_outlined,
+              color: AppColors.primary,
+              title: 'Lịch uống thuốc',
+              subtitle: 'Nhắc nhở uống thuốc đúng giờ',
+              onTap: null,
+              disabled: true,
+            ),
+            const SizedBox(height: 10),
+            _NavCard(
+              icon: Icons.newspaper_outlined,
+              color: AppColors.teal600,
+              title: 'Tin tức sức khỏe',
+              subtitle: 'Bài viết y tế và lời khuyên sức khỏe',
+              onTap: null,
+              disabled: true,
             ),
           ],
         ),
@@ -106,3 +148,103 @@ class HomeView extends StatelessWidget {
     );
   }
 }
+
+// ── Nav Card ───────────────────────────────────────────────────────────────────
+
+class _NavCard extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool disabled;
+
+  const _NavCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.disabled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: disabled ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: disabled ? AppColors.surfaceLight : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: disabled
+                ? AppColors.borderLight
+                : color.withAlpha(60),
+          ),
+          boxShadow: disabled
+              ? null
+              : [
+                  BoxShadow(
+                    color: color.withAlpha(20),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: disabled
+                    ? AppColors.borderLight
+                    : color.withAlpha(25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 22,
+                color: disabled ? AppColors.textHint : color,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: disabled
+                          ? AppColors.textHint
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!disabled)
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: color.withAlpha(180),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

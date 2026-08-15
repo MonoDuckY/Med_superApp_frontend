@@ -82,8 +82,8 @@ class MockAuthService implements AuthServiceAbstract {
     await Future.delayed(const Duration(milliseconds: 800));
     // Fake verify logic: accept if code is 123456
     if (code == '123456') {
-      final user = _fakeUsers.containsKey(phoneNumber) 
-          ? _fakeUsers[phoneNumber]! 
+      final user = _fakeUsers.containsKey(phoneNumber)
+          ? _fakeUsers[phoneNumber]!
           : UserModel(
               id: 'usr_mock_new',
               username: phoneNumber,
@@ -96,5 +96,34 @@ class MockAuthService implements AuthServiceAbstract {
       return ApiResponse.success(user, message: 'Xác thực OTP thành công');
     }
     return ApiResponse.failure('Mã OTP không hợp lệ', errorCode: 'AUTH_INVALID_OTP');
+  }
+
+  @override
+  Future<ApiResponse<UserModel>> updateProfile({
+    required String fullName,
+    required String gender,
+    required String dateOfBirth,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (_currentUser == null) {
+      return ApiResponse.failure('Chưa đăng nhập', errorCode: 'AUTH_UNAUTHORIZED');
+    }
+    // Tạo user mới với thông tin đã cập nhật (UserModel là immutable)
+    final updated = UserModel(
+      id:          _currentUser!.id,
+      username:    _currentUser!.username,
+      role:        _currentUser!.role,
+      status:      _currentUser!.status,
+      patientId:   _currentUser!.patientId,
+      fullName:    fullName,
+      gender:      gender,
+      dateOfBirth: dateOfBirth,
+      phoneNumber: _currentUser!.phoneNumber,
+      createdAt:   _currentUser!.createdAt,
+      updatedAt:   DateTime.now().toIso8601String(),
+      lastLoginAt: _currentUser!.lastLoginAt,
+    );
+    _currentUser = updated;
+    return ApiResponse.success(updated, message: 'Cập nhật hồ sơ thành công');
   }
 }

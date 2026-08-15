@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../view_models/login_viewmodel.dart';
 import '../../core/app_colors.dart';
+import '../../core/config/environment_config.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
@@ -54,7 +57,7 @@ class _LoginBody extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF38BDF8), AppColors.primary],
+                    colors: [AppColors.sky400, AppColors.primary],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
@@ -84,7 +87,7 @@ class _LoginBody extends StatelessWidget {
               const SizedBox(height: 12),
 
               Text(
-                'Welcome to HMS',
+                'Chào mừng đến với HMS',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -106,7 +109,7 @@ class _LoginBody extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Phone Number',
+                  'Số điện thoại',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
@@ -126,15 +129,15 @@ class _LoginBody extends StatelessWidget {
                   hintText: 'e.g. 0912345678',
                   hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
                   filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
+                  fillColor: AppColors.canvasColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    borderSide: const BorderSide(color: AppColors.borderLight),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    borderSide: const BorderSide(color: AppColors.borderLight),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -163,7 +166,7 @@ class _LoginBody extends StatelessWidget {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: const Color(0xFFBAE6FD),
+                    disabledBackgroundColor: AppColors.sky200,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -179,7 +182,7 @@ class _LoginBody extends StatelessWidget {
                           ),
                         )
                       : const Text(
-                          'Login',
+                          'Đăng nhập',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -201,6 +204,13 @@ class _LoginBody extends StatelessWidget {
               ),
 
                const SizedBox(height: 24),
+
+              // ── [DEV] Dev Banner — hidden in release builds ──────────────
+              if (kDebugMode) ...[  
+                const SizedBox(height: 8),
+                const _DevBanner(),
+                const SizedBox(height: 8),
+              ],
             ],
           ),
         ),
@@ -227,11 +237,130 @@ class _StepIndicator extends StatelessWidget {
           width: isActive ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : const Color(0xFFCBD5E0),
+            color: isActive ? AppColors.primary : AppColors.slate300Alt,
             borderRadius: BorderRadius.circular(4),
           ),
         );
       }),
+    );
+  }
+}
+
+class _DevBanner extends StatefulWidget {
+  const _DevBanner();
+
+  @override
+  State<_DevBanner> createState() => _DevBannerState();
+}
+
+class _DevBannerState extends State<_DevBanner> {
+  bool _isMock = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMock = EnvironmentConfig.isMock;
+  }
+
+  void _toggleMock(bool value) async {
+    await EnvironmentConfig.setMock(value);
+    setState(() {
+      _isMock = value;
+    });
+    if (mounted) {
+      context.read<LoginViewModel>().updateMockState();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã đổi sang chế độ: ${value ? "Mock Data" : "Real API"}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<LoginViewModel>();
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.orange50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.orange200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.bolt, size: 14, color: AppColors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'DEV MODE',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.orange700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Sử dụng Mock Data',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Switch(
+                    value: _isMock,
+                    onChanged: _toggleMock,
+                    activeThumbColor: AppColors.orange,
+                  ),
+                ],
+              ),
+              if (_isMock) ...[
+                const Divider(height: 16, color: AppColors.orange200),
+                GestureDetector(
+                  onTap: () => vm.devBypassLogin(context),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.login, size: 16, color: AppColors.orange700),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Bỏ qua đăng nhập',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.orange700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
