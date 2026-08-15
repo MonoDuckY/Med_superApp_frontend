@@ -12,9 +12,9 @@ export default function DoctorIndexRedirect() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#0C1A2E] flex flex-col items-center justify-center gap-3">
-      <Loader2 className="animate-spin h-8 w-8 text-[#0EA5E9]" />
-      <p className="text-slate-400 text-xs font-medium">Đang chuyển hướng đến phân hệ bác sĩ...</p>
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center gap-3">
+      <Loader2 className="h-8 w-8 text-[#0EA5E9] animate-spin" />
+      <p className="text-slate-400 text-xs font-semibold">Đang chuyển hướng đến phân hệ Bác sĩ...</p>
     </div>
   );
 }

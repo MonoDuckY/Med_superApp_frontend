@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FlaskConical, LogOut, Shield, User, CheckCircle2, Check, Stethoscope, ClipboardList } from "lucide-react";
+import { FlaskConical, LogOut, Shield, User, CheckCircle2, Check, Stethoscope, ClipboardList, Database, Cpu } from "lucide-react";
 import { logoutApiCall } from "@/lib/auth";
 import DatasetPanel from "@/components/researcher/DatasetPanel";
+import AiComparePanel from "@/components/researcher/AiComparePanel";
 import Logo from "@/components/Logo";
 
 export default function ResearcherDashboard() {
@@ -12,6 +13,7 @@ export default function ResearcherDashboard() {
   const [user, setUser] = useState<{ fullName?: string; phoneNumber?: string; roles?: string[]; role?: string } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<"dataset" | "ai-compare">("dataset");
   const profileRef = useRef<HTMLDivElement>(null);
 
   const getInitials = (name?: string) => {
@@ -96,6 +98,33 @@ export default function ResearcherDashboard() {
             <p className="text-[#8B5CF6] text-[10px] font-semibold mt-0.5 tracking-wide uppercase">Phân hệ Nghiên cứu</p>
           </div>
         </div>
+
+        {/* Tab Switcher */}
+        <div className="hidden md:flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl">
+          <button 
+            onClick={() => setActiveSubTab("dataset")}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1.5 ${
+              activeSubTab === "dataset" 
+                ? "bg-white text-[#8B5CF6] shadow-sm" 
+                : "bg-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Database size={13} />
+            Kho dữ liệu ảnh
+          </button>
+          <button 
+            onClick={() => setActiveSubTab("ai-compare")}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1.5 ${
+              activeSubTab === "ai-compare" 
+                ? "bg-white text-[#8B5CF6] shadow-sm" 
+                : "bg-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Cpu size={13} />
+            Phân tích & So sánh AI
+          </button>
+        </div>
+
         {/* Avatar circle with Dropdown */}
         <div ref={profileRef} className="relative">
           <div
@@ -168,8 +197,12 @@ export default function ResearcherDashboard() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center p-6">
-        <DatasetPanel user={user} />
+      <main className="flex-1 flex overflow-hidden min-h-0 bg-[#F8FAFC]">
+        {activeSubTab === "dataset" ? (
+          <DatasetPanel user={user} />
+        ) : (
+          <AiComparePanel user={user} />
+        )}
       </main>
     </div>
   );
