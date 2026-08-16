@@ -10,7 +10,7 @@ function RecordsContent() {
   const appointmentId = searchParams.get("appointmentId");
 
   return (
-    <main className="flex-1 flex items-center justify-center p-6 bg-[#F8FAFC]">
+    <main className="flex-1 flex flex-col p-6 bg-[#F8FAFC] min-h-0 overflow-hidden">
       <MedicalWorkspace 
         appointmentId={appointmentId}
         onBackToSchedule={() => {

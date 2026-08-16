@@ -67,6 +67,8 @@ class ApiClient {
     await prefs.remove(AppConstants.keyAccessToken);
     await prefs.remove(AppConstants.keyRefreshToken);
     await prefs.remove(AppConstants.keyUserData);
+    await prefs.remove(AppConstants.keyUserName);
+    await prefs.remove(AppConstants.keyUserPhone);
     await prefs.setBool('is_logged_in', false);
   }
 }

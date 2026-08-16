@@ -66,6 +66,24 @@ class AppointmentViewModel extends ChangeNotifier {
   List<PatientDoctorResponse> _allDoctors = [];
   List<PatientDoctorResponse> get allDoctors => _allDoctors;
 
+  String _doctorSearchQuery = '';
+  String get doctorSearchQuery => _doctorSearchQuery;
+
+  void setDoctorSearchQuery(String query) {
+    _doctorSearchQuery = query;
+    notifyListeners();
+  }
+
+  List<PatientDoctorResponse> get filteredDoctors {
+    if (_doctorSearchQuery.trim().isEmpty) return _allDoctors;
+    final q = _doctorSearchQuery.trim().toLowerCase();
+    return _allDoctors.where((d) {
+      final name = d.fullName.toLowerCase();
+      final phone = (d.phoneNumber ?? '').toLowerCase();
+      return name.contains(q) || phone.contains(q);
+    }).toList();
+  }
+
   bool _isLoadingDoctors = false;
   bool get isLoadingDoctors => _isLoadingDoctors;
 
@@ -77,6 +95,14 @@ class AppointmentViewModel extends ChangeNotifier {
 
   bool _isLoadingSlotsByDoctor = false;
   bool get isLoadingSlotsByDoctor => _isLoadingSlotsByDoctor;
+
+  void clearSelectedDoctor() {
+    _selectedDoctorByDoctorMode = null;
+    _selectedDate = null;
+    _selectedTimeSlotByDoctor = null;
+    _availableSlotsResponse = [];
+    notifyListeners();
+  }
 
   // ── Calendar Helpers ──────────────────────────────────────────────────────
   void previousMonth() {

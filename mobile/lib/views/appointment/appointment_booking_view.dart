@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
@@ -134,7 +135,13 @@ class _BookingScaffold extends StatelessWidget {
       centerTitle: false,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary, size: 24),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/schedule');
+          }
+        },
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,34 +352,83 @@ class _ByDoctorFlow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionTitle(
-          number: '1', 
-          title: 'CHỌN BÁC SĨ',
-          trailingText: '${vm.allDoctors.length} bác sĩ'
-        ),
-        const SizedBox(height: 16),
-        if (vm.isLoadingDoctors)
-          const Center(child: CircularProgressIndicator())
-        else
-          ...vm.allDoctors.map((doc) => _DoctorCard(
-                name: doc.fullName,
-                specialty: 'Khám bệnh', // Default mapping
-                phoneNumber: doc.phoneNumber,
-                avatarColor: AppColors.primary,
-                isSelected: vm.selectedDoctorByDoctorMode?.id == doc.id,
-                onTap: () => vm.selectDoctorByDoctorMode(doc),
-              )),
-        
-        const SizedBox(height: 32),
-        if (vm.selectedDoctorByDoctorMode != null) ...[
+        if (vm.selectedDoctorByDoctorMode == null) ...[
+          _SectionTitle(
+            number: '1',
+            title: 'CHỌN BÁC SĨ',
+            trailingText: '${vm.filteredDoctors.length} / ${vm.allDoctors.length} bác sĩ',
+          ),
+          const SizedBox(height: 12),
+          _DoctorSearchBar(
+            initialValue: vm.doctorSearchQuery,
+            onChanged: (val) => vm.setDoctorSearchQuery(val),
+          ),
+          const SizedBox(height: 14),
+          if (vm.isLoadingDoctors)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (vm.filteredDoctors.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.canvasColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.person_search_outlined, size: 36, color: AppColors.textHint),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Không tìm thấy bác sĩ phù hợp',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Vui lòng thử tìm với từ khóa khác',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...vm.filteredDoctors.map((doc) => _DoctorCard(
+                  name: doc.fullName,
+                  specialty: 'Khám bệnh',
+                  phoneNumber: doc.phoneNumber,
+                  avatarColor: AppColors.primary,
+                  isSelected: false,
+                  onTap: () => vm.selectDoctorByDoctorMode(doc),
+                )),
+        ] else ...[
+          _SectionTitle(
+            number: '1',
+            title: 'BÁC SĨ ĐÃ CHỌN',
+          ),
+          const SizedBox(height: 12),
+          _SelectedDoctorCard(
+            doctor: vm.selectedDoctorByDoctorMode!,
+            onChangeDoctor: () => vm.clearSelectedDoctor(),
+          ),
+          const SizedBox(height: 28),
           _SectionTitle(number: '2', title: 'CHỌN NGÀY KHÁM'),
           const SizedBox(height: 16),
           if (vm.isLoadingSlotsByDoctor)
             const Center(child: CircularProgressIndicator())
           else
             const _DateSelectorRow(byDoctorMode: true),
-          
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           if (vm.selectedDate != null) ...[
             _SectionTitle(number: '3', title: 'CHỌN KHUNG GIỜ'),
             const SizedBox(height: 16),
@@ -397,7 +453,7 @@ class _ByDoctorFlow extends StatelessWidget {
                 child: _TimeLegend(),
               ),
           ]
-        ]
+        ],
       ],
     );
   }
@@ -956,6 +1012,222 @@ class _SummaryRow extends StatelessWidget {
         const Spacer(),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
       ],
+    );
+  }
+}
+
+// ── Search & Selected Doctor Components ───────────────────────────────────────
+
+class _DoctorSearchBar extends StatefulWidget {
+  final String initialValue;
+  final ValueChanged<String> onChanged;
+
+  const _DoctorSearchBar({
+    required this.initialValue,
+    required this.onChanged,
+  });
+
+  @override
+  State<_DoctorSearchBar> createState() => _DoctorSearchBarState();
+}
+
+class _DoctorSearchBarState extends State<_DoctorSearchBar> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant _DoctorSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue &&
+        _controller.text != widget.initialValue) {
+      _controller.text = widget.initialValue;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.canvasColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: TextField(
+        controller: _controller,
+        onChanged: widget.onChanged,
+        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: 'Tìm kiếm bác sĩ theo tên, số điện thoại...',
+          hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint),
+          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textHint),
+          suffixIcon: _controller.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded, size: 18, color: AppColors.textHint),
+                  onPressed: () {
+                    _controller.clear();
+                    widget.onChanged('');
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectedDoctorCard extends StatelessWidget {
+  final dynamic doctor; // PatientDoctorResponse
+  final VoidCallback onChangeDoctor;
+
+  const _SelectedDoctorCard({
+    required this.doctor,
+    required this.onChangeDoctor,
+  });
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length > 1) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : 'BS';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String fullName = doctor.fullName ?? '';
+    final String? phone = doctor.phoneNumber;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withAlpha(8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withAlpha(15),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.teal],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              _getInitials(fullName),
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        fullName,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withAlpha(20),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Đang chọn',
+                        style: GoogleFonts.inter(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                if (phone != null && phone.isNotEmpty)
+                  Row(
+                    children: [
+                      const Icon(Icons.phone_outlined, size: 13, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        phone,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Text(
+                    'Bác sĩ chuyên khoa',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(
+            onPressed: onChangeDoctor,
+            icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+            label: const Text('Đổi BS'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

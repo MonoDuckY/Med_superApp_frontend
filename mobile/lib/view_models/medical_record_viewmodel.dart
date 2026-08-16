@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
+import '../core/config/environment_config.dart';
 import '../models/medical_record_model.dart';
 import '../services/abstract/medical_record_service_abstract.dart';
 import '../services/mock/mock_medical_record_service.dart';
+import '../services/remote/remote_medical_record_service.dart';
 
 enum MedicalRecordFilter { all, ongoing, completed }
 
@@ -11,7 +13,10 @@ class MedicalRecordViewModel extends ChangeNotifier {
   final IMedicalRecordService _service;
 
   MedicalRecordViewModel({IMedicalRecordService? service})
-      : _service = service ?? MockMedicalRecordService();
+      : _service = service ??
+            (EnvironmentConfig.isMock
+                ? MockMedicalRecordService()
+                : RemoteMedicalRecordService());
 
   // ── State ──────────────────────────────────────────────────────────────────
   List<MedicalRecord> _allRecords = [];
@@ -66,7 +71,13 @@ class MedicalRecordViewModel extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      _userName = prefs.getString(AppConstants.keyUserData) ?? 'Khách';
+      var name = prefs.getString(AppConstants.keyUserName) ??
+          prefs.getString(AppConstants.keyUserData) ??
+          'Nguyễn Văn A';
+      if (RegExp(r'^\d+$').hasMatch(name.trim())) {
+        name = 'Nguyễn Văn A';
+      }
+      _userName = name;
     } catch (_) {}
 
     try {

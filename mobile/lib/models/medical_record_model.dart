@@ -101,12 +101,14 @@ class MedicalImageAttachment {
   final String imageType; // "X-Quang", "CT Scan", "Siêu âm", "Xét nghiệm máu"
   final String description;
   final DateTime takenAt;
+  final String? imageUrl;
 
   const MedicalImageAttachment({
     required this.id,
     required this.imageType,
     required this.description,
     required this.takenAt,
+    this.imageUrl,
   });
 }
 

@@ -301,6 +301,16 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
       _selectedTime.hour, _selectedTime.minute,
     );
 
+    if (scheduledAt.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thời gian không được ở tương lai.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     final dishesPayload = _dishes.map((d) {
       return {
         'dishName': d.nameController.text.trim(),

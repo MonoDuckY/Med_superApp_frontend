@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import '../core/config/environment_config.dart';
 import '../models/medical_record_model.dart';
 import '../services/abstract/medical_record_service_abstract.dart';
 import '../services/mock/mock_medical_record_service.dart';
+import '../services/remote/remote_medical_record_service.dart';
 
 class MedicalRecordDetailViewModel extends ChangeNotifier {
   final IMedicalRecordService _service;
@@ -10,7 +12,10 @@ class MedicalRecordDetailViewModel extends ChangeNotifier {
   MedicalRecordDetailViewModel({
     required this.recordId,
     IMedicalRecordService? service,
-  }) : _service = service ?? MockMedicalRecordService();
+  }) : _service = service ??
+            (EnvironmentConfig.isMock
+                ? MockMedicalRecordService()
+                : RemoteMedicalRecordService());
 
   // ── State ──────────────────────────────────────────────────────────────────
   MedicalRecordDetail? _detail;
