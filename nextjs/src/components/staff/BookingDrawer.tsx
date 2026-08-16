@@ -123,11 +123,22 @@ export default function BookingDrawer({
     const slotsList: any[] = [];
     matchedSubmissions.forEach((sub: any) => {
       (sub.slots || []).forEach((slot: any) => {
-        if (slot.status === "AVAILABLE" && isSlotBookable({ ...slot, workDate: sub.workDate })) {
+        const startTime = slot.slot?.startTime;
+        const isNight = startTime ? (parseInt(startTime.slice(0, 2), 10) >= 17 || parseInt(startTime.slice(0, 2), 10) < 8) : false;
+        
+        if (slot.status === "AVAILABLE" && !isNight && isSlotBookable({ ...slot, workDate: sub.workDate })) {
           slotsList.push(slot);
         }
       });
     });
+
+    // Sort chronologically by slot name number (e.g. Slot1, Slot2...)
+    slotsList.sort((a, b) => {
+      const aNum = parseInt((a.slot?.name || "").match(/\d+/)?.[0] || "0", 10);
+      const bNum = parseInt((b.slot?.name || "").match(/\d+/)?.[0] || "0", 10);
+      return aNum - bNum;
+    });
+
     return slotsList;
   }, [selectedDoctorId, formDate, rawSubmissions]);
 
@@ -237,12 +248,12 @@ export default function BookingDrawer({
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointment.id}/reschedule`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          newDoctorWorkSlotId: formTimeSlot,
+          doctorWorkSlotId: formTimeSlot,
           reason: rescheduleReason.trim(),
         }),
       });
