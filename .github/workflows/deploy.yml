@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/researcher-view-patient-images
 
 # Đặt thư mục làm việc mặc định là 'nextjs' cho tất cả các lệnh run
 defaults:
