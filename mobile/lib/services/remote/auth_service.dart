@@ -10,16 +10,27 @@ class RemoteAuthService implements AuthServiceAbstract {
   final Dio _dio = ApiClient.instance;
 
   @override
-  Future<ApiResponse<UserModel>> login(String email, String password) async {
+  Future<ApiResponse<UserModel>> login(String username, String password) async {
     try {
-      final response = await _dio.post('/auth/login', data: {
-        'email': email,
+      final response = await _dio.post('/api/auth/login', data: {
+        'phoneNumber': username, // Khớp với LoginRequest.phoneNumber trên backend
         'password': password,
       });
-      return ApiResponse.fromJson(
+      // Backend trả ApiResponse<AuthResponse> — data chứa accessToken, refreshToken, user
+      final apiResp = ApiResponse.fromJson(
         response.data as Map<String, dynamic>,
-        (json) => UserModel.fromJson(json as Map<String, dynamic>),
+        (json) {
+          final map = json as Map<String, dynamic>;
+          // Lưu token vào ApiClient để interceptor dùng
+          ApiClient.saveTokens(
+            accessToken:  map['accessToken'] as String,
+            refreshToken: map['refreshToken'] as String,
+          );
+          // Trả về UserModel từ nested user object
+          return UserModel.fromJson(map['user'] as Map<String, dynamic>);
+        },
       );
+      return apiResp;
     } on DioException catch (e) {
       return ApiResponse.failure(
         e.response?.data?['message'] ?? 'Lỗi kết nối',
@@ -31,7 +42,11 @@ class RemoteAuthService implements AuthServiceAbstract {
   @override
   Future<ApiResponse<void>> logout() async {
     try {
-      final response = await _dio.post('/auth/logout');
+      final refreshToken = await ApiClient.getRefreshToken();
+      final response = await _dio.post('/api/auth/logout', data: {
+        'refreshToken': refreshToken, // Backend bắt buộc có field này để revoke
+      });
+      await ApiClient.clearTokens();
       return ApiResponse.fromJson(response.data, null);
     } on DioException catch (e) {
       return ApiResponse.failure(e.message ?? 'Lỗi kết nối');
@@ -41,7 +56,97 @@ class RemoteAuthService implements AuthServiceAbstract {
   @override
   Future<ApiResponse<UserModel>> getProfile() async {
     try {
-      final response = await _dio.get('/users/me');
+      final response = await _dio.get('/api/auth/me');
+      return ApiResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => UserModel.fromJson(json as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      return ApiResponse.failure(
+        e.response?.data?['message'] ?? 'Lỗi kết nối',
+        errorCode: e.response?.data?['errorCode'],
+      );
+    }
+  }
+  
+  @override
+  Future<ApiResponse<UserModel?>> requestOtp(String phoneNumber, {String? deviceId}) async {
+    try {
+      final data = {
+        'phoneNumber': phoneNumber,
+      };
+      if (deviceId != null) {
+        data['deviceId'] = deviceId;
+      }
+      final response = await _dio.post('/api/auth/patient-otp/request', data: data);
+      
+      final apiResp = ApiResponse<UserModel?>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) {
+          if (json == null) return null;
+          final map = json as Map<String, dynamic>;
+          ApiClient.saveTokens(
+            accessToken:  map['accessToken'] as String,
+            refreshToken: map['refreshToken'] as String,
+          );
+          return UserModel.fromJson(map['user'] as Map<String, dynamic>);
+        },
+      );
+      return apiResp;
+    } on DioException catch (e) {
+      return ApiResponse.failure(
+        e.response?.data?['message'] ?? 'Lỗi kết nối',
+        errorCode: e.response?.data?['errorCode'],
+      );
+    }
+  }
+
+  @override
+  Future<ApiResponse<UserModel>> verifyOtp(String phoneNumber, String code, {String? deviceId}) async {
+    try {
+      final data = {
+        'phoneNumber': phoneNumber,
+        'code': code,
+      };
+      if (deviceId != null) {
+        data['deviceId'] = deviceId;
+      }
+      
+      final response = await _dio.post('/api/auth/patient-otp/verify', data: data);
+      
+      final apiResp = ApiResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) {
+          final map = json as Map<String, dynamic>;
+          ApiClient.saveTokens(
+            accessToken:  map['accessToken'] as String,
+            refreshToken: map['refreshToken'] as String,
+          );
+          return UserModel.fromJson(map['user'] as Map<String, dynamic>);
+        },
+      );
+      return apiResp;
+    } on DioException catch (e) {
+      return ApiResponse.failure(
+        e.response?.data?['message'] ?? 'Lỗi kết nối',
+        errorCode: e.response?.data?['errorCode'],
+      );
+    }
+  }
+
+  @override
+  Future<ApiResponse<UserModel>> updateProfile({
+    required String fullName,
+    required String gender,
+    required String dateOfBirth,
+  }) async {
+    try {
+      // TODO: Backend cần bổ sung PATCH /api/auth/me cho patient tự update
+      final response = await _dio.patch('/api/auth/me', data: {
+        'fullName':    fullName,
+        'gender':      gender,
+        'dateOfBirth': dateOfBirth,
+      });
       return ApiResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => UserModel.fromJson(json as Map<String, dynamic>),

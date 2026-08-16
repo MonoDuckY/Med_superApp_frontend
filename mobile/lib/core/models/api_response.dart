@@ -1,5 +1,5 @@
 /// Wrapper chuẩn cho mọi API response từ Backend.
-/// Tương ứng với ApiResponse<T> trong Spring Boot.
+/// Tương ứng với `ApiResponse<T>` trong Spring Boot.
 class ApiResponse<T> {
   final bool success;
   final String message;
