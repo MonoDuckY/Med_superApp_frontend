@@ -21,7 +21,9 @@ import {
   LogOut,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  Award,
+  X
 } from "lucide-react";
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
 import Logo from "@/components/Logo";
@@ -86,6 +88,8 @@ export default function UserAccountsList() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [viewingCertificateUrl, setViewingCertificateUrl] = useState<string | null>(null);
+  const [viewingDoctorName, setViewingDoctorName] = useState<string | null>(null);
 
   // Validate Admin Role on load
   useEffect(() => {
@@ -281,11 +285,6 @@ export default function UserAccountsList() {
         </div>
 
         <nav className="flex-1 px-4 py-4 flex flex-col gap-0.5 overflow-y-auto">
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <LayoutDashboard size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Bảng điều khiển</span>
-          </button>
-          
           <div>
             <button 
               onClick={() => setExpandedNav(expandedNav === "Quản lý người dùng" ? "" : "Quản lý người dùng")}
@@ -311,34 +310,9 @@ export default function UserAccountsList() {
                   <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
                   <span className="text-[11px]">Tạo người dùng</span>
                 </button>
-                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer">
-                  <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
-                  <span className="text-[11px]">Vai trò & Quyền hạn</span>
-                </button>
               </div>
             )}
           </div>
-
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <Stethoscope size={15} strokeWidth={1.75} />
-            <span className="text-xs flex-1 truncate">Lâm sàng</span>
-            <span className="font-bold rounded-full flex items-center justify-center shrink-0 text-white bg-[#EF4444]"
-              style={{ fontSize: 9, minWidth: 16, height: 16, padding: "0 4px" }}>
-              3
-            </span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <FlaskConical size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Nghiên cứu</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <FileText size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Báo cáo</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <Settings size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Cấu hình</span>
-          </button>
         </nav>
 
         <div className="px-4 py-4 border-t border-white/8">
@@ -593,6 +567,23 @@ export default function UserAccountsList() {
                       {/* Action */}
                       <td className="px-5">
                         <div className="flex items-center justify-center gap-1.5">
+                          {row.role === "DOCTOR" && (
+                            <button
+                              onClick={() => {
+                                setViewingCertificateUrl(row.certificateUrl || null);
+                                setViewingDoctorName(row.fullName);
+                              }}
+                              disabled={!row.hasCertificate}
+                              className={`w-7 h-7 flex items-center justify-center rounded-lg border border-[#E2E8F0] transition-colors ${
+                                row.hasCertificate
+                                  ? "hover:bg-sky-50 hover:text-[#0EA5E9] hover:border-sky-200 text-sky-500 cursor-pointer"
+                                  : "bg-slate-50 text-slate-300 cursor-not-allowed border-slate-100"
+                              }`}
+                              title={row.hasCertificate ? "Xem chứng chỉ hành nghề" : "Chưa tải lên chứng chỉ"}
+                            >
+                              <Award size={13} />
+                            </button>
+                          )}
                           {row.id !== currentUser?.id ? (
                             <button
                               onClick={() => handleToggleStatus(row.id)}
@@ -679,6 +670,73 @@ export default function UserAccountsList() {
           )}
         </div>
       </main>
+
+      {/* Certificate Viewer Modal */}
+      {viewingCertificateUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px]" onClick={() => setViewingCertificateUrl(null)} />
+          <div className="relative bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-[640px] p-6 shadow-2xl text-left animate-[scaleIn_0.15s_ease-out] flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3 mb-4 shrink-0">
+              <div>
+                <h3 className="font-bold text-sm text-[#0F172A]">Chứng chỉ hành nghề Bác sĩ</h3>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Họ và tên: {viewingDoctorName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingCertificateUrl(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors border-none bg-transparent cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Certificate display */}
+            <div className="flex-1 overflow-auto flex items-center justify-center min-h-[300px] bg-slate-50 rounded-xl p-4 border border-[#E2E8F0]">
+              {(() => {
+                const isPdf = viewingCertificateUrl.toLowerCase().includes(".pdf") || viewingCertificateUrl.includes("response-content-type=application%2Fpdf");
+                if (isPdf) {
+                  return (
+                    <iframe
+                      src={viewingCertificateUrl}
+                      className="w-full h-[450px] border-none rounded-lg bg-white"
+                      title="Chứng chỉ PDF"
+                    />
+                  );
+                } else {
+                  return (
+                    <img
+                      src={viewingCertificateUrl}
+                      alt="Chứng chỉ Bác sĩ"
+                      className="max-w-full max-h-[450px] object-contain rounded-lg shadow-sm"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  );
+                }
+              })()}
+            </div>
+
+            <div className="flex items-center justify-between mt-5 pt-3 border-t border-[#F1F5F9] shrink-0">
+              <a
+                href={viewingCertificateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-[#0EA5E9] hover:underline"
+              >
+                Mở trong tab mới ↗
+              </a>
+              <button
+                type="button"
+                onClick={() => setViewingCertificateUrl(null)}
+                className="h-9 px-5 text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer border-none outline-none"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -280,11 +280,6 @@ export default function CreateUserPage() {
         </div>
 
         <nav className="flex-1 px-4 py-4 flex flex-col gap-0.5 overflow-y-auto">
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <LayoutDashboard size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Bảng điều khiển</span>
-          </button>
-          
           <div>
             <button 
               onClick={() => setExpandedNav(expandedNav === "Quản lý người dùng" ? "" : "Quản lý người dùng")}
@@ -310,34 +305,9 @@ export default function CreateUserPage() {
                   <span className="rounded-full shrink-0 w-1.5 h-1.5 bg-[#38BDF8]" />
                   <span className="text-[11px]">Tạo người dùng</span>
                 </button>
-                <button className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-left transition-all text-[#64748B] hover:text-[#94A3B8] hover:bg-white/5 cursor-pointer">
-                  <span className="rounded-full shrink-0 w-1 h-1 bg-[#334155]" />
-                  <span className="text-[11px]">Vai trò & Quyền hạn</span>
-                </button>
               </div>
             )}
           </div>
-
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <Stethoscope size={15} strokeWidth={1.75} />
-            <span className="text-xs flex-1 truncate">Lâm sàng</span>
-            <span className="font-bold rounded-full flex items-center justify-center shrink-0 text-white bg-[#EF4444]"
-              style={{ fontSize: 9, minWidth: 16, height: 16, padding: "0 4px" }}>
-              3
-            </span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <FlaskConical size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Nghiên cứu</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <FileText size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Báo cáo</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left w-full transition-all text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8] cursor-pointer">
-            <Settings size={15} strokeWidth={1.75} />
-            <span className="text-xs truncate">Cấu hình</span>
-          </button>
         </nav>
 
         <div className="px-4 py-4 border-t border-white/8">

@@ -208,6 +208,35 @@ export default function StaffAppointmentsPage() {
     initData();
   }, []);
 
+  const handleConfirmAppointment = async (apt: Appointment) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    try {
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${apt.id}/decision`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          decision: "APPROVE",
+          rejectionReason: "",
+        }),
+      });
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        triggerSmsToast(
+          "SMS Gateway — Đã duyệt",
+          `Phê duyệt lịch hẹn ${apt.id} của bệnh nhân ${apt.patient} thành công!`
+        );
+        fetchAppointments();
+      } else {
+        alert(result.message || "Phê duyệt lịch hẹn thất bại.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Lỗi kết nối đến máy chủ.");
+    }
+  };
+
   const handleCancelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAppointment || !cancelReason.trim()) return;
@@ -228,7 +257,7 @@ export default function StaffAppointmentsPage() {
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đã hủy",
-          `Mô phỏng gửi SMS: Đã hủy lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} thành công!`
+          `Đã hủy lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} thành công!`
         );
         setIsCancelModalOpen(false);
         setSelectedAppointment(null);
@@ -293,6 +322,7 @@ export default function StaffAppointmentsPage() {
             setSelectedAppointment(apt);
             setIsCancelModalOpen(true);
           }}
+          onConfirm={handleConfirmAppointment}
           stats={stats}
         />
       ) : (

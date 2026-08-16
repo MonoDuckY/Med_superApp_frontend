@@ -83,36 +83,59 @@ export default function StaffSchedulesPage() {
 
             const slotObjs = slots.filter((s: any) => s.slot).map((s: any) => s.slot);
             let shiftDisplay = "Ca làm việc";
-            if (slotObjs.length > 0) {
-              let minStart = "23:59";
-              let maxEnd = "00:00";
-              slotObjs.forEach((s: any) => {
-                if (s.startTime && s.startTime < minStart) minStart = s.startTime;
-                if (s.endTime && s.endTime > maxEnd) maxEnd = s.endTime;
+            if (item.session) {
+              const sess = item.session.toUpperCase();
+              if (sess === "MORNING") shiftDisplay = "Ca sáng";
+              else if (sess === "AFTERNOON") shiftDisplay = "Ca chiều";
+              else if (sess === "NIGHT") shiftDisplay = "Ca tối";
+              else if (sess === "FULL_TIME") shiftDisplay = "Cả ngày";
+            } else if (slotObjs.length > 0) {
+              slotObjs.sort((a: any, b: any) => {
+                const aNum = parseInt((a.name || "").match(/\d+/)?.[0] || "0", 10);
+                const bNum = parseInt((b.name || "").match(/\d+/)?.[0] || "0", 10);
+                return aNum - bNum;
               });
+
+              const minStart = slotObjs[0].startTime || "08:00";
+              const maxEnd = slotObjs[slotObjs.length - 1].endTime || "12:00";
 
               const startHour = parseInt(minStart.slice(0, 2), 10);
               const endHour = parseInt(maxEnd.slice(0, 2), 10);
 
-              if (startHour >= 8 && endHour <= 12) {
+              if (startHour === 8 && endHour === 12) {
                 shiftDisplay = "Ca sáng";
-              } else if (startHour >= 13 && endHour <= 17) {
+              } else if (startHour === 13 && endHour === 17) {
                 shiftDisplay = "Ca chiều";
-              } else if (startHour >= 17 || endHour <= 8) {
-                shiftDisplay = "Ca tối (đêm)";
-              } else if (startHour >= 8 && endHour >= 17) {
+              } else if (startHour === 17 && endHour === 8) {
+                shiftDisplay = "Ca tối";
+              } else if (startHour === 8 && endHour === 17) {
                 shiftDisplay = "Cả ngày";
+              } else {
+                if (startHour >= 17 || endHour <= 8) {
+                  shiftDisplay = "Ca tối";
+                } else if (startHour >= 8 && endHour <= 12) {
+                  shiftDisplay = "Ca sáng";
+                } else if (startHour >= 13 && endHour <= 17) {
+                  shiftDisplay = "Ca chiều";
+                } else if (startHour >= 8 && endHour >= 17) {
+                  shiftDisplay = "Cả ngày";
+                }
               }
             }
 
             return {
               id: item.submissionId,
               doctorName: docName,
+              doctorId: item.doctorId,
               workDate: item.workDate,
               shift: shiftDisplay,
+              session: item.session,
               roomName: item.roomId || (slots[0]?.roomId || "N/A"),
+              roomId: item.roomId || slots[0]?.roomId || "",
               status: item.status,
-              rejectionReason: item.rejectionReason
+              rejectionReason: item.rejectionReason,
+              note: item.note || "",
+              slots: slots
             };
           });
           setSchedules(mapped);

@@ -23,12 +23,43 @@ export default function BookingDrawer({
   onRefresh,
   triggerSmsToast
 }: BookingDrawerProps) {
-  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  const minDateStr = useMemo(() => {
+    const minLimit = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    return minLimit.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  }, []);
+
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   // Common states
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
-  const [formDate, setFormDate] = useState(todayStr);
+  const [formDate, setFormDate] = useState(minDateStr);
   const [formTimeSlot, setFormTimeSlot] = useState("");
+
+  const getDisplayedDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  const handleTextClick = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === "function") {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.click();
+      }
+    }
+  };
+
+  const handleDatePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    setFormDate(val);
+    setFormTimeSlot("");
+  };
   const [formReason, setFormReason] = useState("");
   const [formDeposit, setFormDeposit] = useState(false);
   const [formFollowUp, setFormFollowUp] = useState(false);
@@ -50,7 +81,7 @@ export default function BookingDrawer({
     if (isOpen) {
       if (mode === "ADD") {
         setSelectedDoctorId(selectedAppointment?.doctorId || "");
-        setFormDate(selectedAppointment?.date || todayStr);
+        setFormDate(selectedAppointment?.date || minDateStr);
         setFormTimeSlot(selectedAppointment?.slotId || "");
         setFormReason("");
         setFormDeposit(false);
@@ -64,12 +95,22 @@ export default function BookingDrawer({
         // Find doctor id
         const docMatch = doctorsList.find(d => d.fullName === selectedAppointment.doctor);
         setSelectedDoctorId(docMatch ? docMatch.id : "");
-        setFormDate(todayStr);
+        setFormDate(minDateStr);
         setFormTimeSlot("");
         setRescheduleReason("");
       }
     }
-  }, [isOpen, mode, selectedAppointment, doctorsList, todayStr]);
+  }, [isOpen, mode, selectedAppointment, doctorsList, minDateStr]);
+
+  const isSlotBookable = (slotObj: any) => {
+    if (!slotObj.workDate || !slotObj.slot || !slotObj.slot.startTime) return false;
+    const [year, month, day] = slotObj.workDate.split("-").map((v: string) => parseInt(v, 10));
+    const [hour, minute] = slotObj.slot.startTime.split(":").map((v: string) => parseInt(v, 10));
+    const slotStartDate = new Date(year, month - 1, day, hour, minute, 0);
+    const now = new Date();
+    const minAdvanceTime = now.getTime() + (12 * 60 * 60 * 1000);
+    return slotStartDate.getTime() >= minAdvanceTime;
+  };
 
   // Compute available slots
   const availableSlotsForBooking = useMemo(() => {
@@ -82,11 +123,22 @@ export default function BookingDrawer({
     const slotsList: any[] = [];
     matchedSubmissions.forEach((sub: any) => {
       (sub.slots || []).forEach((slot: any) => {
-        if (slot.status === "AVAILABLE") {
+        const startTime = slot.slot?.startTime;
+        const isNight = startTime ? (parseInt(startTime.slice(0, 2), 10) >= 17 || parseInt(startTime.slice(0, 2), 10) < 8) : false;
+        
+        if (slot.status === "AVAILABLE" && !isNight && isSlotBookable({ ...slot, workDate: sub.workDate })) {
           slotsList.push(slot);
         }
       });
     });
+
+    // Sort chronologically by slot name number (e.g. Slot1, Slot2...)
+    slotsList.sort((a, b) => {
+      const aNum = parseInt((a.slot?.name || "").match(/\d+/)?.[0] || "0", 10);
+      const bNum = parseInt((b.slot?.name || "").match(/\d+/)?.[0] || "0", 10);
+      return aNum - bNum;
+    });
+
     return slotsList;
   }, [selectedDoctorId, formDate, rawSubmissions]);
 
@@ -165,7 +217,7 @@ export default function BookingDrawer({
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đang xử lý",
-          `Mô phỏng gửi SMS: Đăng ký thành công lịch khám cho bệnh nhân ${formPatientName} vào lúc ${formDate}!`
+          `Đăng ký thành công lịch khám cho bệnh nhân ${formPatientName} vào lúc ${formDate}!`
         );
         onRefresh();
         onClose();
@@ -196,12 +248,12 @@ export default function BookingDrawer({
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const res = await fetchWithAuth(`${apiUrl}/api/staff/scheduling/appointments/${selectedAppointment.id}/reschedule`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          newDoctorWorkSlotId: formTimeSlot,
+          doctorWorkSlotId: formTimeSlot,
           reason: rescheduleReason.trim(),
         }),
       });
@@ -210,7 +262,7 @@ export default function BookingDrawer({
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đang xử lý",
-          `Mô phỏng gửi SMS: Dời lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} sang ${formDate} thành công!`
+          `Dời lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} sang ${formDate} thành công!`
         );
         onRefresh();
         onClose();
@@ -351,14 +403,24 @@ export default function BookingDrawer({
             <label className="block text-xs font-semibold text-[#0F172A] mb-1.5">
               Ngày hẹn khám <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="date"
-              value={formDate}
-              min={todayStr}
-              required
-              onChange={(e) => { setFormDate(e.target.value); setFormTimeSlot(""); }}
-              className="w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 bg-white"
-            />
+            <div className="relative w-full h-9">
+              <input
+                type="text"
+                placeholder="Chọn ngày hẹn khám..."
+                readOnly
+                required
+                value={getDisplayedDate(formDate)}
+                onClick={handleTextClick}
+                className="w-full h-full px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 bg-white font-medium text-[#0F172A] cursor-pointer text-left"
+              />
+              <input
+                type="date"
+                ref={dateInputRef}
+                min={minDateStr}
+                onChange={handleDatePicked}
+                className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
+              />
+            </div>
           </div>
 
           {/* Available Slots Grid */}

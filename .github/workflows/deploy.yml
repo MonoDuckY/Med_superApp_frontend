@@ -1,0 +1,96 @@
+name: CI/CD - Deploy Next.js to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+# Đặt thư mục làm việc mặc định là 'nextjs' cho tất cả các lệnh run
+defaults:
+  run:
+    working-directory: nextjs
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: nextjs/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Build Next.js
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      - name: Prepare deployment package
+        run: |
+          mkdir -p deploy
+          cp -r .next/standalone/. deploy/
+          cp -r .next/static deploy/.next/static
+          cp -r public deploy/public
+          tar -czf deploy.tar.gz -C deploy .
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload deployment package
+        run: |
+          scp \
+            -i ~/.ssh/deploy_key \
+            -P ${{ secrets.EC2_PORT }} \
+            deploy.tar.gz \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/deploy.tar.gz
+
+      - name: Deploy to EC2
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p ${{ secrets.EC2_PORT }} \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+
+          set -e
+
+          APP_DIR="/var/www/hmsnextgen"
+
+          echo "Starting deployment..."
+
+          rm -rf "$APP_DIR/new"
+          mkdir -p "$APP_DIR/new"
+
+          tar -xzf /tmp/deploy.tar.gz -C "$APP_DIR/new"
+
+          rm -rf "$APP_DIR/current"
+          mv "$APP_DIR/new" "$APP_DIR/current"
+
+          cd "$APP_DIR/current"
+
+          pm2 restart hmsnextgen || pm2 start server.js --name hmsnextgen
+
+          pm2 save
+
+          rm -f /tmp/deploy.tar.gz
+
+          echo "Deployment completed."
+
+          EOF
