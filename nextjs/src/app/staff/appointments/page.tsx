@@ -152,7 +152,7 @@ export default function StaffAppointmentsPage() {
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đã duyệt",
-          `Mô phỏng gửi SMS: Phê duyệt lịch hẹn ${apt.id} của bệnh nhân ${apt.patient} thành công!`
+          `Phê duyệt lịch hẹn ${apt.id} của bệnh nhân ${apt.patient} thành công!`
         );
         fetchAppointments();
       } else {
@@ -183,7 +183,7 @@ export default function StaffAppointmentsPage() {
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đã hủy",
-          `Mô phỏng gửi SMS: Đã hủy lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} thành công!`
+          `Đã hủy lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} thành công!`
         );
         setIsCancelModalOpen(false);
         setSelectedAppointment(null);

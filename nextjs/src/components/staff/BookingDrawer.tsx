@@ -165,7 +165,7 @@ export default function BookingDrawer({
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đang xử lý",
-          `Mô phỏng gửi SMS: Đăng ký thành công lịch khám cho bệnh nhân ${formPatientName} vào lúc ${formDate}!`
+          `Đăng ký thành công lịch khám cho bệnh nhân ${formPatientName} vào lúc ${formDate}!`
         );
         onRefresh();
         onClose();
@@ -210,7 +210,7 @@ export default function BookingDrawer({
       if (res.ok && result.success) {
         triggerSmsToast(
           "SMS Gateway — Đang xử lý",
-          `Mô phỏng gửi SMS: Dời lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} sang ${formDate} thành công!`
+          `Dời lịch hẹn ${selectedAppointment.id} của bệnh nhân ${selectedAppointment.patient} sang ${formDate} thành công!`
         );
         onRefresh();
         onClose();
