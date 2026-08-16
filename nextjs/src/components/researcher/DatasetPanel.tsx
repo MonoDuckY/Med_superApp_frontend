@@ -334,7 +334,7 @@ export default function DatasetPanel({ user }: DatasetPanelProps) {
     f.toLowerCase().includes(folderSearchTerm.toLowerCase())
   );
 
-  const selectedRecord = records.find(r => r.patientId === selectedRecordId);
+  const selectedRecord = records.find(r => r.appointmentId === selectedRecordId);
 
   const formatDate = (isoString: string) => {
     const d = new Date(isoString);
@@ -446,13 +446,13 @@ export default function DatasetPanel({ user }: DatasetPanelProps) {
               </div>
             ) : (
               filteredRecords.map((r) => {
-                const isSelected = r.patientId === selectedRecordId;
+                const isSelected = r.appointmentId === selectedRecordId;
                 const imageCount = r.medicalImages.length;
                 return (
                   <button
-                    key={r.patientId}
+                    key={r.appointmentId}
                     onClick={() => {
-                      setSelectedRecordId(r.patientId);
+                      setSelectedRecordId(r.appointmentId);
                       setActiveImageIndex(null);
                     }}
                     className={`w-full p-4 rounded-xl border text-left cursor-pointer transition-all flex flex-col gap-2.5 outline-none ${
