@@ -172,16 +172,18 @@ export default function ScheduleRegister() {
     if (subSlots && subSlots.length > 0) {
       const slotDetails = subSlots.map((s: any) => {
         const match = allSlots.find(sl => sl.id === s.slotId);
-        return match ? { start: match.startTime, end: match.endTime } : null;
-      }).filter(Boolean) as { start: string; end: string }[];
+        if (!match) return null;
+        
+        const numMatch = match.name.match(/\d+/);
+        const slotNumber = numMatch ? parseInt(numMatch[0], 10) : 0;
+        
+        return { start: match.startTime, end: match.endTime, slotNumber };
+      }).filter(Boolean) as { start: string; end: string; slotNumber: number }[];
       
       if (slotDetails.length > 0) {
-        slotDetails.sort((a, b) => a.start.localeCompare(b.start));
+        slotDetails.sort((a, b) => a.slotNumber - b.slotNumber);
         const start = slotDetails[0].start.slice(0, 5);
-        
-        slotDetails.sort((a, b) => b.end.localeCompare(a.end));
-        const end = slotDetails[0].end.slice(0, 5);
-        
+        const end = slotDetails[slotDetails.length - 1].end.slice(0, 5);
         return `${start} – ${end}`;
       }
     }
@@ -193,6 +195,23 @@ export default function ScheduleRegister() {
     if (sess === "NIGHT") return "17:00 – 08:00";
     if (sess === "FULL_TIME") return "08:00 – 17:00";
     return "Chưa rõ";
+  };
+
+  const getSessionLabel = (sub: any, timeRange: string) => {
+    if (sub.session) {
+      const sess = sub.session.toUpperCase();
+      if (sess === "MORNING") return "Ca sáng";
+      if (sess === "AFTERNOON") return "Ca chiều";
+      if (sess === "NIGHT") return "Ca tối";
+      if (sess === "FULL_TIME") return "Cả ngày";
+    }
+    
+    if (timeRange.includes("08:00") && timeRange.includes("12:00")) return "Ca sáng";
+    if (timeRange.includes("13:00") && timeRange.includes("17:00")) return "Ca chiều";
+    if (timeRange.includes("17:00") && timeRange.includes("08:00")) return "Ca tối";
+    if (timeRange.includes("08:00") && timeRange.includes("17:00")) return "Cả ngày";
+    
+    return "Ca trực";
   };
 
   const getRoomName = (rId: string) => {
@@ -404,10 +423,7 @@ export default function ScheduleRegister() {
                                 <div className="flex items-center gap-1.5">
                                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: style.dot }} />
                                   <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: style.text }}>
-                                    {sub.session === "MORNING" ? "Ca sáng" :
-                                     sub.session === "AFTERNOON" ? "Ca chiều" :
-                                     sub.session === "NIGHT" ? "Ca tối" :
-                                     sub.session === "FULL_TIME" ? "Cả ngày" : "Ca trực"}
+                                    {getSessionLabel(sub, timeRange)}
                                   </span>
                                 </div>
 
