@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FlaskConical, LogOut, Shield, User, CheckCircle2, Check, Stethoscope, ClipboardList, Database, Cpu } from "lucide-react";
+import { FlaskConical, LogOut, Shield, User, CheckCircle2, Check, Stethoscope, ClipboardList, Database, Cpu, Sparkles } from "lucide-react";
 import { logoutApiCall } from "@/lib/auth";
 import DatasetPanel from "@/components/researcher/DatasetPanel";
 import AiComparePanel from "@/components/researcher/AiComparePanel";
+import LamaCleanPanel from "@/components/researcher/LamaCleanPanel";
 import Logo from "@/components/Logo";
 
 export default function ResearcherDashboard() {
@@ -13,7 +14,7 @@ export default function ResearcherDashboard() {
   const [user, setUser] = useState<{ fullName?: string; phoneNumber?: string; roles?: string[]; role?: string } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<"dataset" | "ai-compare">("dataset");
+  const [activeSubTab, setActiveSubTab] = useState<"dataset" | "ai-compare" | "lama-clean">("dataset");
   const profileRef = useRef<HTMLDivElement>(null);
 
   const getInitials = (name?: string) => {
@@ -123,6 +124,17 @@ export default function ResearcherDashboard() {
             <Cpu size={13} />
             Phân tích & So sánh AI
           </button>
+          <button 
+            onClick={() => setActiveSubTab("lama-clean")}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1.5 ${
+              activeSubTab === "lama-clean" 
+                ? "bg-white text-[#8B5CF6] shadow-sm" 
+                : "bg-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Sparkles size={13} />
+            Xóa Caliper AI
+          </button>
         </div>
 
         {/* Avatar circle with Dropdown */}
@@ -196,12 +208,13 @@ export default function ResearcherDashboard() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex overflow-hidden min-h-0 bg-[#F8FAFC]">
         {activeSubTab === "dataset" ? (
           <DatasetPanel user={user} />
-        ) : (
+        ) : activeSubTab === "ai-compare" ? (
           <AiComparePanel user={user} />
+        ) : (
+          <LamaCleanPanel user={user} />
         )}
       </main>
     </div>

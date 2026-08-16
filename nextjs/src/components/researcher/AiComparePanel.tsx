@@ -460,11 +460,18 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                         {img.file.name}
                       </p>
                       {img.uploading ? (
-                        <p className="text-[10px] text-slate-400">Đang quét...</p>
-                      ) : img.error ? (
-                        <p className="text-[10px] text-amber-500 font-medium">Đã mô phỏng</p>
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Loader2 size={10} className="animate-spin text-slate-400" />
+                          Đang quét...
+                        </p>
+                      ) : img.processedUrl ? (
+                        img.error ? (
+                          <p className="text-[10px] text-amber-500 font-medium">Đã mô phỏng</p>
+                        ) : (
+                          <p className="text-[10px] text-emerald-600 font-medium">Thành công ({img.detections.length})</p>
+                        )
                       ) : (
-                        <p className="text-[10px] text-emerald-600 font-medium">Thành công ({img.detections.length})</p>
+                        <p className="text-[10px] text-slate-400 font-medium">Chờ phân tích...</p>
                       )}
                     </div>
 
