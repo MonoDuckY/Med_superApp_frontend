@@ -70,10 +70,22 @@ class _PersonalInfoScaffold extends StatelessWidget {
                   children: [
                     // ── Avatar & Summary Card ──────────────────────────────
                     _AvatarSummaryCard(vm: vm),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // ── Section: Thông tin cơ bản ──────────────────────────
-                    _SectionHeader(label: 'Thông tin cơ bản'),
+                    // ── Section 1: Chỉ số thể chất & Nhóm máu ──────────────
+                    _SectionHeader(label: 'Chỉ số thể chất & Nhóm máu'),
+                    const SizedBox(height: 12),
+                    _PhysicalMetricsCard(vm: vm),
+                    const SizedBox(height: 20),
+
+                    // ── Section 2: Tiền sử y tế & Sức khỏe ─────────────────
+                    _SectionHeader(label: 'Tiền sử y tế & Sức khỏe'),
+                    const SizedBox(height: 12),
+                    _MedicalBackgroundCard(vm: vm),
+                    const SizedBox(height: 20),
+
+                    // ── Section 3: Thông tin định danh & Hành chính ────────
+                    _SectionHeader(label: 'Thông tin định danh & Hành chính'),
                     const SizedBox(height: 12),
                     _InfoRowCard(
                       icon: Icons.person_outline_rounded,
@@ -133,14 +145,14 @@ class _PersonalInfoScaffold extends StatelessWidget {
                       ),
                     ],
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // ── Section: Tài khoản ──────────────────────────────────
+                    // ── Section 4: Tài khoản ────────────────────────────────
                     _SectionHeader(label: 'Thông tin tài khoản'),
                     const SizedBox(height: 12),
                     _StatusCard(vm: vm),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // ── Notice Banner (Medical Data Policy) ─────────────────
                     _MedicalDataNoticeBanner(),
@@ -256,6 +268,289 @@ class _AvatarSummaryCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Physical Metrics Card ─────────────────────────────────────────────────────
+
+class _PhysicalMetricsCard extends StatelessWidget {
+  final ProfileViewModel vm;
+  const _PhysicalMetricsCard({required this.vm});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(4),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _MetricTile(
+                  icon: Icons.bloodtype_rounded,
+                  iconColor: AppColors.error,
+                  label: 'Nhóm máu',
+                  value: vm.bloodType.isNotEmpty ? vm.bloodType : '—',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MetricTile(
+                  icon: Icons.height_rounded,
+                  iconColor: AppColors.primary,
+                  label: 'Chiều cao',
+                  value: vm.heightFormatted,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricTile(
+                  icon: Icons.monitor_weight_outlined,
+                  iconColor: AppColors.teal,
+                  label: 'Cân nặng',
+                  value: vm.weightFormatted,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MetricTile(
+                  icon: Icons.speed_rounded,
+                  iconColor: AppColors.purple,
+                  label: 'Chỉ số BMI',
+                  value: vm.bmiFormatted,
+                  subtitle: vm.bmi != null ? vm.bmiCategory : null,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+  final String? subtitle;
+
+  const _MetricTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.canvasColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: iconColor.withAlpha(15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textHint,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle!,
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Medical Background Card ───────────────────────────────────────────────────
+
+class _MedicalBackgroundCard extends StatelessWidget {
+  final ProfileViewModel vm;
+  const _MedicalBackgroundCard({required this.vm});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasHistory = vm.medicalHistory.isNotEmpty;
+    final hasSickness = vm.currentSickness.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(4),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tiền sử bệnh lý
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.history_edu_rounded,
+                    size: 18, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tiền sử bệnh lý nền',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hasHistory ? vm.medicalHistory : 'Không ghi nhận tiền sử bệnh lý đặc biệt',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: hasHistory ? AppColors.textPrimary : AppColors.textSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 12),
+
+          // Tình trạng / Bệnh lý hiện tại
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withAlpha(15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.healing_outlined,
+                    size: 18, color: AppColors.teal),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tình trạng sức khỏe / Bệnh lý hiện tại',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hasSickness ? vm.currentSickness : 'Thể trạng ổn định / Không có triệu chứng cấp tính',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: hasSickness ? AppColors.textPrimary : AppColors.textSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

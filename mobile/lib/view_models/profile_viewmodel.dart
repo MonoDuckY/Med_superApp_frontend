@@ -79,6 +79,37 @@ class ProfileViewModel extends ChangeNotifier {
   String get healthInsuranceCode => _user?.healthInsuranceCode ?? '';
   bool get isActive => (_user?.status ?? 'ACTIVE') == 'ACTIVE';
 
+  // ── Physical & Medical Getters ────────────────────────────────────────────
+
+  String get bloodType => _user?.bloodType ?? '';
+  double? get height => _user?.height;
+  double? get weight => _user?.weight;
+  String get medicalHistory => _user?.medicalHistory ?? '';
+  String get currentSickness => _user?.currentSickness ?? '';
+
+  String get heightFormatted => height != null && height! > 0 ? '${height!.toStringAsFixed(0)} cm' : '—';
+  String get weightFormatted => weight != null && weight! > 0 ? '${weight!.toStringAsFixed(1)} kg' : '—';
+
+  /// Tính chỉ số khối cơ thể BMI: Cân nặng (kg) / [Chiều cao (m)]^2
+  double? get bmi {
+    if (height != null && weight != null && height! > 0 && weight! > 0) {
+      final hMeters = height! / 100.0;
+      return weight! / (hMeters * hMeters);
+    }
+    return null;
+  }
+
+  String get bmiFormatted => bmi != null ? bmi!.toStringAsFixed(1) : '—';
+
+  /// Đánh giá phân loại thể trạng theo chuẩn WHO châu Á
+  String get bmiCategory {
+    if (bmi == null) return 'Chưa xác định';
+    if (bmi! < 18.5) return 'Gầy (Thiếu cân)';
+    if (bmi! < 23.0) return 'Bình thường (Chuẩn)';
+    if (bmi! < 25.0) return 'Thừa cân';
+    return 'Béo phì';
+  }
+
   /// Trả về initials (2 chữ cái đầu) của fullName để hiển thị avatar tròn.
   String get initials {
     final name = fullName.trim();

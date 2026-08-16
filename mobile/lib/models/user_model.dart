@@ -14,6 +14,11 @@ class UserModel {
   final String? address;
   final String? citizenIdentificationCode;
   final String? healthInsuranceCode;
+  final String? medicalHistory;
+  final String? currentSickness;
+  final double? height;
+  final double? weight;
+  final String? bloodType;
   final String? createdAt; // ISO-8601 instant string
   final String? updatedAt;
   final String? lastLoginAt;
@@ -31,6 +36,11 @@ class UserModel {
     this.address,
     this.citizenIdentificationCode,
     this.healthInsuranceCode,
+    this.medicalHistory,
+    this.currentSickness,
+    this.height,
+    this.weight,
+    this.bloodType,
     this.createdAt,
     this.updatedAt,
     this.lastLoginAt,
@@ -50,6 +60,11 @@ class UserModel {
       address:                   json['address'] as String?,
       citizenIdentificationCode: json['citizenIdentificationCode'] as String?,
       healthInsuranceCode:       json['healthInsuranceCode'] as String?,
+      medicalHistory:            json['medicalHistory'] as String?,
+      currentSickness:           json['currentSickness'] as String?,
+      height:                    (json['height'] as num?)?.toDouble(),
+      weight:                    (json['weight'] as num?)?.toDouble(),
+      bloodType:                 json['bloodType'] as String?,
       createdAt:                 json['createdAt'] as String?,
       updatedAt:                 json['updatedAt'] as String?,
       lastLoginAt:               json['lastLoginAt'] as String?,
@@ -69,6 +84,11 @@ class UserModel {
     'address':                   address,
     'citizenIdentificationCode': citizenIdentificationCode,
     'healthInsuranceCode':       healthInsuranceCode,
+    'medicalHistory':            medicalHistory,
+    'currentSickness':           currentSickness,
+    'height':                    height,
+    'weight':                    weight,
+    'bloodType':                 bloodType,
     'createdAt':                 createdAt,
     'updatedAt':                 updatedAt,
     'lastLoginAt':               lastLoginAt,

@@ -588,27 +588,31 @@ class _VitalCard extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            value,
-                            style: GoogleFonts.inter(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              value,
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            unit,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
+                            const SizedBox(width: 4),
+                            Text(
+                              unit,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       if (subLabel != null)
                         Text(
@@ -635,27 +639,31 @@ class _VitalCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      value,
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      unit,
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: AppColors.textSecondary,
+                      const SizedBox(width: 3),
+                      Text(
+                        unit,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 Text(
                   label,
@@ -703,6 +711,8 @@ class _DiagnosisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasIcd = diagnosis.icdCode.trim().isNotEmpty && diagnosis.icdCode.trim() != 'ICD-10';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -721,33 +731,48 @@ class _DiagnosisCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'ICD-10',
-                  style: GoogleFonts.inter(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withAlpha(200),
+          if (hasIcd)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'ICD-10',
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withAlpha(200),
+                    ),
                   ),
-                ),
-                Text(
-                  diagnosis.icdCode,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  Text(
+                    diagnosis.icdCode,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            )
+          else
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.assignment_turned_in_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
-          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -756,22 +781,24 @@ class _DiagnosisCard extends StatelessWidget {
                 Text(
                   diagnosis.nameVi,
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                     height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  diagnosis.nameEn,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                    height: 1.4,
+                if (diagnosis.nameEn.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    diagnosis.nameEn,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic,
+                      height: 1.4,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

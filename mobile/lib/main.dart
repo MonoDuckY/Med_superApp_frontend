@@ -22,7 +22,7 @@ class MedSuperApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Med SuperApp',
+      title: 'HMS Health',
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,
       debugShowCheckedModeBanner: false,

@@ -155,13 +155,54 @@ class HomeViewModel extends ChangeNotifier {
       final v = detail?.vitalSigns;
       if (v == null) continue;
 
-      final systolic =
-          double.tryParse(v.bloodPressure.split('/').first) ?? 120;
+      double systolic = 120.0;
+      double diastolic = 80.0;
+
+      final bpStr = v.bloodPressure.trim();
+      if (bpStr.contains('/')) {
+        final parts = bpStr.split('/');
+        systolic = double.tryParse(parts[0].trim()) ?? 120.0;
+        if (parts.length > 1) {
+          diastolic = double.tryParse(parts[1].trim()) ?? 80.0;
+        }
+      } else if (bpStr.contains('-')) {
+        final parts = bpStr.split('-');
+        systolic = double.tryParse(parts[0].trim()) ?? 120.0;
+        if (parts.length > 1) {
+          diastolic = double.tryParse(parts[1].trim()) ?? 80.0;
+        }
+      } else {
+        final raw = double.tryParse(bpStr) ?? 120.0;
+        if (raw >= 1000 && raw <= 2500) {
+          final s = raw.toInt().toString();
+          if (s.length == 4) {
+            systolic = double.tryParse(s.substring(0, 2)) ?? 120.0;
+            diastolic = double.tryParse(s.substring(2)) ?? 80.0;
+            if (systolic < 60) {
+              systolic = double.tryParse(s.substring(0, 3)) ?? 120.0;
+              diastolic = double.tryParse(s.substring(3)) ?? 80.0;
+            }
+          } else if (s.length == 5) {
+            systolic = double.tryParse(s.substring(0, 3)) ?? 120.0;
+            diastolic = double.tryParse(s.substring(3)) ?? 80.0;
+          }
+        } else if (raw >= 50 && raw <= 260) {
+          systolic = raw;
+          diastolic = 80.0;
+        }
+      }
+
+      // Clamp reasonable clinical bounds
+      if (systolic > 260) systolic = 140;
+      if (systolic < 50) systolic = 90;
+      if (diastolic > 160) diastolic = 90;
+      if (diastolic < 30) diastolic = 60;
 
       points.add(VitalChartPoint(
         date: rec.dateTime,
         heartRate: v.heartRate.toDouble(),
         systolic: systolic,
+        diastolic: diastolic,
         respRate: v.respiratoryRate.toDouble(),
         temperature: v.bodyTemperature,
       ));

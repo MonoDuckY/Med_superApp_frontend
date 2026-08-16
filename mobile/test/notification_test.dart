@@ -160,7 +160,11 @@ void main() {
       final mockService = MockMedicineScheduleService();
       final vm = MedicineScheduleViewModel(service: mockService);
 
-      await Future.delayed(const Duration(milliseconds: 700));
+      int waited = 0;
+      while (vm.isLoading && waited < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        waited++;
+      }
       expect(vm.isLoading, isFalse);
 
       if (vm.schedulesForSelectedDate.isNotEmpty) {

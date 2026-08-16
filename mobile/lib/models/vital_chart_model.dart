@@ -7,8 +7,11 @@ class VitalChartPoint {
   /// Heart rate in beats per minute (bpm).
   final double heartRate;
 
-  /// Systolic blood pressure in mmHg (upper value from e.g. "148/92").
+  /// Systolic blood pressure in mmHg (upper value from e.g. "120/80").
   final double systolic;
+
+  /// Diastolic blood pressure in mmHg (lower value from e.g. "120/80").
+  final double diastolic;
 
   /// Respiratory rate in breaths per minute.
   final double respRate;
@@ -20,6 +23,7 @@ class VitalChartPoint {
     required this.date,
     required this.heartRate,
     required this.systolic,
+    this.diastolic = 80.0,
     required this.respRate,
     required this.temperature,
   });

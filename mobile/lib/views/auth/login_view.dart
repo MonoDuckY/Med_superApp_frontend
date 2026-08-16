@@ -51,24 +51,27 @@ class _LoginBody extends StatelessWidget {
 
               // ── Logo ─────────────────────────────────────────────────────
               Container(
-                width: 72,
-                height: 72,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.sky400, AppColors.primary],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.35),
+                      color: AppColors.primary.withValues(alpha: 0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 36),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/icons/app_icon.png',
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
 
               const SizedBox(height: 20),

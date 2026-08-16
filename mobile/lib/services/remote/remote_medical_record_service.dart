@@ -172,9 +172,9 @@ class RemoteMedicalRecordService implements IMedicalRecordService {
     Diagnosis? diagnosis;
     if (mr?.diagnosis != null && mr!.diagnosis!.trim().isNotEmpty) {
       diagnosis = Diagnosis(
-        icdCode: summary.icdCode ?? 'ICD-10',
+        icdCode: summary.icdCode ?? '',
         nameVi: mr.diagnosis!,
-        nameEn: 'Medical examination conclusion',
+        nameEn: '',
       );
     }
 

@@ -685,7 +685,7 @@ class _VitalSignsChartCardState extends State<_VitalSignsChartCard> {
               padding: const EdgeInsets.all(32),
               child: Center(
                 child: Text(
-                  'Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u',
+                  'Chưa có dữ liệu',
                   style: GoogleFonts.inter(color: AppColors.textSecondary),
                 ),
               ),
@@ -696,6 +696,7 @@ class _VitalSignsChartCardState extends State<_VitalSignsChartCard> {
               values: _values(pts),
               color: metric.color,
               unit: metric.unit,
+              isBloodPressure: _selectedMetric == 1,
             ),
 
           // Latest value summary row
@@ -779,124 +780,244 @@ class _LineChartArea extends StatelessWidget {
   final List<double> values;
   final Color color;
   final String unit;
+  final bool isBloodPressure;
 
   const _LineChartArea({
     required this.points,
     required this.values,
     required this.color,
     required this.unit,
+    this.isBloodPressure = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final minVal = values.reduce((a, b) => a < b ? a : b);
-    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final allVals = isBloodPressure
+        ? [...points.map((p) => p.systolic), ...points.map((p) => p.diastolic)]
+        : values;
+    final minVal = allVals.reduce((a, b) => a < b ? a : b);
+    final maxVal = allVals.reduce((a, b) => a > b ? a : b);
     final padding = (maxVal - minVal) < 5 ? 5.0 : (maxVal - minVal) * 0.2;
 
-    final spots = List.generate(
+    final systolicSpots = List.generate(
+      points.length,
+      (i) => FlSpot(i.toDouble(), points[i].systolic),
+    );
+    final diastolicSpots = List.generate(
+      points.length,
+      (i) => FlSpot(i.toDouble(), points[i].diastolic),
+    );
+    final defaultSpots = List.generate(
       values.length,
       (i) => FlSpot(i.toDouble(), values[i]),
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 20, 16, 8),
-      child: SizedBox(
-        height: 160,
-        child: LineChart(
-          LineChartData(
-            minY: (minVal - padding).floorToDouble(),
-            maxY: (maxVal + padding).ceilToDouble(),
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: padding < 1 ? 0.5 : padding,
-              getDrawingHorizontalLine: (_) => FlLine(
-                color: AppColors.borderLight,
-                strokeWidth: 1,
-              ),
-            ),
-            borderData: FlBorderData(show: false),
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  interval: padding < 1 ? 0.5 : padding,
-                  getTitlesWidget: (v, _) => Text(
-                    v.toStringAsFixed(unit == '\u00B0C' ? 1 : 0),
-                    style: GoogleFonts.inter(
-                        fontSize: 10, color: AppColors.textHint),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (isBloodPressure)
+          Padding(
+            padding: const EdgeInsets.only(top: 10, right: 16, bottom: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 24,
-                  getTitlesWidget: (v, _) {
-                    final idx = v.toInt();
-                    if (idx < 0 || idx >= points.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        DateFormat('MM/yy').format(points[idx].date),
+                const SizedBox(width: 5),
+                Text(
+                  'Tâm thu',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.teal,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'Tâm trương',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.teal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 12, 16, 8),
+          child: SizedBox(
+            height: 160,
+            child: LineChart(
+              LineChartData(
+                minY: (minVal - padding).floorToDouble(),
+                maxY: (maxVal + padding).ceilToDouble(),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: padding < 1 ? 0.5 : padding,
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: AppColors.borderLight,
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      interval: padding < 1 ? 0.5 : padding,
+                      getTitlesWidget: (v, _) => Text(
+                        v.toStringAsFixed(unit == '\u00B0C' ? 1 : 0),
                         style: GoogleFonts.inter(
-                            fontSize: 9, color: AppColors.textHint),
+                            fontSize: 10, color: AppColors.textHint),
                       ),
-                    );
-                  },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 24,
+                      getTitlesWidget: (v, _) {
+                        final idx = v.toInt();
+                        if (idx < 0 || idx >= points.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            DateFormat('MM/yy').format(points[idx].date),
+                            style: GoogleFonts.inter(
+                                fontSize: 9, color: AppColors.textHint),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                 ),
-              ),
-              topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false)),
-            ),
-            lineTouchData: LineTouchData(
-              touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => color.withAlpha(230),
-                getTooltipItems: (spots) => spots
-                    .map((s) => LineTooltipItem(
-                          ' ',
+                lineTouchData: LineTouchData(
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (_) => AppColors.textPrimary.withAlpha(230),
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((s) {
+                        final isSys = s.barIndex == 0;
+                        final name = isBloodPressure ? (isSys ? 'Tâm thu' : 'Tâm trương') : '';
+                        return LineTooltipItem(
+                          '$name: ${s.y.toInt()} $unit',
                           GoogleFonts.inter(
+                            color: AppColors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+                lineBarsData: isBloodPressure
+                    ? [
+                        // Tâm thu (Systolic)
+                        LineChartBarData(
+                          spots: systolicSpots,
+                          isCurved: true,
+                          curveSmoothness: 0.35,
+                          color: AppColors.primary,
+                          barWidth: 2.5,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, pct, barIndex, spotIndex) => FlDotCirclePainter(
+                              radius: 4,
                               color: AppColors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600),
-                        ))
-                    .toList(),
+                              strokeWidth: 2,
+                              strokeColor: AppColors.primary,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [AppColors.primary.withAlpha(35), AppColors.primary.withAlpha(0)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                        // Tâm trương (Diastolic)
+                        LineChartBarData(
+                          spots: diastolicSpots,
+                          isCurved: true,
+                          curveSmoothness: 0.35,
+                          color: AppColors.teal,
+                          barWidth: 2.5,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, pct, barIndex, spotIndex) => FlDotCirclePainter(
+                              radius: 3.5,
+                              color: AppColors.white,
+                              strokeWidth: 2,
+                              strokeColor: AppColors.teal,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [AppColors.teal.withAlpha(25), AppColors.teal.withAlpha(0)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ]
+                    : [
+                        LineChartBarData(
+                          spots: defaultSpots,
+                          isCurved: true,
+                          curveSmoothness: 0.35,
+                          color: color,
+                          barWidth: 2.5,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, pct, barIndex, spotIndex) => FlDotCirclePainter(
+                              radius: 4,
+                              color: AppColors.white,
+                              strokeWidth: 2,
+                              strokeColor: color,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [color.withAlpha(50), color.withAlpha(0)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ],
               ),
             ),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                curveSmoothness: 0.35,
-                color: color,
-                barWidth: 2.5,
-                dotData: FlDotData(
-                  show: true,
-                  getDotPainter: (spot, pct, barIndex, spotIndex) => FlDotCirclePainter(
-                    radius: 4,
-                    color: AppColors.white,
-                    strokeWidth: 2,
-                    strokeColor: color,
-                  ),
-                ),
-                belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(
-                    colors: [color.withAlpha(50), color.withAlpha(0)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -916,23 +1037,23 @@ class _LatestValueRow extends StatelessWidget {
     switch (metric) {
       case 0:
         valueStr = last.heartRate.toStringAsFixed(0);
-        label = 'Nh\u1ECBp tim';
+        label = 'Nhịp tim';
         unit = 'bpm';
         break;
       case 1:
-        valueStr = last.systolic.toStringAsFixed(0);
-        label = 'Huy\u1EBFt \u00E1p t\u00E2m thu';
+        valueStr = '${last.systolic.toInt()}/${last.diastolic.toInt()}';
+        label = 'Huyết áp (Tâm thu / Tâm trương)';
         unit = 'mmHg';
         break;
       case 2:
         valueStr = last.respRate.toStringAsFixed(0);
-        label = 'Nh\u1ECBp th\u1EDF';
-        unit = 'l/ph\u00Fat';
+        label = 'Nhịp thở';
+        unit = 'l/phút';
         break;
       default:
         valueStr = last.temperature.toStringAsFixed(1);
-        label = 'Nhi\u1EC7t \u0111\u1ED9 c\u01A1 th\u1EC3';
-        unit = '\u00B0C';
+        label = 'Nhiệt độ cơ thể';
+        unit = '°C';
     }
 
     return Container(
@@ -944,42 +1065,56 @@ class _LatestValueRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "G\u1EA7n nh\u1EA5t \u2014 ${DateFormat("dd/MM/yyyy").format(last.date)}",
-                style: GoogleFonts.inter(
-                    fontSize: 11, color: AppColors.textHint),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-          const Spacer(),
-          RichText(
-            text: TextSpan(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                TextSpan(
-                  text: valueStr,
+                Text(
+                  "Gần nhất — ${DateFormat("dd/MM/yyyy").format(last.date)}",
                   style: GoogleFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    fontSize: 11,
+                    color: AppColors.textHint,
                   ),
                 ),
-                TextSpan(
-                  text: ' $unit',
+                const SizedBox(height: 2),
+                Text(
+                  label,
                   style: GoogleFonts.inter(
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: valueStr,
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' $unit',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
