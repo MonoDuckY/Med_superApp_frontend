@@ -32,6 +32,7 @@ interface ImageItem {
 export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
+  const [zipping, setZipping] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const urlsRef = useRef<string[]>([]);
@@ -211,6 +212,39 @@ export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
     document.body.removeChild(link);
   };
 
+  const handleDownloadAll = async () => {
+    const processedImages = images.filter(img => img.processedUrl && !img.uploading);
+    if (processedImages.length === 0) return;
+
+    setZipping(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+
+      for (const img of processedImages) {
+        const response = await fetch(img.processedUrl!);
+        const blob = await response.blob();
+        zip.file(`cleaned_${img.file.name}`, blob);
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const blobUrl = URL.createObjectURL(content);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `cleaned_images_${Date.now()}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Failed to package ZIP file:", error);
+      alert("Đã xảy ra lỗi khi đóng gói tập tin ZIP.");
+    } finally {
+      setZipping(false);
+    }
+  };
+
   const activeImage = images.find(img => img.id === activeImageId);
 
   return (
@@ -237,15 +271,36 @@ export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
             Tải lên hàng loạt ảnh siêu âm có thước đo caliper. Mạng nơ-ron LaMa AI sẽ tự động inpaint xóa sạch thước đo caliper tuần tự từng ảnh một.
           </p>
         </div>
-        {images.length > 0 && (
-          <button
-            onClick={handleResetAll}
-            className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-[#E2E8F0] rounded-lg transition-colors cursor-pointer"
-          >
-            <RefreshCw size={13} />
-            Xóa toàn bộ & làm mới
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {images.some(img => img.processedUrl && !img.uploading) && (
+            <button
+              onClick={handleDownloadAll}
+              disabled={zipping}
+              className="h-8 px-3 flex items-center gap-1.5 text-xs font-bold text-white bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 rounded-lg transition-colors cursor-pointer border-none"
+            >
+              {zipping ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  Đang đóng gói ZIP...
+                </>
+              ) : (
+                <>
+                  <Download size={13} />
+                  Tải toàn bộ ảnh sạch (ZIP)
+                </>
+              )}
+            </button>
+          )}
+          {images.length > 0 && (
+            <button
+              onClick={handleResetAll}
+              className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-[#E2E8F0] rounded-lg transition-colors cursor-pointer"
+            >
+              <RefreshCw size={13} />
+              Xóa toàn bộ & làm mới
+            </button>
+          )}
+        </div>
       </div>
 
       <input
