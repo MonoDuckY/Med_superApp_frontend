@@ -58,6 +58,17 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
     };
   }, []);
 
+  // Sequential Queue Uploader logic
+  useEffect(() => {
+    const isAnyUploading = images.some(img => img.uploading);
+    if (isAnyUploading) return;
+
+    const nextPending = images.find(img => !img.processedUrl && !img.uploading && !img.error);
+    if (nextPending) {
+      startUpload(nextPending);
+    }
+  }, [images]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -77,7 +88,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
         detections: [],
         imageWidth: 1024,
         imageHeight: 768,
-        uploading: true,
+        uploading: false,
         error: null
       };
 
@@ -87,18 +98,19 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
     setImages(prev => [...prev, ...newItems]);
     setActiveImageId(prev => prev || newItems[0].id);
 
-    // Trigger upload/analysis for each new file
-    newItems.forEach(item => {
-      uploadAndDetect(item);
-    });
-
-    // Reset input so user can select same files again if needed
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const uploadAndDetect = async (item: ImageItem) => {
+  const startUpload = async (item: ImageItem) => {
+    setImages(prev => prev.map(img => {
+      if (img.id === item.id) {
+        return { ...img, uploading: true };
+      }
+      return img;
+    }));
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://hmsnextgen.io.vn:8080";
     
     try {
@@ -236,12 +248,12 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
         style={{ width: "100%", height: "100%" }}
       >
         {activeImage.detections.map((det, idx) => {
+          if (!det) return null;
           const { bbox, suggested_calipers, confidence, class_id } = det;
-          const label = getClassLabel(class_id);
-          const confText = `${Math.round(confidence * 100)}%`;
+          const label = getClassLabel(class_id || 0);
+          const confText = confidence ? `${Math.round(confidence * 100)}%` : "0%";
           const elements = [];
 
-          // 1. Draw Bounding Box (bbox)
           if (bbox) {
             const x = bbox.xmin * activeImage.imageWidth;
             const y = bbox.ymin * activeImage.imageHeight;
@@ -280,9 +292,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
             );
           }
 
-          // 2. Draw Suggested Calipers (Yellow markers)
           if (suggested_calipers) {
-            // Draw pair_a
             if (suggested_calipers.pair_a && suggested_calipers.pair_a.length === 2) {
               const [[x1, y1], [x2, y2]] = suggested_calipers.pair_a;
               elements.push(
@@ -296,18 +306,15 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                     strokeWidth="1.5" 
                     strokeDasharray="4 4" 
                   />
-                  {/* Plus marker 1 */}
                   <line x1={x1 - 6} y1={y1} x2={x1 + 6} y2={y1} stroke="#F59E0B" strokeWidth="1.5" />
                   <line x1={x1} y1={y1 - 6} x2={x1} y2={y1 + 6} stroke="#F59E0B" strokeWidth="1.5" />
                   
-                  {/* Plus marker 2 */}
                   <line x1={x2 - 6} y1={y2} x2={x2 + 6} y2={y2} stroke="#F59E0B" strokeWidth="1.5" />
                   <line x1={x2} y1={y2 - 6} x2={x2} y2={y2 + 6} stroke="#F59E0B" strokeWidth="1.5" />
                 </g>
               );
             }
 
-            // Draw pair_b
             if (suggested_calipers.pair_b && suggested_calipers.pair_b.length === 2) {
               const [[x1, y1], [x2, y2]] = suggested_calipers.pair_b;
               elements.push(
@@ -321,11 +328,9 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                     strokeWidth="1.5" 
                     strokeDasharray="4 4" 
                   />
-                  {/* Plus marker 1 */}
                   <line x1={x1 - 6} y1={y1} x2={x1 + 6} y2={y1} stroke="#F59E0B" strokeWidth="1.5" />
                   <line x1={x1} y1={y1 - 6} x2={x1} y2={y1 + 6} stroke="#F59E0B" strokeWidth="1.5" />
                   
-                  {/* Plus marker 2 */}
                   <line x1={x2 - 6} y1={y2} x2={x2 + 6} y2={y2} stroke="#F59E0B" strokeWidth="1.5" />
                   <line x1={x2} y1={y2 - 6} x2={x2} y2={y2 + 6} stroke="#F59E0B" strokeWidth="1.5" />
                 </g>
@@ -342,7 +347,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
   const activeImage = images.find(img => img.id === activeImageId);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 w-full h-full bg-[#F8FAFC] p-6 gap-5">
+    <div className="w-full h-[calc(100vh-4rem)] flex flex-col bg-[#F8FAFC] p-6 gap-5 overflow-hidden">
       <style>{`
         @keyframes scan-animation {
           0% { top: 0%; }
@@ -362,7 +367,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
             Phân tích & So sánh hình ảnh AI (Nhiều ảnh)
           </h2>
           <p className="text-[10px] text-slate-400 mt-0.5">
-            Tải lên nhiều ảnh phim chụp/siêu âm để AI quét tổn thương đồng thời và quản lý tiện lợi.
+            Tải lên nhiều ảnh phim chụp/siêu âm để AI quét tổn thương tuần tự từng ảnh một và quản lý tiện lợi.
           </p>
         </div>
         {images.length > 0 && (
@@ -396,7 +401,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
             <div className="flex flex-col gap-1.5">
               <p className="text-sm font-bold text-[#0F172A]">Tải lên các tập tin hình ảnh y khoa</p>
               <p className="text-xs text-slate-400 max-w-[340px] leading-relaxed mx-auto">
-                Hỗ trợ chọn hoặc thả nhiều ảnh JPG, PNG, DICOM. AI sẽ phân tích song song từng hình ảnh.
+                Hỗ trợ chọn hoặc thả nhiều ảnh JPG, PNG, DICOM. AI sẽ phân tích tuần tự từng hình ảnh một.
               </p>
             </div>
 
@@ -410,12 +415,12 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
         </div>
       ) : (
         /* Multi-Image Workspace Split Layout */
-        <div className="flex-1 flex gap-5 min-h-0 w-full">
+        <div className="flex-1 flex gap-5 min-h-0 w-full overflow-hidden">
           
           {/* Left Sidebar: Image list */}
-          <div className="w-64 bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col gap-4 shadow-sm shrink-0">
+          <div className="w-64 bg-white border border-[#E2E8F0] rounded-2xl p-4 flex flex-col gap-4 shadow-sm shrink-0 overflow-hidden">
             <div className="flex items-center justify-between shrink-0">
-              <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Danh sách ảnh ({images.length})</h3>
+              <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Danh sách ({images.length} ảnh)</h3>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="h-7 px-2.5 flex items-center gap-1.5 text-[10px] font-bold text-white bg-[#8B5CF6] hover:bg-[#7c4dff] rounded-lg transition-all cursor-pointer border-none"
@@ -455,7 +460,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                         {img.file.name}
                       </p>
                       {img.uploading ? (
-                        <p className="text-[10px] text-slate-400">Đang phân tích...</p>
+                        <p className="text-[10px] text-slate-400">Đang quét...</p>
                       ) : img.error ? (
                         <p className="text-[10px] text-amber-500 font-medium">Đã mô phỏng</p>
                       ) : (
@@ -482,7 +487,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
           {/* Right Workspace: Viewer and Result */}
           <div className="flex-1 bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm flex flex-col overflow-hidden min-h-0">
             {activeImage ? (
-              <div className="w-full h-full flex flex-col min-h-0 gap-4">
+              <div className="w-full h-full flex flex-col min-h-0 gap-4 overflow-hidden">
                 {/* View Mode controls */}
                 <div className="flex items-center justify-between shrink-0 border-b border-[#F1F5F9] pb-3 text-left">
                   <div className="flex items-center gap-3">
@@ -540,13 +545,12 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                 )}
 
                 {/* Comparison frame container */}
-                <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 bg-[#0A0A0A] rounded-2xl relative select-none">
+                <div className="flex-1 bg-[#0A0A0A] rounded-2xl relative select-none overflow-hidden min-h-0 flex items-center justify-center">
                   
                   {activeImage.uploading ? (
                     /* Scanning Line Animation overlay */
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 pointer-events-none">
                       <img src={activeImage.originalUrl} alt="Original Scan" className="max-w-full max-h-full object-contain opacity-55" />
-                      {/* Glowing scan bar */}
                       <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#8B5CF6] to-transparent shadow-[0_0_12px_#8B5CF6] ai-scan-line" />
                       
                       <div className="absolute px-4 py-2 rounded-xl bg-black/75 text-white text-xs font-semibold flex items-center gap-2 backdrop-blur-md">
@@ -557,25 +561,21 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                   ) : null}
 
                   {compareMode === "slider" && activeImage.originalUrl && (activeImage.processedUrl || activeImage.uploading) && (
-                    /* Before/After Drag Slider View */
+                    /* Before/After Drag Slider View - bulletproof centered layout using margin:auto */
                     <div 
                       ref={sliderContainerRef}
                       onMouseMove={handleMouseMove}
                       onTouchMove={handleTouchMove}
-                      className="relative w-full h-full flex items-center justify-center cursor-ew-resize overflow-hidden"
+                      className="absolute inset-0 flex items-center justify-center cursor-ew-resize overflow-hidden"
                     >
-                      {/* Aspect-ratio matched container bounding wrapper */}
+                      {/* Aspect-ratio matched container wrapper centered using margin auto */}
                       <div 
-                        className="relative max-w-full max-h-full"
+                        className="absolute inset-0 max-w-full max-h-full"
                         style={{ 
                           aspectRatio: `${activeImage.imageWidth} / ${activeImage.imageHeight}`,
-                          width: "100%",
+                          width: "auto",
                           height: "auto",
-                          maxHeight: "100%",
-                          maxWidth: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
+                          margin: "auto"
                         }}
                       >
                         {/* Bottom Image: Original */}
@@ -588,10 +588,13 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                         {/* Top Image Box: AI Processed (Width is dynamic) */}
                         {activeImage.processedUrl && (
                           <div 
-                            className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none"
+                            className="absolute top-0 bottom-0 left-0 overflow-hidden pointer-events-none"
                             style={{ width: `${sliderPosition}%` }}
                           >
-                            <div className="absolute inset-0 w-full h-full flex items-center justify-center" style={{ width: `${100 / (sliderPosition / 100)}%` }}>
+                            <div 
+                              className="absolute top-0 bottom-0 left-0 h-full" 
+                              style={{ width: `${100 / (sliderPosition / 100)}%` }}
+                            >
                               <div className="relative w-full h-full">
                                 <img 
                                   src={activeImage.processedUrl} 
@@ -629,12 +632,22 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                   )}
 
                   {compareMode === "side" && activeImage.originalUrl && (
-                    /* Side-by-Side View */
-                    <div className="w-full h-full grid grid-cols-2 gap-0.5 p-0.5 bg-neutral-800">
+                    /* Side-by-Side View - centered absolutely */
+                    <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-0.5 bg-neutral-800">
                       {/* Left Column: Original */}
                       <div className="relative flex items-center justify-center bg-[#0A0A0A] overflow-hidden">
-                        <img src={activeImage.originalUrl} alt="Original Side" className="max-w-full max-h-full object-contain" />
-                        <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-black/70 text-white text-[9px] font-bold">
+                        <div 
+                          className="absolute inset-0 max-w-full max-h-full"
+                          style={{ 
+                            aspectRatio: `${activeImage.imageWidth} / ${activeImage.imageHeight}`,
+                            width: "auto",
+                            height: "auto",
+                            margin: "auto"
+                          }}
+                        >
+                          <img src={activeImage.originalUrl} alt="Original Side" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-black/70 text-white text-[9px] font-bold z-20">
                           ẢNH GỐC (ORIGINAL)
                         </div>
                       </div>
@@ -643,25 +656,24 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                       <div className="relative flex items-center justify-center bg-[#0A0A0A] overflow-hidden border-l border-neutral-700">
                         {activeImage.processedUrl ? (
                           <div 
-                            className="relative max-w-full max-h-full"
+                            className="absolute inset-0 max-w-full max-h-full"
                             style={{ 
                               aspectRatio: `${activeImage.imageWidth} / ${activeImage.imageHeight}`,
-                              width: "100%",
+                              width: "auto",
                               height: "auto",
-                              maxHeight: "100%",
-                              maxWidth: "100%"
+                              margin: "auto"
                             }}
                           >
                             <img src={activeImage.processedUrl} alt="Processed Side" className="w-full h-full object-contain" />
                             {renderSvgOverlay(activeImage)}
                           </div>
                         ) : (
-                          <div className="text-slate-500 text-xs flex items-center gap-1.5">
+                          <div className="text-slate-500 text-xs flex items-center gap-1.5 z-20">
                             <Sparkles size={14} className="animate-spin text-[#8B5CF6]" />
                             Đang chờ kết quả...
                           </div>
                         )}
-                        <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-[#8B5CF6]/80 text-white text-[9px] font-bold">
+                        <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-[#8B5CF6]/80 text-white text-[9px] font-bold z-20">
                           AI PHÂN TÍCH (PROCESSED)
                         </div>
                       </div>
@@ -671,7 +683,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
 
                 {/* AI Detections List */}
                 {activeImage.processedUrl && !activeImage.uploading && (
-                  <div className="mt-4 border-t border-[#F1F5F9] pt-4 text-left w-full shrink-0">
+                  <div className="mt-4 border-t border-[#F1F5F9] pt-4 text-left w-full shrink-0 overflow-y-auto max-h-[140px] pr-1">
                     <h4 className="text-xs font-bold text-[#0F172A] mb-2.5 flex items-center gap-1.5">
                       <Sparkles size={14} className="text-[#8B5CF6]" />
                       Kết quả nhận diện tự động từ AI ({activeImage.detections.length})
