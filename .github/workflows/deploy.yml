@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# Đặt thư mục làm việc mặc định là 'nextjs' cho tất cả các lệnh run
+defaults:
+  run:
+    working-directory: nextjs
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -18,6 +23,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: nextjs/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -26,16 +32,16 @@ jobs:
         run: npm run lint
 
       - name: Build Next.js
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: npm run build
 
       - name: Prepare deployment package
         run: |
           mkdir -p deploy
-
           cp -r .next/standalone/* deploy/
           cp -r .next/static deploy/.next/static
           cp -r public deploy/public
-
           tar -czf deploy.tar.gz -C deploy .
 
       - name: Setup SSH
@@ -43,9 +49,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-
-          ssh-keyscan -p ${{ secrets.EC2_PORT }} \
-            ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Upload deployment package
         run: |
@@ -54,11 +58,6 @@ jobs:
             -P ${{ secrets.EC2_PORT }} \
             deploy.tar.gz \
             ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/tmp/deploy.tar.gz
-      
-      - name: Build Next.js
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-        run: npm run build
 
       - name: Deploy to EC2
         run: |
