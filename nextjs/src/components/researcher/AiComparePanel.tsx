@@ -578,32 +578,32 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                           margin: "auto"
                         }}
                       >
-                        {/* Bottom Image: Original */}
-                        <img 
-                          src={activeImage.originalUrl} 
-                          alt="Original View" 
-                          className="w-full h-full object-contain pointer-events-none" 
-                        />
+                        {/* Bottom Image: AI Processed (Underneath layer) */}
+                        <div className="w-full h-full relative z-0">
+                          <img 
+                            src={activeImage.processedUrl || activeImage.originalUrl} 
+                            alt="Processed View" 
+                            className="w-full h-full object-contain pointer-events-none" 
+                          />
+                          {/* Render responsive SVG overlay */}
+                          {renderSvgOverlay(activeImage)}
+                        </div>
 
-                        {/* Top Image Box: AI Processed (Width is dynamic) */}
+                        {/* Top Image Box: Original (Left layer, width is dynamic) */}
                         {activeImage.processedUrl && (
                           <div 
-                            className="absolute top-0 bottom-0 left-0 overflow-hidden pointer-events-none"
+                            className="absolute top-0 bottom-0 left-0 overflow-hidden pointer-events-none z-20"
                             style={{ width: `${sliderPosition}%` }}
                           >
                             <div 
                               className="absolute top-0 bottom-0 left-0 h-full" 
                               style={{ width: `${100 / (sliderPosition / 100)}%` }}
                             >
-                              <div className="relative w-full h-full">
-                                <img 
-                                  src={activeImage.processedUrl} 
-                                  alt="Processed View" 
-                                  className="w-full h-full object-contain" 
-                                />
-                                {/* Render responsive SVG overlay */}
-                                {renderSvgOverlay(activeImage)}
-                              </div>
+                              <img 
+                                src={activeImage.originalUrl} 
+                                alt="Original View" 
+                                className="w-full h-full object-contain" 
+                              />
                             </div>
                           </div>
                         )}
@@ -611,7 +611,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
                         {/* Split line splitter handle */}
                         {activeImage.processedUrl && (
                           <div 
-                            className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] z-20 pointer-events-none"
+                            className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] z-30 pointer-events-none"
                             style={{ left: `${sliderPosition}%` }}
                           >
                             <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-white text-slate-800 flex items-center justify-center shadow-lg border border-slate-300 font-bold text-xs select-none">
