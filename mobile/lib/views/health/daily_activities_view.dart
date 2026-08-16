@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -160,7 +161,13 @@ class _ActivityHeader extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/health');
+                    }
+                  },
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
                   color: AppColors.textPrimary,
                 ),
@@ -271,7 +278,7 @@ class _DatePickerRow extends StatelessWidget {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: selectedDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    firstDate: DateTime.now().subtract(const Duration(days: 2)),
                     lastDate: DateTime.now(),
                     builder: (context, child) {
                       return Theme(
@@ -575,7 +582,10 @@ class _NutritionTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isEditable = selectedDate.year == DateTime.now().year && selectedDate.month == DateTime.now().month && selectedDate.day == DateTime.now().day;
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final minDate = today.subtract(const Duration(days: 2));
+    final curDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final isEditable = !curDate.isAfter(today) && !curDate.isBefore(minDate);
 
     return Stack(
       children: [
@@ -679,7 +689,10 @@ class _WorkoutTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isEditable = selectedDate.year == DateTime.now().year && selectedDate.month == DateTime.now().month && selectedDate.day == DateTime.now().day;
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final minDate = today.subtract(const Duration(days: 2));
+    final curDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final isEditable = !curDate.isAfter(today) && !curDate.isBefore(minDate);
 
     return Stack(
       children: [

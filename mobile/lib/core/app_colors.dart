@@ -71,6 +71,15 @@ class AppColors {
   static const Color pink500 = Color(0xFFEC4899);
   // -------------------------------------------
 
+  // On-dark / Hero Card Overlay Colors
+  // Used on gradient/dark backgrounds inside the home hero card.
+  static const Color onDarkPrimary = Colors.white; // text & icons on dark bg
+  static const Color onDarkSubtle = Color(0xC8FFFFFF); // white at alpha 200 (~78%)
+  static const Color onDarkMuted = Color(0xFFFFFFFF); // kept as alias for clarity
+  static const Color heroLabelBg = Color(0x23FFFFFF); // white at alpha 35 (~14%)
+  static const Color heroOutlinedBtnBg = Color(0x1EFFFFFF); // white at alpha 30 (~12%)
+  static const Color heroOutlinedBtnBorder = Color(0x50FFFFFF); // white at alpha 80 (~31%)
+
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, darkBlue],
