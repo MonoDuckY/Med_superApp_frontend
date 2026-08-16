@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feature/researcher-view-patient-images
 
 # Đặt thư mục làm việc mặc định là 'nextjs' cho tất cả các lệnh run
 defaults:
@@ -45,9 +46,11 @@ jobs:
           tar -czf deploy.tar.gz -C deploy .
 
       - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
