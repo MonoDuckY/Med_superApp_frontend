@@ -47,42 +47,30 @@ class ProfilePlaceholderView extends StatelessWidget {
                     _ProfileMenuItem(
                       icon: Icons.folder_shared_outlined,
                       iconColor: AppColors.primary,
-                      title: 'Hồ sơ bệnh án',
-                      subtitle: 'Lịch sử khám và chẩn đoán',
+                      title: 'Hồ sơ bệnh án & Xét nghiệm',
+                      subtitle: 'Lịch sử khám, chẩn đoán, đơn thuốc & hình ảnh',
                       onTap: () => context.push('/profile/medical-records'),
-                    ),
-                    const SizedBox(height: 8),
-                    _ProfileMenuItem(
-                      icon: Icons.science_outlined,
-                      iconColor: AppColors.warning,
-                      title: 'Kết quả xét nghiệm',
-                      subtitle: 'Hình ảnh và chỉ số xét nghiệm',
-                      badge: 'Sắp có',
-                      onTap: () => _showComingSoon(context,
-                          'Kết quả xét nghiệm đang được phát triển'),
                     ),
 
                     const SizedBox(height: 24),
 
                     // ── Tài khoản ───────────────────────────────────────────────
-                    _SectionLabel(label: 'Tài khoản'),
+                    _SectionLabel(label: 'Tài khoản & Thông báo'),
                     const SizedBox(height: 12),
                     _ProfileMenuItem(
                       icon: Icons.person_outline_rounded,
                       iconColor: AppColors.purple,
                       title: 'Thông tin cá nhân',
-                      subtitle: 'Tên, số điện thoại, ngày sinh',
+                      subtitle: 'Tên, CCCD/Định danh, BHYT, ngày sinh',
                       onTap: () => context.push('/profile/personal-info'),
                     ),
                     const SizedBox(height: 8),
                     _ProfileMenuItem(
                       icon: Icons.notifications_outlined,
                       iconColor: AppColors.teal,
-                      title: 'Cài đặt thông báo',
-                      subtitle: 'Quản lý nhắc nhở và thông báo',
-                      badge: 'Sắp có',
-                      onTap: () => _showComingSoon(
-                          context, 'Cài đặt thông báo đang được phát triển'),
+                      title: 'Thông báo hệ thống',
+                      subtitle: 'Danh sách thông báo và nhắc lịch',
+                      onTap: () => context.push('/notifications'),
                     ),
 
                     const SizedBox(height: 24),
@@ -117,20 +105,6 @@ class ProfilePlaceholderView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '🚧 $message',
-          style: GoogleFonts.inter(fontSize: 13),
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -372,7 +346,6 @@ class _ProfileMenuItem extends StatelessWidget {
   final Color iconColor;
   final String title;
   final String? subtitle;
-  final String? badge;
   final VoidCallback onTap;
   final bool isDanger;
 
@@ -381,7 +354,6 @@ class _ProfileMenuItem extends StatelessWidget {
     required this.iconColor,
     required this.title,
     this.subtitle,
-    this.badge,
     required this.onTap,
     this.isDanger = false,
   });
@@ -438,24 +410,6 @@ class _ProfileMenuItem extends StatelessWidget {
                 ],
               ),
             ),
-            if (badge != null)
-              Container(
-                margin: const EdgeInsets.only(right: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  badge!,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textHint,
-                  ),
-                ),
-              ),
             Icon(
               Icons.chevron_right_rounded,
               size: 18,

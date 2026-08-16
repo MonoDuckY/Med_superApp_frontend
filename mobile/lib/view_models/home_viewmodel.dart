@@ -4,8 +4,13 @@ import '../core/constants/app_constants.dart';
 import '../models/appointment_models.dart';
 import '../models/health_news_model.dart';
 import '../models/vital_chart_model.dart';
+import '../services/abstract/medical_record_service_abstract.dart';
 import '../services/mock/mock_health_news_service.dart';
 import '../services/mock/mock_medical_record_service.dart';
+import '../services/remote/remote_medical_record_service.dart';
+import '../services/abstract/appointment_service_abstract.dart';
+import '../services/mock/mock_appointment_service.dart';
+import '../services/remote/remote_appointment_service.dart';
 import '../core/config/environment_config.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
@@ -15,7 +20,12 @@ import '../services/mock/mock_notification_service.dart';
 import '../services/remote/remote_notification_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
-  final MockMedicalRecordService _medService = MockMedicalRecordService();
+  final IMedicalRecordService _medService = EnvironmentConfig.isMock
+      ? MockMedicalRecordService()
+      : RemoteMedicalRecordService();
+  final IAppointmentService _appointmentService = EnvironmentConfig.isMock
+      ? MockAppointmentService()
+      : RemoteAppointmentService();
   final MockHealthNewsService _newsService = MockHealthNewsService();
   final AuthServiceAbstract _authService = EnvironmentConfig.isMock
       ? MockAuthService()
@@ -30,6 +40,7 @@ class HomeViewModel extends ChangeNotifier {
   List<VitalChartPoint> _vitalHistory = [];
   List<HealthNewsArticle> _news = [];
   int _unreadNotificationCount = 0;
+  NextAppointmentInfo? _nextAppointment;
 
   // ── Getters ────────────────────────────────────────────────────────────────
   bool get isLoading => _isLoading;
@@ -37,6 +48,7 @@ class HomeViewModel extends ChangeNotifier {
   List<VitalChartPoint> get vitalHistory => _vitalHistory;
   List<HealthNewsArticle> get news => _news;
   int get unreadNotificationCount => _unreadNotificationCount;
+  NextAppointmentInfo? get nextAppointment => _nextAppointment;
 
   /// Greeting string based on current hour.
   String get greeting {
@@ -45,21 +57,6 @@ class HomeViewModel extends ChangeNotifier {
     if (hour < 18) return 'Chào buổi chiều';
     return 'Chào buổi tối';
   }
-
-  // ── Mock next appointment ─────────────────────────────────────────────────
-  // Hardcoded from mock data matching rec-001 (BS. Nguyễn Thị Lan).
-  // Replace with a proper API call when the appointment endpoint is stable.
-  static final NextAppointmentInfo _mockNextAppt = NextAppointmentInfo(
-    doctorName: 'BS. Nguyễn Thị Lan',
-    specialty: 'Tim mạch',
-    location: 'A101 — Phòng A',
-    dateTime: DateTime.now().add(const Duration(days: 3, hours: 2)),
-    status: 'Đã xác nhận',
-  );
-
-  /// Returns the next upcoming appointment, or null if none.
-  NextAppointmentInfo? get nextAppointment =>
-      _mockNextAppt.dateTime.isAfter(DateTime.now()) ? _mockNextAppt : null;
 
   // ── Load ──────────────────────────────────────────────────────────────────
   Future<void> load() async {
@@ -91,6 +88,43 @@ class HomeViewModel extends ChangeNotifier {
       if (notifRes.success && notifRes.data != null) {
         _unreadNotificationCount = notifRes.data!;
       }
+    } catch (_) {}
+
+    try {
+      final appts = await _appointmentService.getPatientAppointments();
+      final now = DateTime.now();
+      NextAppointmentInfo? earliest;
+      for (final a in appts) {
+        if (a.status.toUpperCase() == 'CANCELLED' || a.status.toUpperCase() == 'REJECTED') {
+          continue;
+        }
+        DateTime dt = DateTime.now();
+        if (a.doctorWorkSlot != null && a.slot != null) {
+          final dateStr = a.doctorWorkSlot!.workDate;
+          String timeStr = a.slot!.startTime;
+          if (timeStr.length == 5) timeStr = '$timeStr:00';
+          dt = DateTime.tryParse('${dateStr}T$timeStr') ?? dt;
+        } else if (a.requestedAt != null) {
+          dt = DateTime.tryParse(a.requestedAt!)?.toLocal() ?? dt;
+        }
+
+        if (dt.isAfter(now)) {
+          if (earliest == null || dt.isBefore(earliest.dateTime)) {
+            final docName = a.doctor?.fullName ?? 'Bác sĩ chuyên khoa';
+            final roomName = a.room?.roomName ?? 'Phòng khám';
+            final loc = a.room != null ? '${a.room!.id} - ${a.room!.roomName}' : 'Bệnh viện';
+            final statusStr = a.status.toUpperCase() == 'CONFIRMED' ? 'Đã xác nhận' : 'Chờ duyệt';
+            earliest = NextAppointmentInfo(
+              doctorName: docName,
+              specialty: roomName,
+              location: loc,
+              dateTime: dt,
+              status: statusStr,
+            );
+          }
+        }
+      }
+      _nextAppointment = earliest;
     } catch (_) {}
 
     _vitalHistory = await _buildVitalHistory();

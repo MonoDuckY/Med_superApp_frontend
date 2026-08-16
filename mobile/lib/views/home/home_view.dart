@@ -61,19 +61,23 @@ class _HomeBody extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // Hero card
+              // Hero card (Next Appointment)
               _NextAppointmentHeroCard(vm: vm),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
 
-              // Vital signs chart
-              _SectionLabel(label: 'Ch\u1ec9 s\u1ed1 sinh t\u1ed3n'),
-              const SizedBox(height: 14),
+              // Quick action shortcuts
+              const _QuickActionsGrid(),
+              const SizedBox(height: 24),
+
+              // Vital signs chart (Real medical records data)
+              _SectionLabel(label: 'Chỉ số sinh tồn'),
+              const SizedBox(height: 12),
               _VitalSignsChartCard(vm: vm),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // Health news
-              _SectionLabel(label: 'Tin t\u1ee9c s\u1ee9c kh\u1ecfe'),
-              const SizedBox(height: 14),
+              _SectionLabel(label: 'Tin tức & Kiến thức y khoa'),
+              const SizedBox(height: 12),
               ...vm.news.map((article) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _NewsCard(article: article),
@@ -84,6 +88,119 @@ class _HomeBody extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ============================================================
+//  Quick Actions Grid
+// ============================================================
+
+class _QuickActionsGrid extends StatelessWidget {
+  const _QuickActionsGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickActionItem(
+            icon: Icons.calendar_month_rounded,
+            iconColor: AppColors.primary,
+            title: 'Đặt khám',
+            onTap: () => context.push('/schedule/book'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickActionItem(
+            icon: Icons.folder_shared_rounded,
+            iconColor: AppColors.purple,
+            title: 'Bệnh án',
+            onTap: () => context.push('/profile/medical-records'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickActionItem(
+            icon: Icons.medication_rounded,
+            iconColor: AppColors.teal,
+            title: 'Lịch thuốc',
+            onTap: () => context.push('/health/medicine-schedule'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickActionItem(
+            icon: Icons.restaurant_rounded,
+            iconColor: AppColors.orange,
+            title: 'Nhật ký sống',
+            onTap: () => context.push('/health/daily-activities'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final VoidCallback onTap;
+
+  const _QuickActionItem({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withAlpha(15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
