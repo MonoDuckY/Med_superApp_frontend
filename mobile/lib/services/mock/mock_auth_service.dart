@@ -27,11 +27,12 @@ class MockAuthService implements AuthServiceAbstract {
     '0123456789': UserModel(
       id: 'usr_003',
       username: '0123456789',
-      fullName: 'Nguyễn Thị C',
+      fullName: 'Nguyễn Văn A',
       role: 'PATIENT',
       status: 'ACTIVE',
       phoneNumber: '0123456789',
-      patientId: 'BN000001',
+      dateOfBirth: '1995-08-15',
+      gender: 'MALE',
     ),
   };
 
@@ -67,7 +68,9 @@ class MockAuthService implements AuthServiceAbstract {
     if (_currentUser != null) {
       return ApiResponse.success(_currentUser!);
     }
-    return ApiResponse.failure('Chưa đăng nhập', errorCode: 'AUTH_UNAUTHORIZED');
+    // Fallback: khởi tạo patient mock mặc định nếu chưa đăng nhập qua form
+    _currentUser = _fakeUsers['0123456789'];
+    return ApiResponse.success(_currentUser!);
   }
 
   @override
@@ -87,10 +90,12 @@ class MockAuthService implements AuthServiceAbstract {
           : UserModel(
               id: 'usr_mock_new',
               username: phoneNumber,
-              fullName: 'Bệnh nhân mới',
+              fullName: 'Nguyễn Văn A',
               role: 'PATIENT',
               status: 'ACTIVE',
               phoneNumber: phoneNumber,
+              gender: 'MALE',
+              dateOfBirth: '1995-08-15',
             );
       _currentUser = user;
       return ApiResponse.success(user, message: 'Xác thực OTP thành công');

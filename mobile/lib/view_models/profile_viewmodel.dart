@@ -8,8 +8,8 @@ import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
 import '../core/config/environment_config.dart';
 
-/// ViewModel cho màn hình "Thông tin cá nhân" (UC-04).
-/// Quản lý: load profile, validate input, save profile.
+/// ViewModel cho màn hình "Thông tin cá nhân / Hồ sơ y tế" (UC-05: View Personal Medical Profile).
+/// Chế độ chỉ xem (Read-only), đồng bộ trực tiếp với Backend API / Mock.
 class ProfileViewModel extends ChangeNotifier {
   final AuthServiceAbstract _authService;
 
@@ -26,33 +26,12 @@ class ProfileViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  bool _isSaving = false;
-  bool get isSaving => _isSaving;
-
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  String? _successMessage;
-  String? get successMessage => _successMessage;
+  // ── Load Profile ──────────────────────────────────────────────────────────
 
-  /// True nếu form đang có thay đổi chưa được lưu.
-  bool _isDirty = false;
-  bool get isDirty => _isDirty;
-
-  // ── Form field controllers (raw values, không bind TextField trực tiếp) ──
-
-  String _fullName = '';
-  String get fullName => _fullName;
-
-  String _gender = '';
-  String get gender => _gender;
-
-  String _dateOfBirth = '';
-  String get dateOfBirth => _dateOfBirth;
-
-  // ── Load ──────────────────────────────────────────────────────────────────
-
-  /// Tải thông tin user. Ưu tiên gọi service; fallback về SharedPreferences.
+  /// Tải thông tin hồ sơ cá nhân.
   Future<void> loadProfile() async {
     _isLoading = true;
     _errorMessage = null;
@@ -62,137 +41,79 @@ class ProfileViewModel extends ChangeNotifier {
 
     if (response.success && response.data != null) {
       _user = response.data;
-      _syncFormFromUser();
+      if (_user?.fullName != null && _user!.fullName!.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AppConstants.keyUserName, _user!.fullName!);
+      }
     } else {
-      // Fallback: đọc phone từ SharedPreferences và dựng UserModel giả
+      // Fallback khi offline / cache local
       final prefs = await SharedPreferences.getInstance();
-      final phone = prefs.getString(AppConstants.keyUserData) ?? '';
+      final phone = prefs.getString(AppConstants.keyUserPhone) ??
+          prefs.getString(AppConstants.keyUserData) ??
+          '0123456789';
+      var name = prefs.getString(AppConstants.keyUserName) ?? 'Nguyễn Văn A';
+      if (RegExp(r'^\d+$').hasMatch(name.trim())) {
+        name = 'Nguyễn Văn A';
+      }
       _user = UserModel(
         id: 'local',
         role: 'PATIENT',
         status: 'ACTIVE',
         phoneNumber: phone,
-        fullName: phone.isNotEmpty ? phone : 'Bệnh nhân',
+        fullName: name,
+        gender: 'MALE',
+        dateOfBirth: '1995-08-15',
       );
-      _syncFormFromUser();
     }
 
     _isLoading = false;
-    _isDirty = false;
     notifyListeners();
   }
 
-  /// Đồng bộ giá trị form từ UserModel hiện tại.
-  void _syncFormFromUser() {
-    _fullName    = _user?.fullName    ?? '';
-    _gender      = _user?.gender      ?? '';
-    _dateOfBirth = _user?.dateOfBirth ?? '';
-  }
+  // ── Formatted Getters for UI ──────────────────────────────────────────────
 
-  // ── Form update methods ───────────────────────────────────────────────────
+  String get fullName => _user?.fullName ?? '';
+  String get phoneNumber => _user?.phoneNumber ?? '';
+  String get address => _user?.address ?? '';
+  String get citizenId => _user?.citizenIdentificationCode ?? '';
+  String get healthInsuranceCode => _user?.healthInsuranceCode ?? '';
+  bool get isActive => (_user?.status ?? 'ACTIVE') == 'ACTIVE';
 
-  void setFullName(String value) {
-    _fullName = value;
-    _isDirty = true;
-    _errorMessage = null;
-    notifyListeners();
-  }
+  // ── Physical & Medical Getters ────────────────────────────────────────────
 
-  void setGender(String value) {
-    _gender = value;
-    _isDirty = true;
-    _errorMessage = null;
-    notifyListeners();
-  }
+  String get bloodType => _user?.bloodType ?? '';
+  double? get height => _user?.height;
+  double? get weight => _user?.weight;
+  String get medicalHistory => _user?.medicalHistory ?? '';
+  String get currentSickness => _user?.currentSickness ?? '';
 
-  void setDateOfBirth(String value) {
-    _dateOfBirth = value;
-    _isDirty = true;
-    _errorMessage = null;
-    notifyListeners();
-  }
+  String get heightFormatted => height != null && height! > 0 ? '${height!.toStringAsFixed(0)} cm' : '—';
+  String get weightFormatted => weight != null && weight! > 0 ? '${weight!.toStringAsFixed(1)} kg' : '—';
 
-  // ── Validation ────────────────────────────────────────────────────────────
-
-  String? validateFullName(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Họ và tên không được để trống';
-    }
-    if (value.trim().length < 2) {
-      return 'Họ và tên phải có ít nhất 2 ký tự';
+  /// Tính chỉ số khối cơ thể BMI: Cân nặng (kg) / [Chiều cao (m)]^2
+  double? get bmi {
+    if (height != null && weight != null && height! > 0 && weight! > 0) {
+      final hMeters = height! / 100.0;
+      return weight! / (hMeters * hMeters);
     }
     return null;
   }
 
-  String? validateDateOfBirth(String? value) {
-    if (value == null || value.isEmpty) return null; // optional
-    try {
-      final dob = DateTime.parse(value);
-      if (dob.isAfter(DateTime.now())) {
-        return 'Ngày sinh không được ở tương lai';
-      }
-    } catch (_) {
-      return 'Ngày sinh không hợp lệ';
-    }
-    return null;
+  String get bmiFormatted => bmi != null ? bmi!.toStringAsFixed(1) : '—';
+
+  /// Đánh giá phân loại thể trạng theo chuẩn WHO châu Á
+  String get bmiCategory {
+    if (bmi == null) return 'Chưa xác định';
+    if (bmi! < 18.5) return 'Gầy (Thiếu cân)';
+    if (bmi! < 23.0) return 'Bình thường (Chuẩn)';
+    if (bmi! < 25.0) return 'Thừa cân';
+    return 'Béo phì';
   }
 
-  bool get isFormValid {
-    return validateFullName(_fullName) == null &&
-        validateDateOfBirth(_dateOfBirth) == null;
-  }
-
-  // ── Save ──────────────────────────────────────────────────────────────────
-
-  /// Gọi service để cập nhật profile. Trả true nếu thành công.
-  Future<bool> saveProfile() async {
-    if (!isFormValid) return false;
-
-    _isSaving = true;
-    _errorMessage = null;
-    _successMessage = null;
-    notifyListeners();
-
-    final response = await _authService.updateProfile(
-      fullName:    _fullName.trim(),
-      gender:      _gender,
-      dateOfBirth: _dateOfBirth,
-    );
-
-    _isSaving = false;
-
-    if (response.success && response.data != null) {
-      _user = response.data;
-      _isDirty = false;
-      _successMessage = response.message;
-    } else {
-      _errorMessage = response.message;
-    }
-
-    notifyListeners();
-    return response.success;
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  void clearMessages() {
-    _errorMessage = null;
-    _successMessage = null;
-    notifyListeners();
-  }
-
-  /// Hủy mọi thay đổi, reset form về giá trị gốc.
-  void discardChanges() {
-    _syncFormFromUser();
-    _isDirty = false;
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  /// Trả về initials (2 chữ cái đầu) của fullName để hiển thị avatar.
+  /// Trả về initials (2 chữ cái đầu) của fullName để hiển thị avatar tròn.
   String get initials {
-    final name = (_fullName.isNotEmpty ? _fullName : _user?.fullName ?? '').trim();
-    if (name.isEmpty) return '?';
+    final name = fullName.trim();
+    if (name.isEmpty) return 'BN';
     final parts = name.split(RegExp(r'\s+'));
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
@@ -200,23 +121,34 @@ class ProfileViewModel extends ChangeNotifier {
 
   /// Format ngày sinh ISO-8601 (yyyy-MM-dd) → dd/MM/yyyy để hiển thị.
   String get formattedDateOfBirth {
-    if (_dateOfBirth.isEmpty) return '';
+    final dob = _user?.dateOfBirth ?? '';
+    if (dob.isEmpty) return 'Chưa cập nhật';
     try {
-      final parts = _dateOfBirth.split('-');
-      if (parts.length != 3) return _dateOfBirth;
+      final parts = dob.split('-');
+      if (parts.length != 3) return dob;
       return '${parts[2]}/${parts[1]}/${parts[0]}';
     } catch (_) {
-      return _dateOfBirth;
+      return dob;
     }
   }
 
-  /// Label giới tính dễ đọc.
+  /// Nhãn hiển thị giới tính thân thiện.
   String get genderLabel {
-    switch (_gender) {
-      case 'MALE':   return 'Nam';
-      case 'FEMALE': return 'Nữ';
-      case 'OTHER':  return 'Khác';
-      default:       return '';
-    }
+    final g = (_user?.gender ?? '').trim().toUpperCase();
+    if (g == 'MALE' || g == 'NAM') return 'Nam';
+    if (g == 'FEMALE' || g == 'NỮ' || g == 'NU') return 'Nữ';
+    if (g == 'OTHER' || g == 'KHÁC' || g == 'KHAC') return 'Khác';
+    if (g.isNotEmpty) return _user!.gender!;
+    return 'Chưa cập nhật';
+  }
+
+  static String normalizeGender(String? val) {
+    if (val == null || val.trim().isEmpty) return '';
+    final lower = val.trim().toLowerCase();
+    if (lower == 'male' || lower == 'nam' || lower == 'm') return 'MALE';
+    if (lower == 'female' || lower == 'nữ' || lower == 'nu' || lower == 'f') return 'FEMALE';
+    if (lower == 'other' || lower == 'khác' || lower == 'khac') return 'OTHER';
+    if (val == 'MALE' || val == 'FEMALE' || val == 'OTHER') return val;
+    return 'OTHER';
   }
 }

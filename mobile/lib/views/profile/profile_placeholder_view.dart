@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/config/environment_config.dart';
+import '../../services/mock/mock_auth_service.dart';
+import '../../services/remote/auth_service.dart';
 
 /// Tab 4 — Hồ sơ
 /// Thông tin cá nhân, hồ sơ bệnh án (UC-06), cài đặt tài khoản.
@@ -43,42 +47,43 @@ class ProfilePlaceholderView extends StatelessWidget {
                     _ProfileMenuItem(
                       icon: Icons.folder_shared_outlined,
                       iconColor: AppColors.primary,
-                      title: 'Hồ sơ bệnh án',
-                      subtitle: 'Lịch sử khám và chẩn đoán',
+                      title: 'Hồ sơ bệnh án & Xét nghiệm',
+                      subtitle: 'Lịch sử khám, chẩn đoán, đơn thuốc & hình ảnh',
                       onTap: () => context.push('/profile/medical-records'),
-                    ),
-                    const SizedBox(height: 8),
-                    _ProfileMenuItem(
-                      icon: Icons.science_outlined,
-                      iconColor: AppColors.warning,
-                      title: 'Kết quả xét nghiệm',
-                      subtitle: 'Hình ảnh và chỉ số xét nghiệm',
-                      badge: 'Sắp có',
-                      onTap: () => _showComingSoon(context,
-                          'Kết quả xét nghiệm đang được phát triển'),
                     ),
 
                     const SizedBox(height: 24),
 
                     // ── Tài khoản ───────────────────────────────────────────────
-                    _SectionLabel(label: 'Tài khoản'),
+                    _SectionLabel(label: 'Tài khoản & Thông báo'),
                     const SizedBox(height: 12),
                     _ProfileMenuItem(
                       icon: Icons.person_outline_rounded,
                       iconColor: AppColors.purple,
                       title: 'Thông tin cá nhân',
-                      subtitle: 'Tên, số điện thoại, ngày sinh',
+                      subtitle: 'Tên, CCCD/Định danh, BHYT, ngày sinh',
                       onTap: () => context.push('/profile/personal-info'),
                     ),
                     const SizedBox(height: 8),
                     _ProfileMenuItem(
                       icon: Icons.notifications_outlined,
                       iconColor: AppColors.teal,
-                      title: 'Cài đặt thông báo',
-                      subtitle: 'Quản lý nhắc nhở và thông báo',
-                      badge: 'Sắp có',
-                      onTap: () => _showComingSoon(
-                          context, 'Cài đặt thông báo đang được phát triển'),
+                      title: 'Thông báo hệ thống',
+                      subtitle: 'Danh sách thông báo và nhắc lịch',
+                      onTap: () => context.push('/notifications'),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Hỗ trợ & Đánh giá (UC-13) ───────────────────────────────
+                    _SectionLabel(label: 'Hỗ trợ & Đánh giá'),
+                    const SizedBox(height: 12),
+                    _ProfileMenuItem(
+                      icon: Icons.rate_review_outlined,
+                      iconColor: AppColors.orange,
+                      title: 'Đánh giá & Góp ý',
+                      subtitle: 'Phản hồi chất lượng dịch vụ và khám bệnh',
+                      onTap: () => context.push('/profile/feedback'),
                     ),
 
                     const SizedBox(height: 24),
@@ -100,20 +105,6 @@ class ProfilePlaceholderView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '🚧 $message',
-          style: GoogleFonts.inter(fontSize: 13),
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -207,7 +198,7 @@ class _AvatarCard extends StatefulWidget {
 }
 
 class _AvatarCardState extends State<_AvatarCard> {
-  String _userName = 'Khách';
+  String _userName = 'Nguyễn Văn A';
 
   @override
   void initState() {
@@ -217,9 +208,35 @@ class _AvatarCardState extends State<_AvatarCard> {
 
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('user_data') ?? 'Khách'; // AppConstants.keyUserData == 'user_data'
-    });
+    var name = prefs.getString(AppConstants.keyUserName) ??
+        prefs.getString(AppConstants.keyUserData) ??
+        'Nguyễn Văn A';
+    if (RegExp(r'^\d+$').hasMatch(name.trim())) {
+      name = 'Nguyễn Văn A';
+    }
+    if (mounted) {
+      setState(() {
+        _userName = name;
+      });
+    }
+
+    try {
+      final authService = EnvironmentConfig.isMock
+          ? MockAuthService()
+          : RemoteAuthService();
+      final res = await authService.getProfile();
+      if (res.success && res.data != null) {
+        final u = res.data!;
+        if (u.fullName != null && u.fullName!.isNotEmpty) {
+          await prefs.setString(AppConstants.keyUserName, u.fullName!);
+          if (mounted) {
+            setState(() {
+              _userName = u.fullName!;
+            });
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -272,6 +289,7 @@ class _AvatarCardState extends State<_AvatarCard> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   _userName,
@@ -285,25 +303,8 @@ class _AvatarCardState extends State<_AvatarCard> {
                 Text(
                   'Bệnh nhân',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withAlpha(12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'ID: BN-00123',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
                   ),
                 ),
               ],
@@ -345,7 +346,6 @@ class _ProfileMenuItem extends StatelessWidget {
   final Color iconColor;
   final String title;
   final String? subtitle;
-  final String? badge;
   final VoidCallback onTap;
   final bool isDanger;
 
@@ -354,7 +354,6 @@ class _ProfileMenuItem extends StatelessWidget {
     required this.iconColor,
     required this.title,
     this.subtitle,
-    this.badge,
     required this.onTap,
     this.isDanger = false,
   });
@@ -411,24 +410,6 @@ class _ProfileMenuItem extends StatelessWidget {
                 ],
               ),
             ),
-            if (badge != null)
-              Container(
-                margin: const EdgeInsets.only(right: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  badge!,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textHint,
-                  ),
-                ),
-              ),
             Icon(
               Icons.chevron_right_rounded,
               size: 18,

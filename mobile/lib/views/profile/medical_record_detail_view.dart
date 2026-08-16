@@ -588,27 +588,31 @@ class _VitalCard extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            value,
-                            style: GoogleFonts.inter(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              value,
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            unit,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
+                            const SizedBox(width: 4),
+                            Text(
+                              unit,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       if (subLabel != null)
                         Text(
@@ -635,27 +639,31 @@ class _VitalCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      value,
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      unit,
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: AppColors.textSecondary,
+                      const SizedBox(width: 3),
+                      Text(
+                        unit,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 Text(
                   label,
@@ -703,6 +711,8 @@ class _DiagnosisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasIcd = diagnosis.icdCode.trim().isNotEmpty && diagnosis.icdCode.trim() != 'ICD-10';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -721,33 +731,48 @@ class _DiagnosisCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'ICD-10',
-                  style: GoogleFonts.inter(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withAlpha(200),
+          if (hasIcd)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'ICD-10',
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withAlpha(200),
+                    ),
                   ),
-                ),
-                Text(
-                  diagnosis.icdCode,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  Text(
+                    diagnosis.icdCode,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            )
+          else
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.assignment_turned_in_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
-          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -756,22 +781,24 @@ class _DiagnosisCard extends StatelessWidget {
                 Text(
                   diagnosis.nameVi,
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                     height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  diagnosis.nameEn,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                    height: 1.4,
+                if (diagnosis.nameEn.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    diagnosis.nameEn,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic,
+                      height: 1.4,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -1112,94 +1139,188 @@ class _ImageCard extends StatelessWidget {
     return AppColors.teal600;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          // Thumbnail placeholder
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: _color.withAlpha(15),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _color.withAlpha(40)),
-            ),
-            child: Icon(_icon, size: 26, color: _color),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _color.withAlpha(12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    image.imageType,
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: _color,
+  void _showFullImage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    title: Text(
+                      image.imageType,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    leading: IconButton(
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textPrimary),
+                      onPressed: () => Navigator.of(ctx).pop(),
                     ),
                   ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  image.description,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    child: image.imageUrl != null && image.imageUrl!.isNotEmpty
+                        ? Image.network(
+                            image.imageUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              height: 200,
+                              color: AppColors.surfaceLight,
+                              child: const Center(
+                                child: Text('Không thể tải hình ảnh y tế'),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            height: 200,
+                            color: AppColors.surfaceLight,
+                            child: Center(
+                              child: Icon(_icon, size: 64, color: _color),
+                            ),
+                          ),
                   ),
+                  if (image.description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        image.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasNetworkImage = image.imageUrl != null && image.imageUrl!.isNotEmpty;
+
+    return InkWell(
+      onTap: () => _showFullImage(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: _color.withAlpha(15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _color.withAlpha(40)),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  DateFormat('dd/MM/yyyy · HH:mm').format(image.takenAt),
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.textHint,
+                child: hasNetworkImage
+                    ? Image.network(
+                        image.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(_icon, size: 26, color: _color),
+                      )
+                    : Icon(_icon, size: 26, color: _color),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _color.withAlpha(12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      image.imageType,
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: _color,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.zoom_in_rounded,
-                    size: 13, color: AppColors.textHint),
-                const SizedBox(width: 4),
-                Text(
-                  'Xem',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                  const SizedBox(height: 5),
+                  Text(
+                    image.description,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    DateFormat('dd/MM/yyyy · HH:mm').format(image.takenAt),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.zoom_in_rounded,
+                      size: 13, color: AppColors.textHint),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Xem',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

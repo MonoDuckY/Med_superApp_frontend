@@ -60,6 +60,11 @@ class LoginViewModel extends ChangeNotifier {
         await prefs.setBool('is_logged_in', true);
         await prefs.setBool('is_dev_login', false);
         await prefs.setString(AppConstants.keyUserData, phoneNumber);
+        await prefs.setString(AppConstants.keyUserPhone, phoneNumber);
+        await prefs.setString(
+          AppConstants.keyUserName,
+          response.data?.fullName ?? 'Nguyễn Văn A',
+        );
         if (context.mounted) {
           context.go('/home');
         }
@@ -88,6 +93,8 @@ class LoginViewModel extends ChangeNotifier {
     await prefs.setBool('is_logged_in', true);
     await prefs.setBool('is_dev_login', true);
     await prefs.setString(AppConstants.keyUserData, '0123456789');
+    await prefs.setString(AppConstants.keyUserPhone, '0123456789');
+    await prefs.setString(AppConstants.keyUserName, 'Nguyễn Văn A');
 
     isLoading = false;
     notifyListeners();

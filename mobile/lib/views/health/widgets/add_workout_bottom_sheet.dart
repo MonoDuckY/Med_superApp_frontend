@@ -272,6 +272,16 @@ class _AddWorkoutBottomSheetState extends State<AddWorkoutBottomSheet> {
       _selectedTime.hour, _selectedTime.minute,
     );
 
+    if (scheduledAt.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thời gian không được ở tương lai.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     await widget.onSubmit(
