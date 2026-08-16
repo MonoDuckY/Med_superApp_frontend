@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import DatasetPanel from "@/components/researcher/DatasetPanel";
+import AiComparePanel from "@/components/researcher/AiComparePanel";
 
-export default function ResearcherDashboard() {
+export default function AiComparePage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -17,5 +17,5 @@ export default function ResearcherDashboard() {
     }
   }, []);
 
-  return <DatasetPanel user={user} />;
+  return <AiComparePanel user={user} />;
 }

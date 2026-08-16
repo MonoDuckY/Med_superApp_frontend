@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import DatasetPanel from "@/components/researcher/DatasetPanel";
+import LamaCleanPanel from "@/components/researcher/LamaCleanPanel";
 
-export default function ResearcherDashboard() {
+export default function LamaCleanPage() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -17,5 +17,5 @@ export default function ResearcherDashboard() {
     }
   }, []);
 
-  return <DatasetPanel user={user} />;
+  return <LamaCleanPanel user={user} />;
 }
