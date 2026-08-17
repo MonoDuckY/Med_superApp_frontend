@@ -206,10 +206,19 @@ export default function ScheduleRegister() {
       if (sess === "FULL_TIME") return "Cả ngày";
     }
     
+    // Normalize dashes and spaces for robust exact comparison
+    const cleanRange = timeRange.replace(/\s+/g, "").replace(/–/g, "-");
+    
+    if (cleanRange === "08:00-12:00") return "Ca sáng";
+    if (cleanRange === "13:00-17:00") return "Ca chiều";
+    if (cleanRange === "17:00-08:00") return "Ca tối";
+    if (cleanRange === "08:00-17:00") return "Cả ngày";
+    
+    // Fallbacks
     if (timeRange.includes("08:00") && timeRange.includes("12:00")) return "Ca sáng";
     if (timeRange.includes("13:00") && timeRange.includes("17:00")) return "Ca chiều";
-    if (timeRange.includes("17:00") && timeRange.includes("08:00")) return "Ca tối";
-    if (timeRange.includes("08:00") && timeRange.includes("17:00")) return "Cả ngày";
+    if (cleanRange.startsWith("17:00") || cleanRange.endsWith("08:00")) return "Ca tối";
+    if (cleanRange.startsWith("08:00") && cleanRange.endsWith("17:00")) return "Cả ngày";
     
     return "Ca trực";
   };
