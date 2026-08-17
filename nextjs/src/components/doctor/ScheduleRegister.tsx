@@ -360,10 +360,31 @@ export default function ScheduleRegister() {
         <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden flex flex-col h-full shadow-sm">
           
           {/* Week Panel Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#F1F5F9] shrink-0">
-            <h2 className="font-bold text-base text-[#0F172A]">Lịch làm việc tuần này</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 border-b border-[#F1F5F9] shrink-0 text-left">
+            <div>
+              <h2 className="font-bold text-base text-[#0F172A]">Lịch làm việc tuần này</h2>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Chú thích:</span>
+                <span className="flex items-center gap-1 text-[9px] font-bold text-[#137333] bg-[#E6F4EA] px-2 py-0.5 rounded-full border border-[#CEEAD6]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                  Đã duyệt (Xanh)
+                </span>
+                <span className="flex items-center gap-1 text-[9px] font-bold text-[#B27B00] bg-[#FFF9E6] px-2 py-0.5 rounded-full border border-[#FFEBA3]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                  Chờ duyệt (Vàng)
+                </span>
+                <span className="flex items-center gap-1 text-[9px] font-bold text-[#C5221F] bg-[#FCE8E6] px-2 py-0.5 rounded-full border border-[#FAD2CF]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]" />
+                  Từ chối (Đỏ)
+                </span>
+                <span className="flex items-center gap-1 text-[9px] font-bold text-[#5F6368] bg-[#F1F3F4] px-2 py-0.5 rounded-full border border-[#DADCE0]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#9CA3AF]" />
+                  Đã hủy (Xám)
+                </span>
+              </div>
+            </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setWeekOffset(w => w - 1)}
                 className="h-8 px-3 text-xs font-medium border border-[#E2E8F0] rounded-lg hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1 text-[#64748B]"
