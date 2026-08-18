@@ -114,6 +114,7 @@ class ExaminationPatientDto {
   final String fullName;
   final String? phoneNumber;
   final String? gender;
+  final String? dateOfBirth;
   final String? medicalHistory;
   final String? currentSickness;
   final double? height;
@@ -125,6 +126,7 @@ class ExaminationPatientDto {
     required this.fullName,
     this.phoneNumber,
     this.gender,
+    this.dateOfBirth,
     this.medicalHistory,
     this.currentSickness,
     this.height,
@@ -138,6 +140,7 @@ class ExaminationPatientDto {
       fullName: json['fullName'] as String? ?? '',
       phoneNumber: json['phoneNumber'] as String?,
       gender: json['gender'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String?,
       medicalHistory: json['medicalHistory'] as String?,
       currentSickness: json['currentSickness'] as String?,
       height: (json['height'] as num?)?.toDouble(),

@@ -91,18 +91,18 @@ class _PatientInfoCard extends StatelessWidget {
           Container(
             width: 46,
             height: 46,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 colors: [AppColors.primary, AppColors.teal],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'VN',
-                style: TextStyle(
+                vm.userInitials,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -124,7 +124,7 @@ class _PatientInfoCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'MID-20241105  ·  DOB: 12 Mar 1985',
+                vm.patientSubtitle,
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.textSecondary,
