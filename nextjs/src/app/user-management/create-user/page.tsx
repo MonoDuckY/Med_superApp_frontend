@@ -13,7 +13,7 @@ import Logo from "@/components/Logo";
 
 /* ─── Types ─── */
 type Status = "Active" | "Inactive" | "";
-type Gender = "Male" | "Female" | "Other" | "";
+type Gender = "Male" | "Female" | "";
 
 /* ─── Shared styling ─── */
 const INPUT_CLASS = "w-full h-9 px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all bg-white";
@@ -577,7 +577,6 @@ export default function CreateUserPage() {
                           <option value="">Chọn giới tính...</option>
                           <option value="Male">Nam</option>
                           <option value="Female">Nữ</option>
-                          <option value="Other">Khác</option>
                         </select>
                         <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
                       </div>

@@ -560,7 +560,6 @@ function EditUserContent() {
                           <option value="">Chọn giới tính...</option>
                           <option value="Male">Nam</option>
                           <option value="Female">Nữ</option>
-                          <option value="Other">Khác</option>
                         </select>
                         <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
                       </div>
