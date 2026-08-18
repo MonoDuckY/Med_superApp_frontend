@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { FlaskConical, LogOut, Shield, Check, Stethoscope, ClipboardList, Database, Cpu, Sparkles } from "lucide-react";
+import { FlaskConical, LogOut, Shield, Check, Stethoscope, ClipboardList, Database, Cpu, Sparkles, Split } from "lucide-react";
 import { logoutApiCall } from "@/lib/auth";
 import Logo from "@/components/Logo";
 
@@ -90,7 +90,9 @@ export default function ResearcherLayout({ children }: { children: React.ReactNo
     ? "ai-compare" 
     : pathname === "/researcher/lama-clean" 
       ? "lama-clean" 
-      : "dataset";
+      : pathname === "/researcher/lama-compare"
+        ? "lama-compare"
+        : "dataset";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -138,6 +140,17 @@ export default function ResearcherLayout({ children }: { children: React.ReactNo
           >
             <Sparkles size={13} />
             Xóa Caliper AI
+          </button>
+          <button 
+            onClick={() => router.push("/researcher/lama-compare")}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "lama-compare" 
+                ? "bg-white text-[#8B5CF6] shadow-sm" 
+                : "bg-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Split size={13} />
+            Đối chiếu Caliper
           </button>
         </div>
 
