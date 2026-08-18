@@ -23,7 +23,8 @@ import {
   CheckCircle,
   Loader2,
   Award,
-  X
+  X,
+  Edit
 } from "lucide-react";
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
 import Logo from "@/components/Logo";
@@ -567,6 +568,13 @@ export default function UserAccountsList() {
                       {/* Action */}
                       <td className="px-5">
                         <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => router.push(`/user-management/edit?userId=${row.id}`)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E2E8F0] hover:bg-sky-50 hover:text-blue-600 hover:border-blue-200 transition-colors cursor-pointer text-slate-500"
+                            title="Chỉnh sửa tài khoản"
+                          >
+                            <Edit size={13} />
+                          </button>
                           {row.role === "DOCTOR" && (
                             <button
                               onClick={() => {
