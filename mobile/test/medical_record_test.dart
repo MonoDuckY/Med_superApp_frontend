@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:med_superapp_frontend/models/dto/doctor_examination_response.dart';
 import 'package:med_superapp_frontend/models/medical_record_model.dart';
+import 'package:med_superapp_frontend/services/mock/mock_auth_service.dart';
 import 'package:med_superapp_frontend/services/mock/mock_medical_record_service.dart';
 import 'package:med_superapp_frontend/view_models/medical_record_viewmodel.dart';
 import 'package:med_superapp_frontend/view_models/medical_record_detail_viewmodel.dart';
@@ -43,6 +44,7 @@ void main() {
         'patient': {
           'id': 'user-123',
           'fullName': 'Nguyễn Văn A',
+          'dateOfBirth': '1990-05-15',
           'medicalHistory': 'Tăng huyết áp',
           'currentSickness': 'Tức ngực nhẹ',
           'bloodType': 'O+',
@@ -92,6 +94,7 @@ void main() {
       expect(dto.appointment.id, 'apt-999');
       expect(dto.appointment.status, 'COMPLETED');
       expect(dto.patient?.fullName, 'Nguyễn Văn A');
+      expect(dto.patient?.dateOfBirth, '1990-05-15');
       expect(dto.patient?.medicalHistory, 'Tăng huyết áp');
       expect(dto.medicalRecord?.diagnosis, 'I10 - Tăng huyết áp vô căn');
       expect(dto.medicalRecord?.heartRate, 82);
@@ -103,14 +106,20 @@ void main() {
   });
 
   group('Medical Record ViewModels Tests', () {
-    test('MedicalRecordViewModel loads records and filters properly', () async {
-      final vm = MedicalRecordViewModel(service: MockMedicalRecordService());
+    test('MedicalRecordViewModel loads records, profile info, and filters properly', () async {
+      final vm = MedicalRecordViewModel(
+        service: MockMedicalRecordService(),
+        authService: MockAuthService(),
+      );
       expect(vm.isLoading, false);
 
       await vm.loadRecords();
 
       expect(vm.filteredRecords.isNotEmpty, true);
       expect(vm.recordsByYear.containsKey(2026), true);
+      expect(vm.userInitials, isNotEmpty);
+      expect(vm.dobDisplay, isNotEmpty);
+      expect(vm.patientSubtitle, isNotEmpty);
 
       vm.setFilter(MedicalRecordFilter.completed);
       expect(

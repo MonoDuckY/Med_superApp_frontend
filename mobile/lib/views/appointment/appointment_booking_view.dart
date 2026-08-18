@@ -72,12 +72,9 @@ class _BookingScaffold extends StatelessWidget {
                               MaterialPageRoute(
                                 builder: (_) => AppointmentSuccessView(
                                   date: vm.selectedDate!,
-                                  time: vm.mode == BookingMode.byTime
-                                      ? vm.selectedTimeSlotByTime!.time
-                                      : vm.selectedTimeSlotByDoctor!.time,
-                                  doctorName: vm.mode == BookingMode.byTime
-                                      ? vm.selectedDoctorByTime!.name
-                                      : vm.selectedDoctorByDoctorMode!.fullName,
+                                  time: vm.selectedTimeRange,
+                                  doctorName: vm.selectedDoctorName,
+                                  roomName: vm.selectedRoomName,
                                 ),
                               ),
                             );
@@ -910,27 +907,9 @@ class _SummaryCard extends StatelessWidget {
       dateStr = '${vm.selectedDate!.day}/${vm.selectedDate!.month}/${vm.selectedDate!.year}';
     }
     
-    String timeStr = '';
-    if (vm.mode == BookingMode.byTime && vm.selectedTimeSlotByTime != null) {
-      timeStr = vm.selectedTimeSlotByTime!.time;
-    } else if (vm.mode == BookingMode.byDoctor && vm.selectedTimeSlotByDoctor != null) {
-      timeStr = vm.selectedTimeSlotByDoctor!.time;
-    }
-    
-    // Add end time to summary
-    if (timeStr.isNotEmpty) {
-      try {
-        final parts = timeStr.split(':');
-        final dt = DateTime(2020, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
-        final endDt = dt.add(const Duration(minutes: 30));
-        final endTimeStr = '${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}';
-        timeStr = '$timeStr - $endTimeStr';
-      } catch (_) {}
-    }
-        
-    final docName = vm.mode == BookingMode.byTime
-        ? vm.selectedDoctorByTime?.name ?? ''
-        : vm.selectedDoctorByDoctorMode?.fullName ?? '';
+    final timeStr = vm.selectedTimeRange;
+    final docName = vm.selectedDoctorName;
+    final roomName = vm.selectedRoomName;
 
     return Container(
       decoration: BoxDecoration(
@@ -971,7 +950,7 @@ class _SummaryCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 _SummaryRow(icon: Icons.person_outline, label: 'Bác sĩ', value: docName),
                 const SizedBox(height: 16),
-                const _SummaryRow(icon: Icons.business, label: 'Phòng khám', value: 'Phòng N3'), // Hardcoded based on screenshot
+                _SummaryRow(icon: Icons.business, label: 'Phòng khám', value: roomName),
               ],
             ),
           ),

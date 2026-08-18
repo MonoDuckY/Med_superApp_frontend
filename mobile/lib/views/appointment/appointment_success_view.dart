@@ -5,12 +5,14 @@ class AppointmentSuccessView extends StatelessWidget {
   final DateTime date;
   final String time;
   final String doctorName;
+  final String? roomName;
 
   const AppointmentSuccessView({
     super.key,
     required this.date,
     required this.time,
     required this.doctorName,
+    this.roomName,
   });
 
   @override
@@ -117,10 +119,10 @@ class AppointmentSuccessView extends StatelessWidget {
                             value: doctorName,
                           ),
                           const SizedBox(height: 16),
-                          const _SummaryRow(
+                          _SummaryRow(
                             icon: Icons.business, 
                             label: 'Phòng khám', 
-                            value: 'Phòng N3' // Hardcoded to match the screenshot
+                            value: (roomName != null && roomName!.isNotEmpty) ? roomName! : 'Phòng khám',
                           ),
                         ],
                       ),

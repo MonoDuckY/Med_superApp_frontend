@@ -256,6 +256,72 @@ class AppointmentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Selected Summary Helpers ──────────────────────────────────────────────
+  AvailableAppointmentSlotResponse? get selectedSlotResponse {
+    if (_mode == BookingMode.byTime) {
+      if (_selectedDoctorByTime == null) return null;
+      return _availableSlotsResponse
+          .where((s) => s.doctorWorkSlotId == _selectedDoctorByTime!.id)
+          .firstOrNull;
+    } else {
+      if (_selectedTimeSlotByDoctor == null) return null;
+      return _availableSlotsResponse
+          .where((s) => s.doctorWorkSlotId == _selectedTimeSlotByDoctor!.id)
+          .firstOrNull;
+    }
+  }
+
+  String get selectedDoctorName {
+    if (_mode == BookingMode.byTime) {
+      return _selectedDoctorByTime?.name ?? '';
+    } else {
+      return _selectedDoctorByDoctorMode?.fullName ?? '';
+    }
+  }
+
+  String get selectedRoomName {
+    final slot = selectedSlotResponse;
+    if (slot != null && slot.roomId.isNotEmpty) {
+      final r = slot.roomId.trim();
+      if (r.toLowerCase().startsWith('phòng') || r.toLowerCase().startsWith('p.')) {
+        return r;
+      }
+      return 'Phòng $r';
+    }
+    return 'Phòng khám';
+  }
+
+  String get selectedTimeRange {
+    final slot = selectedSlotResponse;
+    if (slot != null && slot.startAt.isNotEmpty && slot.endAt.isNotEmpty) {
+      final start = _parseTimeToHHmm(slot.startAt);
+      final end = _parseTimeToHHmm(slot.endAt);
+      if (start.isNotEmpty && end.isNotEmpty && start != end) {
+        return '$start - $end';
+      }
+      if (start.isNotEmpty) return start;
+    }
+
+    String timeStr = '';
+    if (_mode == BookingMode.byTime && _selectedTimeSlotByTime != null) {
+      timeStr = _selectedTimeSlotByTime!.time;
+    } else if (_mode == BookingMode.byDoctor && _selectedTimeSlotByDoctor != null) {
+      timeStr = _selectedTimeSlotByDoctor!.time;
+    }
+
+    if (timeStr.isNotEmpty && !timeStr.contains('-')) {
+      try {
+        final parts = timeStr.split(':');
+        final dt = DateTime(2020, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+        final endDt = dt.add(const Duration(minutes: 30));
+        final endTimeStr = '${endDt.hour.toString().padLeft(2, '0')}:${endDt.minute.toString().padLeft(2, '0')}';
+        return '$timeStr - $endTimeStr';
+      } catch (_) {}
+    }
+
+    return timeStr;
+  }
+
   bool get canConfirm {
     if (_mode == BookingMode.byTime) {
       return _selectedDate != null && _selectedTimeSlotByTime != null && _selectedDoctorByTime != null;

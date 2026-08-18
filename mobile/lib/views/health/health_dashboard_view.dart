@@ -64,13 +64,9 @@ class _HealthScaffold extends StatelessWidget {
                     _DailyActivityCard(),
                     const SizedBox(height: 20),
 
-                    // ── Section: Kế hoạch điều trị & Lời khuyên ──────────────
-                    _SectionHeader(label: 'Kế hoạch y tế & Lời khuyên'),
+                    // ── Section: Kiến thức & Tin tức sức khỏe ────────────────
+                    _SectionHeader(label: 'Kiến thức & Tin tức sức khỏe'),
                     const SizedBox(height: 10),
-
-                    // UC-10: Phác đồ điều trị
-                    _CarePlanCard(),
-                    const SizedBox(height: 12),
 
                     // UC-12: Kiến thức & Tin tức sức khỏe
                     _HealthNewsCard(),
@@ -906,140 +902,7 @@ class _DailyActivityCard extends StatelessWidget {
   }
 }
 
-// ── 4. Card: Phác đồ & Kế hoạch điều trị (UC-10) ──────────────────────────────
 
-class _CarePlanCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(4),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.purple.withAlpha(15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.healing_outlined,
-                  size: 20,
-                  color: AppColors.purple,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Kế hoạch điều trị',
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.purple.withAlpha(12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'Chuyên khoa',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.purple,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Khoa Tim mạch — BS. Nguyễn Thị Lan',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Care Plan Details Box
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.purpleSurface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.purple.withAlpha(30)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.assignment_outlined,
-                        size: 14, color: AppColors.purple),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Lời dặn của bác sĩ điều trị:',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.purple,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  '• Duy trì chế độ ăn giảm muối (< 5g/ngày), hạn chế thức ăn dầu mỡ.\n• Đo huyết áp và nhịp tim 2 lần mỗi ngày (sáng & tối).\n• Tái khám đúng hẹn vào ngày 17/08/2026.',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    height: 1.45,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ── 5. Card: Kiến thức & Tin tức sức khỏe (UC-12) ───────────────────────────
 
