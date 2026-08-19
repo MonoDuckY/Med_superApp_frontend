@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, AlertCircle } from "lucide-react";
 import { fetchWithAuth } from "@/lib/auth";
 
 interface ScheduleApprovalsProps {
@@ -228,6 +228,33 @@ export default function ScheduleApprovals({ schedules, onRefresh }: ScheduleAppr
     return match ? match.name : rId;
   };
 
+  // Find the selected schedule details for Approve Modal
+  const selectedSchedule = schedules.find(s => s.id === selectedScheduleId);
+
+  // Check if there is another doctor assigned to this room on the same date and session/shift
+  const conflictingSchedule = selectedSchedule && approveRoomId ? schedules.find(s => 
+    s.id !== selectedSchedule.id &&
+    s.doctorId !== selectedSchedule.doctorId &&
+    s.workDate === selectedSchedule.workDate &&
+    s.session === selectedSchedule.session &&
+    s.roomId === approveRoomId &&
+    (s.status === "APPROVED" || s.status === "AVAILABLE" || s.status === "BOOKED" || s.status === "IN_PROGRESS" || s.status === "CLOSED")
+  ) : null;
+
+  // Find the edited schedule details
+  const editSchedule = schedules.find(s => s.id === editScheduleId);
+  const editScheduleDoctorId = editSchedule ? editSchedule.doctorId : null;
+
+  // Check if there is another doctor assigned to the edited room on the edited date and session/shift
+  const conflictingEditSchedule = editScheduleId && editRoomId ? schedules.find(s =>
+    s.id !== editScheduleId &&
+    s.doctorId !== editScheduleDoctorId &&
+    s.workDate === editWorkDate &&
+    s.session === editSession &&
+    s.roomId === editRoomId &&
+    (s.status === "APPROVED" || s.status === "AVAILABLE" || s.status === "BOOKED" || s.status === "IN_PROGRESS" || s.status === "CLOSED")
+  ) : null;
+
   return (
     <div className="space-y-4">
       {/* Title section */}
@@ -393,6 +420,15 @@ export default function ScheduleApprovals({ schedules, onRefresh }: ScheduleAppr
                   ))}
                 </select>
               </div>
+
+              {conflictingSchedule && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-[11px] rounded-lg flex items-start gap-2 leading-normal">
+                  <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Cảnh báo trùng phòng:</strong> Phòng này đang được phân cho bác sĩ <strong>{conflictingSchedule.doctorName}</strong> trong cùng ca trực.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3 mt-5 pt-3 border-t border-[#F1F5F9]">
@@ -525,6 +561,15 @@ export default function ScheduleApprovals({ schedules, onRefresh }: ScheduleAppr
                   ))}
                 </select>
               </div>
+
+              {conflictingEditSchedule && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-[11px] rounded-lg flex items-start gap-2 leading-normal">
+                  <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Cảnh báo trùng phòng:</strong> Phòng này đang được phân cho bác sĩ <strong>{conflictingEditSchedule.doctorName}</strong> trong cùng ca trực.
+                  </span>
+                </div>
+              )}
 
               {/* Optional Note */}
               <div>

@@ -85,6 +85,26 @@ function EditUserContent() {
 
   const profileRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTextClick = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === "function") {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.click();
+      }
+    }
+  };
+
+  const formatDobDisplay = (isoStr: string) => {
+    if (!isoStr) return "";
+    const parts = isoStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoStr;
+  };
 
   // Load Super Admin info
   useEffect(() => {
@@ -154,13 +174,30 @@ function EditUserContent() {
     if (!fullName.trim())  e.fullName = "Họ và tên là bắt buộc.";
     if (!role) e.role = "Vui lòng chọn vai trò.";
     if (!status) e.status = "Vui lòng chọn trạng thái tài khoản.";
-    if (!dob)    e.dob    = "Ngày sinh là bắt buộc.";
+    
+    if (!dob) {
+      e.dob = "Ngày sinh là bắt buộc.";
+    } else {
+      const dobDate = new Date(dob);
+      const today = new Date();
+      if (dobDate > today) {
+        e.dob = "Ngày sinh không được ở tương lai.";
+      }
+    }
+    
     if (!gender) e.gender = "Vui lòng chọn giới tính.";
     if (!address.trim()) e.address = "Địa chỉ thường trú là bắt buộc.";
+    
     if (role === "DOCTOR" && !existingCertUrl && !newLicenseFile)
       e.license = "Bác sĩ bắt buộc phải có chứng chỉ hành nghề.";
-    if (password.trim() && password.length < 6)
-      e.password = "Mật khẩu phải dài ít nhất 6 ký tự.";
+      
+    if (password.trim()) {
+      if (password.length < 8) {
+        e.password = "Mật khẩu mới phải dài ít nhất 8 ký tự.";
+      } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*[\d\W])/.test(password)) {
+        e.password = "Mật khẩu phải chứa ít nhất 1 chữ thường, 1 chữ hoa, và 1 chữ số hoặc ký tự đặc biệt.";
+      }
+    }
     return e;
   };
 
@@ -170,6 +207,9 @@ function EditUserContent() {
     setErrors({});
     setIsSubmitting(true);
 
+    const cleanPhone = phone.replace(/\s/g, "");
+    const formattedPhone = cleanPhone.startsWith("0") ? "+84" + cleanPhone.slice(1) : cleanPhone;
+
     const payload = {
       ...(password.trim() ? { password: password.trim() } : {}),
       role: role,
@@ -177,7 +217,7 @@ function EditUserContent() {
       fullName: fullName.trim(),
       gender: gender,
       dateOfBirth: dob,
-      phoneNumber: phone.replace(/\s/g, ""),
+      phoneNumber: formattedPhone,
       address: address.trim(),
       citizenIdentificationCode: cccd || null,
       healthInsuranceCode: bhyt || null,
@@ -538,14 +578,24 @@ function EditUserContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div>
                       <Label required>Ngày sinh</Label>
-                      <input 
-                        type="date" 
-                        value={dob}
-                        max={new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" })}
-                        onChange={(e) => { setDob(e.target.value); setErrors(p => ({ ...p, dob: "" })); }}
-                        className={INPUT_CLASS} 
-                        style={{ borderColor: errors.dob ? "#EF4444" : undefined }}
-                      />
+                      <div className="relative w-full h-9">
+                        <input 
+                          type="text" 
+                          placeholder="dd/mm/yyyy"
+                          readOnly
+                          value={formatDobDisplay(dob)}
+                          onClick={handleTextClick}
+                          className={INPUT_CLASS} 
+                          style={{ borderColor: errors.dob ? "#EF4444" : undefined, cursor: "pointer" }}
+                        />
+                        <input 
+                          type="date"
+                          ref={dateInputRef}
+                          max={new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" })}
+                          onChange={(e) => { setDob(e.target.value); setErrors(p => ({ ...p, dob: "" })); }}
+                          className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
+                        />
+                      </div>
                       {errors.dob && <p className="text-xs text-rose-500 mt-1">{errors.dob}</p>}
                     </div>
                     <div>
