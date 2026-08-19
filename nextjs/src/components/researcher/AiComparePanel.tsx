@@ -74,9 +74,16 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
     if (!files || files.length === 0) return;
 
     const newItems: ImageItem[] = [];
+    const invalidFiles: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
+        invalidFiles.push(file.name);
+        continue;
+      }
+
       const id = Math.random().toString(36).substring(7) + "_" + Date.now();
       const localUrl = URL.createObjectURL(file);
 
@@ -93,6 +100,17 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
       };
 
       newItems.push(item);
+    }
+
+    if (invalidFiles.length > 0) {
+      alert(`Định dạng tệp không hợp lệ: ${invalidFiles.join(", ")}. Hệ thống chỉ hỗ trợ định dạng PNG, JPG, JPEG.`);
+    }
+
+    if (newItems.length === 0) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
     }
 
     setImages(prev => [...prev, ...newItems]);
@@ -385,7 +403,7 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept="image/*"
+        accept=".png,.jpg,.jpeg"
         multiple
         className="hidden"
       />

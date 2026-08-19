@@ -57,6 +57,13 @@ export default function LamaComparePanel({ user }: LamaComparePanelProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
+      alert(`Định dạng tệp không hợp lệ: ${file.name}. Hệ thống chỉ hỗ trợ định dạng PNG, JPG, JPEG.`);
+      if (fileInputRef1.current) fileInputRef1.current.value = "";
+      return;
+    }
+    
     if (img1Url.startsWith("blob:")) URL.revokeObjectURL(img1Url);
     setImage1(file);
     setImg1Url(URL.createObjectURL(file));
@@ -66,6 +73,13 @@ export default function LamaComparePanel({ user }: LamaComparePanelProps) {
   const handleImage2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
+      alert(`Định dạng tệp không hợp lệ: ${file.name}. Hệ thống chỉ hỗ trợ định dạng PNG, JPG, JPEG.`);
+      if (fileInputRef2.current) fileInputRef2.current.value = "";
+      return;
+    }
 
     if (img2Url.startsWith("blob:")) URL.revokeObjectURL(img2Url);
     setImage2(file);
@@ -196,7 +210,7 @@ export default function LamaComparePanel({ user }: LamaComparePanelProps) {
             type="file" 
             ref={fileInputRef1} 
             onChange={handleImage1Change} 
-            accept="image/*" 
+            accept=".png,.jpg,.jpeg" 
             className="hidden" 
           />
 
@@ -254,7 +268,7 @@ export default function LamaComparePanel({ user }: LamaComparePanelProps) {
             type="file" 
             ref={fileInputRef2} 
             onChange={handleImage2Change} 
-            accept="image/*" 
+            accept=".png,.jpg,.jpeg" 
             className="hidden" 
           />
 
