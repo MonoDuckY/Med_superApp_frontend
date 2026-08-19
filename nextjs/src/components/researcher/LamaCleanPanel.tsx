@@ -23,6 +23,7 @@ interface ImageItem {
   file: File;
   originalUrl: string;
   processedUrl: string | null;
+  processedMimeType?: string;
   imageWidth: number;
   imageHeight: number;
   uploading: boolean;
@@ -168,6 +169,7 @@ export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
             return {
               ...img,
               processedUrl: processedBlobUrl,
+              processedMimeType: blob.type,
               uploading: false,
               error: null
             };
@@ -218,9 +220,21 @@ export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
 
   const handleDownload = (imgItem: ImageItem) => {
     if (!imgItem.processedUrl) return;
+
+    let extension = "png"; // default
+    if (imgItem.processedMimeType === "image/jpeg" || imgItem.processedMimeType === "image/jpg") {
+      extension = "jpg";
+    } else if (imgItem.processedMimeType === "image/png") {
+      extension = "png";
+    } else {
+      extension = imgItem.file.name.split('.').pop() || "png";
+    }
+
+    const baseName = imgItem.file.name.substring(0, imgItem.file.name.lastIndexOf('.')) || imgItem.file.name;
+
     const link = document.createElement("a");
     link.href = imgItem.processedUrl;
-    link.download = `cleaned_${imgItem.file.name}`;
+    link.download = `cleaned_${baseName}.${extension}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -238,7 +252,18 @@ export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
       for (const img of processedImages) {
         const response = await fetch(img.processedUrl!);
         const blob = await response.blob();
-        zip.file(`cleaned_${img.file.name}`, blob);
+
+        let extension = "png";
+        if (blob.type === "image/jpeg" || blob.type === "image/jpg") {
+          extension = "jpg";
+        } else if (blob.type === "image/png") {
+          extension = "png";
+        } else {
+          extension = img.file.name.split('.').pop() || "png";
+        }
+        const baseName = img.file.name.substring(0, img.file.name.lastIndexOf('.')) || img.file.name;
+
+        zip.file(`cleaned_${baseName}.${extension}`, blob);
       }
 
       const content = await zip.generateAsync({ type: "blob" });

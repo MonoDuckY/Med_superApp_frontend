@@ -87,15 +87,59 @@ export default function LamaComparePanel({ user }: LamaComparePanelProps) {
     setComparedUrl(""); // Reset previous comparison
   };
 
+  const getCorrectedFile = async (file: File): Promise<File> => {
+    // Read the first 8 bytes of the file to determine format from magic bytes
+    const headerBytes = await new Promise<Uint8Array>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          resolve(new Uint8Array(e.target.result as ArrayBuffer));
+        } else {
+          resolve(new Uint8Array());
+        }
+      };
+      reader.onerror = () => resolve(new Uint8Array());
+      reader.readAsArrayBuffer(file.slice(0, 8));
+    });
+
+    if (headerBytes.length >= 4) {
+      // PNG Magic: 89 50 4E 47
+      const isPng = headerBytes[0] === 0x89 && headerBytes[1] === 0x50 && headerBytes[2] === 0x4E && headerBytes[3] === 0x47;
+      // JPEG Magic: FF D8 FF
+      const isJpeg = headerBytes[0] === 0xFF && headerBytes[1] === 0xD8 && headerBytes[2] === 0xFF;
+
+      const currentExt = file.name.split('.').pop()?.toLowerCase();
+
+      if (isPng && currentExt !== "png") {
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        const newName = `${baseName}.png`;
+        console.log(`Auto-corrected file type for ${file.name} to image/png and renamed to ${newName}`);
+        return new File([file], newName, { type: "image/png" });
+      }
+
+      if (isJpeg && currentExt !== "jpg" && currentExt !== "jpeg") {
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        const newName = `${baseName}.jpg`;
+        console.log(`Auto-corrected file type for ${file.name} to image/jpeg and renamed to ${newName}`);
+        return new File([file], newName, { type: "image/jpeg" });
+      }
+    }
+
+    return file;
+  };
+
   const handleCompare = async () => {
     if (!image1 || !image2) return;
     setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://hmsnextgen.io.vn:8080";
     
     try {
+      const correctedImage1 = await getCorrectedFile(image1);
+      const correctedImage2 = await getCorrectedFile(image2);
+
       const formData = new FormData();
-      formData.append("image1", image1);
-      formData.append("image2", image2);
+      formData.append("image1", correctedImage1);
+      formData.append("image2", correctedImage2);
       
       const res = await fetchWithAuth(`${apiUrl}/api/researcher/compare`, {
         method: "POST",
