@@ -866,8 +866,44 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
     }
   }
 
+  const validateClinicalInfo = (): boolean => {
+    if (bloodPressure) {
+      const bpRegex = /^[0-9]{1,3}\/[0-9]{1,3}$/;
+      if (!bpRegex.test(bloodPressure)) {
+        alert("Huyết áp chỉ nhận hai nhóm từ 1 đến 3 chữ số, phân cách bằng dấu '/' (ví dụ: 120/80)!");
+        return false;
+      }
+    }
+    if (heartRate && !/^[0-9]+$/.test(heartRate)) {
+      alert("Nhịp tim phải là số nguyên dương!");
+      return false;
+    }
+    if (breathingRate && !/^[0-9]+$/.test(breathingRate)) {
+      alert("Nhịp thở phải là số nguyên dương!");
+      return false;
+    }
+    if (bodyTemperature && !/^[0-9]+(\.[0-9]+)?$/.test(bodyTemperature)) {
+      alert("Thân nhiệt phải là số thực dương (ví dụ: 36.8)!");
+      return false;
+    }
+    if (bloodLipids && !/^[0-9]+(\.[0-9]+)?$/.test(bloodLipids)) {
+      alert("Mỡ máu phải là số thực dương (ví dụ: 185)!");
+      return false;
+    }
+    if (height && !/^[0-9]+(\.[0-9]+)?$/.test(height)) {
+      alert("Chiều cao phải là số thực dương (ví dụ: 172)!");
+      return false;
+    }
+    if (weight && !/^[0-9]+(\.[0-9]+)?$/.test(weight)) {
+      alert("Cân nặng phải là số thực dương (ví dụ: 68)!");
+      return false;
+    }
+    return true;
+  };
+
   const handleSaveDraft = async () => {
     if (!activeAppointmentId) return
+    if (!validateClinicalInfo()) return
     setSaving(true)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
     try {
@@ -974,6 +1010,7 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
   const handleComplete = async () => {
     setShowConfirm(false)
     if (!activeAppointmentId) return
+    if (!validateClinicalInfo()) return
     setSaving(true)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
     try {
