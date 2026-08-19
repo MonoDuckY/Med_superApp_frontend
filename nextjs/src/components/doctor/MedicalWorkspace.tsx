@@ -715,17 +715,16 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
         const result = await res.json()
         if (result.success && result.data) {
           const rawList = result.data || []
-          const todayDateStr = getTodayDateString()
-          const list = rawList.filter((item: any) => {
-            const itemDate = item.doctorWorkSlot?.workDate
-            const isToday = itemDate === todayDateStr
-            const isInProgress = item.status === "IN_PROGRESS"
-            return isToday || isInProgress
-          })
-          setAppointments(list)
+          setAppointments(rawList)
           
-          if (list.length > 0 && !activeAppointmentId) {
-            const firstApt = list.find((a: any) => a.status === "IN_PROGRESS") || list.find((a: any) => a.status === "CONFIRMED") || list[0]
+          if (rawList.length > 0 && !activeAppointmentId) {
+            const todayDateStr = getTodayDateString()
+            const todayList = rawList.filter((item: any) => item.doctorWorkSlot?.workDate === todayDateStr)
+            const firstApt = todayList.find((a: any) => a.status === "IN_PROGRESS") || 
+                             todayList.find((a: any) => a.status === "CONFIRMED") || 
+                             rawList.find((a: any) => a.status === "IN_PROGRESS") || 
+                             rawList.find((a: any) => a.status === "CONFIRMED") || 
+                             rawList[0]
             setActiveAppointmentId(firstApt.id)
           }
         }
@@ -1252,7 +1251,13 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
             setActiveId={setActiveAppointmentId}
             qSearch={qSearch}
             setQSearch={setQSearch}
-            appointments={appointments}
+            appointments={appointments.filter((item: any) => {
+              const itemDate = item.doctorWorkSlot?.workDate;
+              const isToday = itemDate === getTodayDateString();
+              const isActiveAptDate = apt?.doctorWorkSlot?.workDate && itemDate === apt.doctorWorkSlot.workDate;
+              const isInProgress = item.status === "IN_PROGRESS";
+              return isToday || isActiveAptDate || isInProgress;
+            })}
           />
         </div>
 

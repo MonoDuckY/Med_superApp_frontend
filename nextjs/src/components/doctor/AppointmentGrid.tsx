@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   Users, 
   Clock, 
@@ -44,11 +44,30 @@ const STATUS_CONFIG: Record<Status, {
 const COL_HEADERS = ["STT", "Giờ hẹn", "Mã lịch hẹn", "Bệnh nhân", "Triệu chứng ban đầu", "Phòng khám", "Trạng thái", "Hành động"];
 const COL_WIDTHS  = [60, 130, 120, 200, 260, 110, 140, 160];
 
+const getTodayDateString = () => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return formatter.format(new Date());
+};
+
+const formatDobDisplay = (dateStr: string) => {
+  if (!dateStr) return "";
+  const [yyyy, mm, dd] = dateStr.split("-");
+  if (!yyyy || !mm || !dd) return dateStr;
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 export default function AppointmentGrid({ onStartExam, onBackToSchedule }: AppointmentGridProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
 
   const calculateAge = (dobString?: string) => {
     if (!dobString || dobString === "N/A") return null;
@@ -85,16 +104,6 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
     setAppointments(mockData);
   };
 
-  const getTodayDateString = () => {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Ho_Chi_Minh',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    return formatter.format(new Date());
-  };
-
   const fetchAppointments = async () => {
     setIsLoading(true);
     try {
@@ -103,15 +112,14 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data && result.data.length > 0) {
-          const todayDateStr = getTodayDateString();
-          const todayAppointments = result.data.filter((item: any) => {
+          const selectedAppointments = result.data.filter((item: any) => {
             const itemDate = item.doctorWorkSlot?.workDate;
-            const isToday = itemDate === todayDateStr;
+            const isSelectedDay = itemDate === selectedDate;
             const isInProgress = item.status === "IN_PROGRESS";
-            return isToday || isInProgress;
+            return isSelectedDay || isInProgress;
           });
 
-          const mapped = todayAppointments.map((item: any, idx: number) => {
+          const mapped = selectedAppointments.map((item: any, idx: number) => {
             const start = item.slot?.startTime?.slice(0, 5) || "";
             const end = item.slot?.endTime?.slice(0, 5) || "";
             const age = calculateAge(item.patient?.dateOfBirth);
@@ -145,7 +153,7 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
 
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [selectedDate]);
 
   const handleStartExamAction = async (aptId: string, currentStatus: Status) => {
     if (currentStatus === "waiting") {
@@ -181,8 +189,6 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
     { key: "inprogress", label: `Đang khám (${appointments.filter(a => a.status === "inprogress").length})` },
     { key: "completed",  label: `Đã hoàn thành (${appointments.filter(a => a.status === "completed").length})` },
   ];
-
-  const todayStr = new Date().toLocaleDateString("vi-VN", { day: "numeric", month: "numeric", year: "numeric" });
 
   if (isLoading) {
     return (
@@ -227,10 +233,33 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
               className="w-full h-9 pl-9 pr-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 placeholder:text-slate-300 transition-all font-medium"
             />
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] bg-slate-50 border border-slate-100 px-3 py-2 rounded-lg">
+          <div 
+            onClick={() => dateInputRef.current?.showPicker()}
+            className="relative flex items-center gap-2 text-xs font-bold text-[#0F172A] bg-slate-50 border border-[#E2E8F0] px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-all select-none"
+          >
             <Calendar size={13} className="text-slate-500" />
-            <span>Hôm nay, {todayStr}</span>
+            <span>{selectedDate === getTodayDateString() ? `Hôm nay, ${formatDobDisplay(selectedDate)}` : formatDobDisplay(selectedDate)}</span>
+            <input
+              type="date"
+              ref={dateInputRef}
+              value={selectedDate}
+              onChange={e => {
+                if (e.target.value) {
+                  setSelectedDate(e.target.value);
+                }
+              }}
+              className="absolute opacity-0 pointer-events-none w-0 h-0"
+            />
           </div>
+
+          {selectedDate !== getTodayDateString() && (
+            <button
+              onClick={() => setSelectedDate(getTodayDateString())}
+              className="h-9 px-3 text-xs font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 border border-sky-100 rounded-lg transition-colors cursor-pointer"
+            >
+              Về hôm nay
+            </button>
+          )}
         </div>
 
         {/* Filters Grid */}
