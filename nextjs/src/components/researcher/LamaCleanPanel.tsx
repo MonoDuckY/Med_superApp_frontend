@@ -178,21 +178,17 @@ export default function LamaCleanPanel({ user }: LamaCleanPanelProps) {
         throw new Error("Lỗi kết nối API xóa caliper LaMa.");
       }
     } catch (err: any) {
-      console.warn(`LaMa API failed for ${item.file.name}, falling back to mock:`, err);
-      // Wait 2.5 seconds to simulate processing
-      setTimeout(() => {
-        setImages(prev => prev.map(img => {
-          if (img.id === item.id) {
-            return {
-              ...img,
-              processedUrl: item.originalUrl, // Simulation fallback
-              uploading: false,
-              error: "Không thể kết nối API AI thực tế. Đã chuyển sang chế độ mô phỏng."
-            };
-          }
-          return img;
-        }));
-      }, 2500);
+      console.warn(`LaMa API failed for ${item.file.name}:`, err);
+      setImages(prev => prev.map(img => {
+        if (img.id === item.id) {
+          return {
+            ...img,
+            uploading: false,
+            error: err.message || "Lỗi kết nối API xóa caliper LaMa."
+          };
+        }
+        return img;
+      }));
     }
   };
 

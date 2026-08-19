@@ -167,44 +167,17 @@ export default function AiComparePanel({ user }: AiComparePanelProps) {
         throw new Error("Lỗi kết nối API phân tích AI.");
       }
     } catch (err: any) {
-      console.warn(`AI Detect API failed for ${item.file.name}, falling back to mock overlay simulation:`, err);
-      setTimeout(() => {
-        setImages(prev => prev.map(img => {
-          if (img.id === item.id) {
-            return {
-              ...img,
-              imageWidth: 1024,
-              imageHeight: 768,
-              processedUrl: item.originalUrl,
-              detections: [
-                {
-                  confidence: 0.22810617089271545,
-                  class_id: 0,
-                  bbox: {
-                    xmin: 0.4749598205089569,
-                    ymin: 0.3960506121317546,
-                    xmax: 0.5546775460243225,
-                    ymax: 0.4825144608815511
-                  },
-                  suggested_calipers: {
-                    pair_a: [
-                      [486.3588562011719, 337.3689880371094],
-                      [567.9898071289062, 337.3689880371094]
-                    ],
-                    pair_b: [
-                      [527.1743316650391, 304.1668701171875],
-                      [527.1743316650391, 370.57110595703125]
-                    ]
-                  }
-                }
-              ],
-              uploading: false,
-              error: "Không thể kết nối API AI thực tế. Đã chuyển sang mô phỏng chẩn đoán lâm sàng của AI."
-            };
-          }
-          return img;
-        }));
-      }, 2500);
+      console.warn(`AI Detect API failed for ${item.file.name}:`, err);
+      setImages(prev => prev.map(img => {
+        if (img.id === item.id) {
+          return {
+            ...img,
+            uploading: false,
+            error: err.message || "Lỗi kết nối API phân tích AI."
+          };
+        }
+        return img;
+      }));
     }
   };
 
