@@ -240,6 +240,13 @@ export default function DatasetPanel({ user }: DatasetPanelProps) {
     const file = e.target.files?.[0];
     if (!file || !selectedFolderName) return;
 
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
+      alert(`Định dạng tệp không hợp lệ: ${file.name}. Hệ thống chỉ hỗ trợ định dạng PNG, JPG, JPEG.`);
+      if (folderFileInputRef.current) folderFileInputRef.current.value = "";
+      return;
+    }
+
     setUploadingImage(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://hmsnextgen.io.vn:8080";
     try {
@@ -355,7 +362,7 @@ export default function DatasetPanel({ user }: DatasetPanelProps) {
         type="file"
         ref={folderFileInputRef}
         onChange={handleUploadFolderImage}
-        accept="image/*"
+        accept=".png,.jpg,.jpeg"
         className="hidden"
       />
 
