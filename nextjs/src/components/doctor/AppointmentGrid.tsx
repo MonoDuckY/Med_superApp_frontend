@@ -85,6 +85,16 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
     setAppointments(mockData);
   };
 
+  const getTodayDateString = () => {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return formatter.format(new Date());
+  };
+
   const fetchAppointments = async () => {
     setIsLoading(true);
     try {
@@ -93,7 +103,15 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data && result.data.length > 0) {
-          const mapped = result.data.map((item: any, idx: number) => {
+          const todayDateStr = getTodayDateString();
+          const todayAppointments = result.data.filter((item: any) => {
+            const itemDate = item.doctorWorkSlot?.workDate;
+            const isToday = itemDate === todayDateStr;
+            const isInProgress = item.status === "IN_PROGRESS";
+            return isToday || isInProgress;
+          });
+
+          const mapped = todayAppointments.map((item: any, idx: number) => {
             const start = item.slot?.startTime?.slice(0, 5) || "";
             const end = item.slot?.endTime?.slice(0, 5) || "";
             const age = calculateAge(item.patient?.dateOfBirth);

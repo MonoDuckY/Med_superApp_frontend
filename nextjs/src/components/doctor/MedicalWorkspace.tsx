@@ -697,6 +697,16 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
 
   const locked = apt?.status === "COMPLETED" || apt?.status === "CANCELLED" || apt?.status === "NO_SHOW"
 
+  const getTodayDateString = () => {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return formatter.format(new Date());
+  };
+
   const fetchAppointmentsList = async () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
     try {
@@ -704,7 +714,14 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
       if (res.ok) {
         const result = await res.json()
         if (result.success && result.data) {
-          const list = result.data || []
+          const rawList = result.data || []
+          const todayDateStr = getTodayDateString()
+          const list = rawList.filter((item: any) => {
+            const itemDate = item.doctorWorkSlot?.workDate
+            const isToday = itemDate === todayDateStr
+            const isInProgress = item.status === "IN_PROGRESS"
+            return isToday || isInProgress
+          })
           setAppointments(list)
           
           if (list.length > 0 && !activeAppointmentId) {
