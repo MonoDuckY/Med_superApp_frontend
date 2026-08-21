@@ -37,6 +37,7 @@ const ic = {
   listOl:      ["M10 6h11", "M10 12h11", "M10 18h11", "M4 6h1v4", "M4 10H3", "M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"],
   link:        ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
   image:       ["M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z", "M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+  x:           ["M18 6 6 18", "M6 6l12 12"],
 };
 
 type Status = "DRAFT" | "PUBLISHED" | "DISABLED";
@@ -488,10 +489,11 @@ interface EditorProps {
   article: Article;
   onBack: () => void;
   onSave: (updated: Article, coverFile: File | null) => void;
+  onSilentSave: (updated: Article, coverFile: File | null) => Promise<Article | null>;
   isSaving: boolean;
 }
 
-function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
+function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps) {
   const [title, setTitle] = useState(article.title);
   const [body, setBody] = useState(article.content);
   const [pubStatus, setPubStatus] = useState<"DRAFT" | "PUBLISHED">(article.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT");
@@ -509,6 +511,80 @@ function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const titleError = titleTouched && !title.trim() ? "Tiêu đề bài viết không được để trống" : undefined;
+
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"synced" | "saving" | "saved" | "failed">("synced");
+  const [lastSavedTime, setLastSavedTime] = useState<string>("");
+
+  const lastSavedRef = useRef({
+    title: article.title,
+    content: article.content,
+    coverPhotoUrl: article.coverPhoto?.url || ""
+  });
+
+  const titleRef = useRef(title);
+  const bodyRef = useRef(body);
+  const coverUrlRef = useRef(coverUrl);
+  const coverFileRef = useRef(coverFile);
+
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+
+  useEffect(() => {
+    bodyRef.current = body;
+  }, [body]);
+
+  useEffect(() => {
+    coverUrlRef.current = coverUrl;
+  }, [coverUrl]);
+
+  useEffect(() => {
+    coverFileRef.current = coverFile;
+  }, [coverFile]);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const currentTitle = titleRef.current.trim();
+      const currentContent = bodyRef.current;
+      const currentCoverUrl = coverUrlRef.current;
+      const currentCoverFile = coverFileRef.current;
+
+      const hasChanges = 
+        currentTitle !== lastSavedRef.current.title ||
+        currentContent !== lastSavedRef.current.content ||
+        currentCoverUrl !== lastSavedRef.current.coverPhotoUrl;
+
+      if (hasChanges && currentTitle && article.status === "DRAFT") {
+        setAutoSaveStatus("saving");
+        const updated: Article = {
+          ...article,
+          title: currentTitle,
+          content: currentContent,
+          status: "DRAFT",
+        };
+
+        const result = await onSilentSave(updated, currentCoverFile);
+        if (result) {
+          lastSavedRef.current = {
+            title: result.title,
+            content: result.content,
+            coverPhotoUrl: result.coverPhoto?.url || "",
+          };
+          if (result.coverPhoto?.url) {
+            setCoverUrl(result.coverPhoto.url);
+            setCoverFile(null);
+          }
+          setAutoSaveStatus("saved");
+          const now = new Date();
+          setLastSavedTime(now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        } else {
+          setAutoSaveStatus("failed");
+        }
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [article, onSilentSave]);
 
   // Initialize Tiptap Editor
   const editor = useEditor({
@@ -744,8 +820,27 @@ function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
 
               {/* Auto-save indicator */}
               <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#F1F5F9]">
-                <Ico d={ic.checkCircle} cls="w-3.5 h-3.5 shrink-0" style={{ color: "#10B981" }} />
-                <p style={{ fontSize: 11, color: "#94A3B8" }}>Tự động đồng bộ với máy chủ</p>
+                {autoSaveStatus === "saving" ? (
+                  <>
+                    <Loader2 className="animate-spin h-3.5 w-3.5 text-blue-500 shrink-0" />
+                    <p style={{ fontSize: 11, color: "#2563EB" }}>Đang tự động lưu nháp...</p>
+                  </>
+                ) : autoSaveStatus === "saved" ? (
+                  <>
+                    <Ico d={ic.checkCircle} cls="w-3.5 h-3.5 shrink-0" style={{ color: "#10B981" }} />
+                    <p style={{ fontSize: 11, color: "#10B981" }}>Đã tự động lưu nháp lúc {lastSavedTime}</p>
+                  </>
+                ) : autoSaveStatus === "failed" ? (
+                  <>
+                    <Ico d={ic.x} cls="w-3.5 h-3.5 shrink-0" style={{ color: "#EF4444" }} />
+                    <p style={{ fontSize: 11, color: "#EF4444" }}>Tự động lưu thất bại</p>
+                  </>
+                ) : (
+                  <>
+                    <Ico d={ic.checkCircle} cls="w-3.5 h-3.5 shrink-0" style={{ color: "#94A3B8" }} />
+                    <p style={{ fontSize: 11, color: "#94A3B8" }}>Đã đồng bộ với máy chủ</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -902,6 +997,42 @@ export default function MedicalNewsPage() {
     }
   };
 
+  const handleSilentSave = async (updatedArticle: Article, coverFile: File | null): Promise<Article | null> => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const formData = new FormData();
+      
+      const newsRequestJson = JSON.stringify({
+        title: updatedArticle.title,
+        content: updatedArticle.content,
+        status: updatedArticle.status
+      });
+
+      formData.append("news", new Blob([newsRequestJson], { type: "application/json" }));
+
+      if (coverFile) {
+        formData.append("coverPhoto", coverFile);
+      }
+
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news/${updatedArticle.newsId}`, {
+        method: "PATCH",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          const saved = result.data as Article;
+          setRows(prev => prev.map(r => r.newsId === saved.newsId ? saved : r));
+          return saved;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to silent save article:", error);
+    }
+    return null;
+  };
+
   const handlePublish = async (newsId: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -965,6 +1096,7 @@ export default function MedicalNewsPage() {
           article={screen.article}
           onBack={() => setScreen({ view: "dashboard" })}
           onSave={handleSaveArticle}
+          onSilentSave={handleSilentSave}
           isSaving={isSaving}
         />
       ) : (
