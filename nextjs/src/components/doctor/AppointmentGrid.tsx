@@ -41,8 +41,8 @@ const STATUS_CONFIG: Record<Status, {
   absent:     { label: "Vắng mặt",       bg: "rgba(148,163,184,0.10)", text: "#475569" },
 };
 
-const COL_HEADERS = ["STT", "Giờ hẹn", "Mã lịch hẹn", "Bệnh nhân", "Triệu chứng ban đầu", "Phòng khám", "Trạng thái", "Hành động"];
-const COL_WIDTHS  = [60, 130, 120, 200, 260, 110, 140, 160];
+const COL_HEADERS = ["STT", "Giờ hẹn", "Bệnh nhân", "Triệu chứng ban đầu", "Phòng khám", "Trạng thái", "Hành động"];
+const COL_WIDTHS  = [60, 130, 200, 260, 110, 140, 160];
 
 const getTodayDateString = () => {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -307,7 +307,7 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
             <tbody className="divide-y divide-[#F1F5F9]">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-16 text-center text-xs font-semibold text-slate-400">
+                  <td colSpan={7} className="px-5 py-16 text-center text-xs font-semibold text-slate-400">
                     Không tìm thấy ca khám nào phù hợp.
                   </td>
                 </tr>
@@ -322,10 +322,6 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
                     {/* Time */}
                     <td className="px-5">
                       <span className="font-mono text-xs font-bold text-[#0F172A]">{row.time}</span>
-                    </td>
-                    {/* Apt ID */}
-                    <td className="px-5">
-                      <span className="font-mono text-xs text-[#64748B]">{row.aptId}</span>
                     </td>
                     {/* Patient */}
                     <td className="px-5">

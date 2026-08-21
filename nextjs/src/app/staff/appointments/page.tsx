@@ -529,7 +529,7 @@ export default function StaffAppointmentsPage() {
             className="relative bg-white border border-[#E2E8F0] rounded-2xl w-full max-w-[360px] p-6 shadow-2xl text-left animate-[scaleIn_0.15s_ease-out]"
           >
             <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3 mb-4">
-              <h3 className="font-bold text-sm text-[#0F172A]">Hủy lịch hẹn {selectedAppointment.id}</h3>
+              <h3 className="font-bold text-sm text-[#0F172A]">Hủy lịch hẹn bệnh nhân</h3>
               <button
                 type="button"
                 onClick={() => { setIsCancelModalOpen(false); setSelectedAppointment(null); }}

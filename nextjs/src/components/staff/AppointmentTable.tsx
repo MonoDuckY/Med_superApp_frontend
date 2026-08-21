@@ -248,7 +248,7 @@ export default function AppointmentTable({
           <table className="w-full text-xs text-left">
             <thead>
               <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                {["Mã lịch hẹn", "Bệnh nhân", "Bác sĩ & Phòng", "Ngày & Giờ", "Trạng thái", "Loại", "Thao tác"].map(h => (
+                {["Bệnh nhân", "Bác sĩ & Phòng", "Ngày & Giờ", "Trạng thái", "Loại", "Thao tác"].map(h => (
                   <th key={h} className="px-5 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -256,7 +256,7 @@ export default function AppointmentTable({
             <tbody className="divide-y divide-[#F1F5F9] font-medium text-slate-700">
               {paginatedAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-400">Không tìm thấy lịch hẹn phù hợp.</td>
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">Không tìm thấy lịch hẹn phù hợp.</td>
                 </tr>
               ) : paginatedAppointments.map(a => {
                 const isActionDisabled = a.status === "Cancelled" || a.status === "No-show" || a.status === "Completed" || a.status === "In-progress";
@@ -267,9 +267,6 @@ export default function AppointmentTable({
                 } catch (e) {}
                 return (
                   <tr key={a.id} className="hover:bg-[#F8FAFC] transition-colors">
-                    <td className="px-5 py-3.5 whitespace-nowrap">
-                      <span className="mono text-xs font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded">{a.id}</span>
-                    </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div>
                         <p className="font-bold text-slate-900">{a.patient}</p>

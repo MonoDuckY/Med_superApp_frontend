@@ -560,7 +560,6 @@ function QueuePanel({
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold truncate" style={{ color: active ? "#0284C7" : "#0F172A" }}>{patientName}</p>
-                  <p className="text-xs mono truncate text-slate-400" style={{ fontSize: 10 }}>#{patientId.slice(0, 8)}...</p>
                 </div>
               </div>
               <div className="mt-1.5 ml-10">
@@ -1206,7 +1205,6 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
                   <p className="text-xs" style={{ color: "#64748B" }}>
                     {calculateAge(patient.dateOfBirth)} · {translateGender(patient.gender)}
                   </p>
-                  <span className="text-xs font-mono font-medium text-slate-400">#{patient.id ? patient.id.slice(0, 8) : "N/A"}</span>
                 </div>
               </div>
             </div>

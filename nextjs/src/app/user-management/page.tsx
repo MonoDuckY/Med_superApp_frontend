@@ -527,9 +527,6 @@ export default function UserAccountsList() {
                             <p className="text-xs font-bold truncate text-[#0F172A]" title={row.fullName}>
                               {row.fullName}
                             </p>
-                            <p className="text-[10px] text-slate-400 truncate">
-                              ID: {row.id}
-                            </p>
                           </div>
                         </div>
                       </td>

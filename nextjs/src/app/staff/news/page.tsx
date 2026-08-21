@@ -395,7 +395,7 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
           <table className="w-full" style={{ borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #F1F5F9", background: "#FAFAFA" }}>
-                {["Tiêu đề bài viết", "Người viết", "Trạng thái", "Ngày cập nhật", "Thao tác"].map(h => (
+                {["Tiêu đề bài viết", "Trạng thái", "Ngày cập nhật", "Thao tác"].map(h => (
                   <th key={h} className="text-left px-5 py-3.5" style={{ fontSize: 11, color: "#94A3B8", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                     {h}
                   </th>
@@ -405,7 +405,7 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-16" style={{ color: "#94A3B8", fontSize: 13 }}>
+                  <td colSpan={4} className="text-center py-16" style={{ color: "#94A3B8", fontSize: 13 }}>
                     Không tìm thấy bài viết nào phù hợp.
                   </td>
                 </tr>
@@ -430,10 +430,6 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
                           {row.title || "(Chưa có tiêu đề)"}
                         </p>
                       </div>
-                    </td>
-                    {/* Author */}
-                    <td className="px-5 py-4" style={{ minWidth: 200 }}>
-                      <p className="font-medium" style={{ fontSize: 13, color: "#374151" }}>{row.uploadBy}</p>
                     </td>
                     {/* Status badge */}
                     <td className="px-5 py-4">
