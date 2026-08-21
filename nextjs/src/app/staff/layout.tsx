@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Bell,
   Loader2,
-  Newspaper
+  Newspaper,
+  MessageSquare
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { logoutApiCall } from "@/lib/auth";
@@ -88,6 +89,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     { label: "Phê duyệt Lịch Bác sĩ", icon: ClipboardList, path: "/staff/schedules", id: "schedules" },
     { label: "Tạo hồ sơ bệnh nhân", icon: UserPlus, path: "/staff/create-patient", id: "create-patient" },
     { label: "Tin tức y khoa", icon: Newspaper, path: "/staff/news", id: "news" },
+    { label: "Phản hồi & Ý kiến", icon: MessageSquare, path: "/staff/feedback", id: "feedback" },
   ];
 
   const activeItem = sidebarItems.find(item => pathname.startsWith(item.path)) || sidebarItems[0];
