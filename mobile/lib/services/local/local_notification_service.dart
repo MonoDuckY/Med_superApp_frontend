@@ -52,7 +52,7 @@ class LocalNotificationService {
       );
 
       await _notificationsPlugin.initialize(
-        initSettings,
+        settings: initSettings,
         onDidReceiveNotificationResponse: onNotificationTap,
       );
 
@@ -141,14 +141,12 @@ class LocalNotificationService {
       final tzDateTime = tz.TZDateTime.from(reminderTime, tz.local);
 
       await _notificationsPlugin.zonedSchedule(
-        notificationId,
-        '💊 Nhắc nhở uống thuốc (còn 30 phút)',
-        'Sắp đến giờ uống $medicineName - Liều dùng: $dosage',
-        tzDateTime,
-        _notificationDetails(),
+        id: notificationId,
+        title: '💊 Nhắc nhở uống thuốc (còn 30 phút)',
+        body: 'Sắp đến giờ uống $medicineName - Liều dùng: $dosage',
+        scheduledDate: tzDateTime,
+        notificationDetails: _notificationDetails(),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: '/health/medicine-schedule',
       );
 
@@ -165,7 +163,7 @@ class LocalNotificationService {
   Future<void> cancelMedicineReminder(String scheduleId) async {
     try {
       final notificationId = scheduleId.hashCode.abs() % 100000;
-      await _notificationsPlugin.cancel(notificationId);
+      await _notificationsPlugin.cancel(id: notificationId);
       debugPrint('Đã hủy thông báo ID: $notificationId cho schedule: $scheduleId');
     } catch (e) {
       debugPrint('Lỗi hủy thông báo: $e');
