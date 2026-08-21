@@ -43,8 +43,7 @@ interface Article {
   id: number;
   title: string;
   body: string;
-  author: string;
-  source: string;
+  uploadBy: string;
   status: Status;
   updated: string;
   thumb: string;
@@ -55,8 +54,7 @@ const SAMPLE: Article[] = [
     id: 1,
     title: "Phát hiện sớm ung thư gan qua siêu âm định kỳ: Những điều cần biết",
     body: "<p>Nội dung bài viết về Ung thư gan. Siêu âm định kỳ đóng vai trò cực kỳ quan trọng...</p>",
-    author: "BS. Nguyễn Văn A",
-    source: "Báo Sức khỏe & Đời sống",
+    uploadBy: "BS. Nguyễn Văn A",
     status: "published",
     updated: "18/08/2026 15:30",
     thumb: "liver",
@@ -65,8 +63,7 @@ const SAMPLE: Article[] = [
     id: 2,
     title: "Vai trò của trí tuệ nhân tạo trong chẩn đoán hình ảnh y tế",
     body: "<p>Nội dung bài viết về Trí tuệ nhân tạo (AI) trong Y tế. Chẩn đoán hình ảnh đang thay đổi mạnh mẽ...</p>",
-    author: "TS. Trần Minh Khoa",
-    source: "Tạp chí Y học Việt Nam",
+    uploadBy: "TS. Trần Minh Khoa",
     status: "published",
     updated: "17/08/2026 09:15",
     thumb: "brain",
@@ -75,8 +72,7 @@ const SAMPLE: Article[] = [
     id: 3,
     title: "Hướng dẫn phòng ngừa đột quỵ cho người cao tuổi",
     body: "<p>Nội dung bài viết phòng ngừa đột quỵ...</p>",
-    author: "BS.CK2 Lê Thị Hương",
-    source: "Bệnh viện Bạch Mai",
+    uploadBy: "BS.CK2 Lê Thị Hương",
     status: "draft",
     updated: "16/08/2026 14:00",
     thumb: "heart",
@@ -258,7 +254,7 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
 
   const filtered = rows.filter(r => {
     const matchSearch = r.title.toLowerCase().includes(search.toLowerCase()) ||
-      r.author.toLowerCase().includes(search.toLowerCase());
+      r.uploadBy.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || r.status === filter;
     return matchSearch && matchFilter;
   });
@@ -298,7 +294,7 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
             <Ico d={ic.search} cls="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#9CA3AF" }} />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Tìm kiếm theo tiêu đề bài viết, tác giả..."
+              placeholder="Tìm kiếm theo tiêu đề bài viết, người viết..."
               className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#E2E8F0] bg-white outline-none text-sm transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               style={{ color: "#0F172A", fontSize: 13, height: 40 }}
             />
@@ -333,7 +329,7 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
           <table className="w-full" style={{ borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #F1F5F9", background: "#FAFAFA" }}>
-                {["Tiêu đề bài viết", "Tác giả & Nguồn", "Trạng thái", "Ngày cập nhật", "Thao tác"].map(h => (
+                {["Tiêu đề bài viết", "Người viết", "Trạng thái", "Ngày cập nhật", "Thao tác"].map(h => (
                   <th key={h} className="text-left px-5 py-3.5" style={{ fontSize: 11, color: "#94A3B8", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                     {h}
                   </th>
@@ -363,11 +359,10 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
                         </p>
                       </div>
                     </td>
-                    {/* Author */}
-                    <td className="px-5 py-4" style={{ minWidth: 200 }}>
-                      <p className="font-medium" style={{ fontSize: 13, color: "#374151" }}>{row.author}</p>
-                      <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>{row.source}</p>
-                    </td>
+                     {/* Author */}
+                     <td className="px-5 py-4" style={{ minWidth: 200 }}>
+                       <p className="font-medium" style={{ fontSize: 13, color: "#374151" }}>{row.uploadBy}</p>
+                     </td>
                     {/* Status badge */}
                     <td className="px-5 py-4">
                       <span className="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
@@ -427,8 +422,6 @@ interface EditorProps {
 function Editor({ article, onBack, onSave }: EditorProps) {
   const [title, setTitle] = useState(article.title);
   const [body, setBody] = useState(article.body);
-  const [author, setAuthor] = useState(article.author);
-  const [source, setSource] = useState(article.source);
   const [pubStatus, setPubStatus] = useState<"draft" | "publish">(article.status === "published" ? "publish" : "draft");
   const [hasImage, setHasImage] = useState(!!article.thumb);
   const [imgHover, setImgHover] = useState(false);
@@ -468,8 +461,7 @@ function Editor({ article, onBack, onSave }: EditorProps) {
       ...article,
       title: title.trim(),
       body: body,
-      author: author.trim() || "Bác sĩ",
-      source: source.trim() || "HMS News",
+      uploadBy: article.uploadBy || "StaffA",
       status: pubStatus === "publish" ? "published" : "draft",
       updated: new Date().toLocaleString("vi-VN"),
       thumb: hasImage ? "brain" : "",
@@ -593,33 +585,6 @@ function Editor({ article, onBack, onSave }: EditorProps) {
                 </div>
               </div>
             </div>
-
-            {/* Author & source */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0]"
-              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04)" }}>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <FLabel required>Tác giả</FLabel>
-                  <input
-                    value={author}
-                    onChange={e => setAuthor(e.target.value)}
-                    placeholder="Nhập tên tác giả..."
-                    className="w-full h-10 outline-none border border-[#E2E8F0] rounded-xl px-4 text-xs focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                    style={{ color: "#0F172A" }}
-                  />
-                </div>
-                <div>
-                  <FLabel required>Nguồn trích dẫn</FLabel>
-                  <input
-                    value={source}
-                    onChange={e => setSource(e.target.value)}
-                    placeholder="Nhập nguồn trích dẫn y khoa..."
-                    className="w-full h-10 outline-none border border-[#E2E8F0] rounded-xl px-4 text-xs focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                    style={{ color: "#0F172A" }}
-                  />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right 30% — Settings panel */}
@@ -735,8 +700,7 @@ export default function MedicalNewsPage() {
       id: rows.length + 1,
       title: "",
       body: "<p>Nhập nội dung bài viết mới tại đây...</p>",
-      author: "BS. Nguyễn Văn A",
-      source: "HMS News",
+      uploadBy: "BS. Nguyễn Văn A",
       status: "draft",
       updated: new Date().toLocaleString("vi-VN"),
       thumb: "brain",
