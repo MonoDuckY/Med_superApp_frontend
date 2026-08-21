@@ -18,7 +18,9 @@ import {
 interface Feedback {
   feedbackId: string;
   senderId: string;
+  senderName?: string;
   receiverId: string;
+  receiverName?: string;
   content: string;
   status: string; // "SUBMITTED" or "RESPONDED"
   rating: number;
@@ -211,7 +213,7 @@ export default function FeedbackPage() {
             {filtered.map(fb => {
               const active = selectedId === fb.feedbackId;
               const st = stCfg[fb.status] || { label: fb.status, bg: "#F1F5F9", color: "#64748B" };
-              const patientDisplay = fb.senderId || "Bệnh nhân";
+              const patientDisplay = fb.senderName || fb.senderId || "Bệnh nhân";
               return (
                 <button key={fb.feedbackId} type="button" onClick={() => { setSelectedId(fb.feedbackId); setReplyText(""); }}
                   className="w-full text-left rounded-2xl border p-4 transition-all cursor-pointer outline-none bg-white"
@@ -294,15 +296,9 @@ export default function FeedbackPage() {
                 {/* Patient info row */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <Avatar name={selected.senderId || "Bệnh nhân"} size={44} />
+                    <Avatar name={selected.senderName || selected.senderId || "Bệnh nhân"} size={44} />
                     <div>
-                      <p className="font-bold text-sm" style={{ color: "#0F172A" }}>{selected.senderId || "Bệnh nhân"}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="flex items-center gap-1" style={{ fontSize: 11, color: "#64748B" }}>
-                          <User size={12} className="text-slate-400" />
-                          Mã tài khoản: {selected.senderId}
-                        </span>
-                      </div>
+                      <p className="font-bold text-sm" style={{ color: "#0F172A" }}>{selected.senderName || selected.senderId || "Bệnh nhân"}</p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full text-xs font-semibold"
@@ -383,7 +379,9 @@ export default function FeedbackPage() {
                       <div className="flex items-center gap-1.5 border-t border-[#F1F5F9] pt-3 text-[11px] text-slate-400 font-semibold">
                         <CheckCircle size={14} className="text-emerald-500 shrink-0" />
                         <p>
-                          Người phản hồi: <span className="text-slate-600 font-bold">{selected.receiverId}</span>
+                          Người phản hồi: <span className="text-slate-600 font-bold">
+                            {selected.receiverName || selected.receiverId}
+                          </span>
                         </p>
                       </div>
                     )}
