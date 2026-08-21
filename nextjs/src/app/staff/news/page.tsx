@@ -224,6 +224,83 @@ function ImageInsertModal({ newsId, isOpen, onClose, onInsert }: ImageInsertModa
   );
 }
 
+// Link Insert Dialog Component
+interface LinkInsertModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onInsert: (url: string, text: string) => void;
+  defaultText: string;
+  defaultUrl: string;
+}
+
+function LinkInsertModal({ isOpen, onClose, onInsert, defaultText, defaultUrl }: LinkInsertModalProps) {
+  const [url, setUrl] = useState(defaultUrl || "https://");
+  const [text, setText] = useState(defaultText);
+
+  useEffect(() => {
+    if (isOpen) {
+      setUrl(defaultUrl || "https://");
+      setText(defaultText);
+    }
+  }, [isOpen, defaultText, defaultUrl]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-xl max-w-md w-full p-6 text-left">
+        <h3 className="font-bold text-sm text-[#0F172A] mb-4">Chèn liên kết</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">VĂN BẢN HIỂN THỊ</label>
+            <input
+              type="text"
+              placeholder="Ví dụ: Trang chủ Google"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              className="w-full h-9 px-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">ĐƯỜNG DẪN LIÊN KẾT (URL)</label>
+            <input
+              type="text"
+              placeholder="https://example.com"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              className="w-full h-9 px-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-[#F1F5F9]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 px-4 text-xs font-semibold border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-white text-slate-600"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (url.trim()) {
+                onInsert(url.trim(), text.trim());
+                onClose();
+              }
+            }}
+            disabled={!url.trim()}
+            className="h-9 px-4 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg cursor-pointer border-none"
+          >
+            Chèn liên kết
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Dashboard component
 interface DashboardProps {
   rows: Article[];
@@ -430,6 +507,9 @@ function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
   const [imgHover, setImgHover] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkDefaultText, setLinkDefaultText] = useState("");
+  const [linkDefaultUrl, setLinkDefaultUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const titleError = titleTouched && !title.trim() ? "Tiêu đề bài viết không được để trống" : undefined;
@@ -478,20 +558,26 @@ function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
     </button>
   );
 
-  const insertLink = () => {
+  const triggerLinkModal = () => {
     if (!editor) return;
-    const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("Nhập liên kết (URL):", previousUrl || "https://");
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, " ");
+    const previousUrl = editor.getAttributes("link").href || "";
     
-    // empty = unset link
-    if (url === "") {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
-    
-    if (url) {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
-    }
+    setLinkDefaultText(selectedText);
+    setLinkDefaultUrl(previousUrl);
+    setLinkModalOpen(true);
+  };
+
+  const handleInsertLink = (url: string, text: string) => {
+    if (!editor) return;
+    const displayVal = text || url;
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .insertContent(`<a href="${url}">${displayVal}</a> `)
+      .run();
   };
 
   const insertImage = (url: string) => {
@@ -568,7 +654,7 @@ function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
                     {toolBtn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), ic.list, "Danh sách tròn")}
                     {toolBtn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), ic.listOl, "Danh sách số")}
                     <div className="w-px h-5 mx-1 bg-[#E2E8F0]" />
-                    {toolBtn(editor.isActive("link"), insertLink, ic.link, "Chèn liên kết")}
+                    {toolBtn(editor.isActive("link"), triggerLinkModal, ic.link, "Chèn liên kết")}
                     {toolBtn(false, () => setImageModalOpen(true), ic.image, "Chèn hình ảnh")}
                   </div>
                 )}
@@ -692,6 +778,14 @@ function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
         isOpen={imageModalOpen}
         onClose={() => setImageModalOpen(false)}
         onInsert={insertImage}
+      />
+
+      <LinkInsertModal 
+        isOpen={linkModalOpen}
+        onClose={() => setLinkModalOpen(false)}
+        onInsert={handleInsertLink}
+        defaultText={linkDefaultText}
+        defaultUrl={linkDefaultUrl}
       />
     </div>
   );
