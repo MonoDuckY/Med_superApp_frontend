@@ -6,6 +6,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
+import { fetchWithAuth } from "@/lib/auth";
+import { Loader2 } from "lucide-react";
 
 // Icons & Helpers
 function Ico({ d, cls = "", style }: { d: string | string[]; cls?: string; style?: React.CSSProperties }) {
@@ -37,70 +39,29 @@ const ic = {
   image:       ["M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z", "M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
 };
 
-type Status = "published" | "draft" | "hidden";
+type Status = "DRAFT" | "PUBLISHED" | "DISABLED";
+
+interface Attachment {
+  url: string;
+  expiresAt: string;
+}
 
 interface Article {
-  id: number;
+  newsId: string;
   title: string;
-  body: string;
+  content: string;
   uploadBy: string;
+  image: Attachment[];
+  coverPhoto?: Attachment | null;
   status: Status;
-  updated: string;
-  thumb: string;
+  uploadTime: string;
 }
-
-const SAMPLE: Article[] = [
-  {
-    id: 1,
-    title: "Phát hiện sớm ung thư gan qua siêu âm định kỳ: Những điều cần biết",
-    body: "<p>Nội dung bài viết về Ung thư gan. Siêu âm định kỳ đóng vai trò cực kỳ quan trọng...</p>",
-    uploadBy: "BS. Nguyễn Văn A",
-    status: "published",
-    updated: "18/08/2026 15:30",
-    thumb: "liver",
-  },
-  {
-    id: 2,
-    title: "Vai trò của trí tuệ nhân tạo trong chẩn đoán hình ảnh y tế",
-    body: "<p>Nội dung bài viết về Trí tuệ nhân tạo (AI) trong Y tế. Chẩn đoán hình ảnh đang thay đổi mạnh mẽ...</p>",
-    uploadBy: "TS. Trần Minh Khoa",
-    status: "published",
-    updated: "17/08/2026 09:15",
-    thumb: "brain",
-  },
-  {
-    id: 3,
-    title: "Hướng dẫn phòng ngừa đột quỵ cho người cao tuổi",
-    body: "<p>Nội dung bài viết phòng ngừa đột quỵ...</p>",
-    uploadBy: "BS.CK2 Lê Thị Hương",
-    status: "draft",
-    updated: "16/08/2026 14:00",
-    thumb: "heart",
-  },
-];
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; color: string }> = {
-  published: { label: "Đã xuất bản", bg: "rgba(16,185,129,0.1)",  color: "#10B981" },
-  draft:     { label: "Bản nháp",    bg: "#F1F5F9",                color: "#64748B" },
-  hidden:    { label: "Tạm ẩn",      bg: "#FEF3C7",                color: "#D97706" },
+  PUBLISHED: { label: "Đã xuất bản", bg: "rgba(16,185,129,0.1)",  color: "#10B981" },
+  DRAFT:     { label: "Bản nháp",    bg: "#F1F5F9",                color: "#64748B" },
+  DISABLED:  { label: "Tạm ẩn",      bg: "#FEF3C7",                color: "#D97706" },
 };
-
-function Thumb({ kind, size = 40 }: { kind: string; size?: number }) {
-  const colors: Record<string, [string, string]> = {
-    liver:   ["#FEE2E2", "#EF4444"],
-    brain:   ["#EDE9FE", "#8B5CF6"],
-    heart:   ["#FCE7F3", "#EC4899"],
-    vaccine: ["#D1FAE5", "#10B981"],
-    diabetes: ["#FEF3C7", "#F59E0B"],
-  };
-  const [bg, fg] = colors[kind] ?? ["#DBEAFE", "#2563EB"];
-  return (
-    <div className="rounded-lg shrink-0 flex items-center justify-center"
-      style={{ width: size, height: size, background: bg }}>
-      <Ico d={ic.image} cls="w-4 h-4" style={{ color: fg }} />
-    </div>
-  );
-}
 
 function FLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -112,12 +73,13 @@ function FLabel({ children, required }: { children: React.ReactNode; required?: 
 
 // Image Insert Dialog Component
 interface ImageInsertModalProps {
+  newsId: string;
   isOpen: boolean;
   onClose: () => void;
   onInsert: (url: string) => void;
 }
 
-function ImageInsertModal({ isOpen, onClose, onInsert }: ImageInsertModalProps) {
+function ImageInsertModal({ newsId, isOpen, onClose, onInsert }: ImageInsertModalProps) {
   const [url, setUrl] = useState("");
   const [tab, setTab] = useState<"url" | "upload">("url");
   const [isUploading, setIsUploading] = useState(false);
@@ -125,7 +87,7 @@ function ImageInsertModal({ isOpen, onClose, onInsert }: ImageInsertModalProps) 
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -135,14 +97,37 @@ function ImageInsertModal({ isOpen, onClose, onInsert }: ImageInsertModalProps) 
     }
 
     setIsUploading(true);
-    // Simulate image upload to server to get URL
-    setTimeout(() => {
-      // Convert to ObjectURL as temporary mock server image URL
-      const mockUrl = URL.createObjectURL(file);
-      onInsert(mockUrl);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const formData = new FormData();
+      formData.append("images", file);
+
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news/${newsId}/images`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data && result.data.image) {
+          const imgList = result.data.image as Attachment[];
+          const lastImg = imgList[imgList.length - 1];
+          if (lastImg && lastImg.url) {
+            onInsert(lastImg.url);
+          }
+        } else {
+          alert(result.message || "Tải ảnh lên máy chủ thất bại.");
+        }
+      } else {
+        alert("Lỗi kết nối khi tải ảnh lên máy chủ.");
+      }
+    } catch (error) {
+      console.error("Failed to upload content image:", error);
+      alert("Có lỗi xảy ra khi tải ảnh.");
+    } finally {
       setIsUploading(false);
       onClose();
-    }, 800);
+    }
   };
 
   return (
@@ -242,35 +227,39 @@ function ImageInsertModal({ isOpen, onClose, onInsert }: ImageInsertModalProps) 
 // Dashboard component
 interface DashboardProps {
   rows: Article[];
-  setRows: React.Dispatch<React.SetStateAction<Article[]>>;
   onEdit: (a: Article) => void;
-  onCreate: () => void;
+  onCreateDraft: () => void;
+  onPublish: (id: string) => void;
+  onDisable: (id: string) => void;
 }
 
-function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
+function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: DashboardProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | Status>("all");
   const [filterOpen, setFilterOpen] = useState(false);
 
   const filtered = rows.filter(r => {
-    const matchSearch = r.title.toLowerCase().includes(search.toLowerCase()) ||
-      r.uploadBy.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = (r.title || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.uploadBy || "").toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || r.status === filter;
     return matchSearch && matchFilter;
   });
 
-  function toggleHide(id: number) {
-    setRows(rs => rs.map(r => r.id === id
-      ? { ...r, status: r.status === "hidden" ? "published" : "hidden" as Status }
-      : r));
-  }
-
-  function softDelete(id: number) {
-    setRows(rs => rs.filter(r => r.id !== id));
-  }
-
   const filterLabels: Record<string, string> = {
-    all: "Tất cả", published: "Đã xuất bản", draft: "Bản nháp", hidden: "Tạm ẩn",
+    all: "Tất cả", PUBLISHED: "Đã xuất bản", DRAFT: "Bản nháp", DISABLED: "Tạm ẩn",
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString("vi-VN", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit"
+      });
+    } catch {
+      return dateStr;
+    }
   };
 
   return (
@@ -280,7 +269,7 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-bold" style={{ fontSize: 24, color: "#0F172A" }}>Quản lý tin tức y khoa</h1>
-          <button onClick={onCreate}
+          <button onClick={onCreateDraft}
             className="flex items-center gap-2 h-10 px-5 text-sm font-bold text-white rounded-xl cursor-pointer hover:opacity-90 transition-opacity border-none"
             style={{ background: "#2563EB", boxShadow: "0 2px 8px rgba(37,99,235,0.3)" }}>
             <Ico d={ic.plus} cls="w-4 h-4" />
@@ -310,7 +299,7 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
             </button>
             {filterOpen && (
               <div className="absolute right-0 top-full mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-lg z-20 overflow-hidden py-1" style={{ minWidth: 160 }}>
-                {(["all", "published", "draft", "hidden"] as const).map(opt => (
+                {(["all", "PUBLISHED", "DRAFT", "DISABLED"] as const).map(opt => (
                   <button key={opt} onMouseDown={() => { setFilter(opt); setFilterOpen(false); }}
                     className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-blue-50 transition-colors flex items-center justify-between border-none bg-transparent cursor-pointer"
                     style={{ color: filter === opt ? "#2563EB" : "#374151" }}>
@@ -345,24 +334,30 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
                 </tr>
               )}
               {filtered.map((row, i) => {
-                const st = STATUS_CFG[row.status];
+                const st = STATUS_CFG[row.status] || { label: row.status, bg: "#E2E8F0", color: "#64748B" };
                 return (
-                  <tr key={row.id}
+                  <tr key={row.newsId}
                     style={{ borderBottom: i < filtered.length - 1 ? "1px solid #F8FAFC" : "none" }}
                     className="hover:bg-slate-50 transition-colors group">
                     {/* Title */}
                     <td className="px-5 py-4" style={{ maxWidth: 380 }}>
                       <div className="flex items-center gap-3">
-                        <Thumb kind={row.thumb} size={40} />
+                        <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
+                          {row.coverPhoto?.url ? (
+                            <img src={row.coverPhoto.url} alt="Cover" className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <Ico d={ic.image} cls="w-4 h-4 text-sky-500" />
+                          )}
+                        </div>
                         <p className="font-semibold leading-snug line-clamp-2" style={{ fontSize: 13, color: "#0F172A" }}>
                           {row.title || "(Chưa có tiêu đề)"}
                         </p>
                       </div>
                     </td>
-                     {/* Author */}
-                     <td className="px-5 py-4" style={{ minWidth: 200 }}>
-                       <p className="font-medium" style={{ fontSize: 13, color: "#374151" }}>{row.uploadBy}</p>
-                     </td>
+                    {/* Author */}
+                    <td className="px-5 py-4" style={{ minWidth: 200 }}>
+                      <p className="font-medium" style={{ fontSize: 13, color: "#374151" }}>{row.uploadBy}</p>
+                    </td>
                     {/* Status badge */}
                     <td className="px-5 py-4">
                       <span className="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
@@ -372,7 +367,7 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
                     </td>
                     {/* Date */}
                     <td className="px-5 py-4 whitespace-nowrap" style={{ fontSize: 13, color: "#64748B" }}>
-                      {row.updated}
+                      {formatDate(row.uploadTime)}
                     </td>
                     {/* Actions */}
                     <td className="px-5 py-4">
@@ -382,16 +377,19 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
                           title="Chỉnh sửa">
                           <Ico d={ic.pencil} cls="w-3.5 h-3.5" style={{ color: "#2563EB" }} />
                         </button>
-                        <button onClick={() => toggleHide(row.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-50 transition-colors cursor-pointer border-none bg-transparent"
-                          title={row.status === "hidden" ? "Hiện bài viết" : "Ẩn bài viết"}>
-                          <Ico d={ic.eyeSlash} cls="w-3.5 h-3.5" style={{ color: "#D97706" }} />
-                        </button>
-                        <button onClick={() => softDelete(row.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
-                          title="Xóa bài viết">
-                          <Ico d={ic.trash} cls="w-3.5 h-3.5" style={{ color: "#EF4444" }} />
-                        </button>
+                        {row.status === "DISABLED" ? (
+                          <button onClick={() => onPublish(row.newsId)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-green-50 transition-colors cursor-pointer border-none bg-transparent"
+                            title="Hiện bài viết">
+                            <Ico d={ic.checkCircle} cls="w-3.5 h-3.5" style={{ color: "#10B981" }} />
+                          </button>
+                        ) : (
+                          <button onClick={() => onDisable(row.newsId)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-50 transition-colors cursor-pointer border-none bg-transparent"
+                            title="Ẩn bài viết">
+                            <Ico d={ic.eyeSlash} cls="w-3.5 h-3.5" style={{ color: "#D97706" }} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -416,18 +414,23 @@ function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
 interface EditorProps {
   article: Article;
   onBack: () => void;
-  onSave: (updated: Article) => void;
+  onSave: (updated: Article, coverFile: File | null) => void;
+  isSaving: boolean;
 }
 
-function Editor({ article, onBack, onSave }: EditorProps) {
+function Editor({ article, onBack, onSave, isSaving }: EditorProps) {
   const [title, setTitle] = useState(article.title);
-  const [body, setBody] = useState(article.body);
-  const [pubStatus, setPubStatus] = useState<"draft" | "publish">(article.status === "published" ? "publish" : "draft");
-  const [hasImage, setHasImage] = useState(!!article.thumb);
+  const [body, setBody] = useState(article.content);
+  const [pubStatus, setPubStatus] = useState<"DRAFT" | "PUBLISHED">(article.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT");
+  
+  // Cover Photo Upload state
+  const [coverUrl, setCoverUrl] = useState(article.coverPhoto?.url || "");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  
   const [imgHover, setImgHover] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const titleError = titleTouched && !title.trim() ? "Tiêu đề bài viết không được để trống" : undefined;
 
@@ -441,7 +444,7 @@ function Editor({ article, onBack, onSave }: EditorProps) {
         openOnClick: false,
       }),
     ],
-    content: article.body || "<p>Nhập nội dung bài viết y khoa tại đây...</p>",
+    content: article.content || "<p>Nhập nội dung bài viết y khoa tại đây...</p>",
     onUpdate: ({ editor }) => {
       setBody(editor.getHTML());
     },
@@ -460,18 +463,11 @@ function Editor({ article, onBack, onSave }: EditorProps) {
     const updated: Article = {
       ...article,
       title: title.trim(),
-      body: body,
-      uploadBy: article.uploadBy || "StaffA",
-      status: pubStatus === "publish" ? "published" : "draft",
-      updated: new Date().toLocaleString("vi-VN"),
-      thumb: hasImage ? "brain" : "",
+      content: body,
+      status: pubStatus,
     };
 
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      onSave(updated);
-    }, 1200);
+    onSave(updated, coverFile);
   }
 
   const toolBtn = (active: boolean, onClick: () => void, icon: string | string[], tip: string) => (
@@ -504,18 +500,22 @@ function Editor({ article, onBack, onSave }: EditorProps) {
     }
   };
 
+  const handleCoverPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ảnh bìa không được vượt quá 5MB!");
+      return;
+    }
+
+    setCoverFile(file);
+    setCoverUrl(URL.createObjectURL(file));
+  };
+
   return (
     <div className="flex-grow flex flex-col min-h-0 overflow-y-auto text-left" style={{ background: "#F8FAFC" }}>
       
-      {/* Toast */}
-      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
-        style={{ opacity: saved ? 1 : 0, transform: `translateX(-50%) translateY(${saved ? 0 : -10}px)`, pointerEvents: "none" }}>
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border border-green-200" style={{ background: "#ECFDF5" }}>
-          <Ico d={ic.checkCircle} cls="w-4 h-4" style={{ color: "#10B981" }} />
-          <p className="text-sm font-semibold" style={{ color: "#065F46" }}>Bài viết đã được lưu thành công</p>
-        </div>
-      </div>
-
       {/* Main workspace */}
       <div className="flex-grow overflow-y-auto px-8 py-6">
         <div className="mx-auto flex gap-6" style={{ maxWidth: 1200 }}>
@@ -537,9 +537,9 @@ function Editor({ article, onBack, onSave }: EditorProps) {
                 onChange={e => { if (e.target.value.length <= 150) { setTitle(e.target.value); setTitleTouched(false); } }}
                 onBlur={() => setTitleTouched(true)}
                 placeholder="Nhập tiêu đề bài viết y khoa..."
-                className="w-full outline-none border rounded-xl px-4 py-3 transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                className="w-full outline-none border rounded-xl px-4 py-3 transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-100 font-semibold"
                 style={{
-                  fontSize: 18, fontWeight: 600, color: "#0F172A",
+                  fontSize: 16, color: "#0F172A",
                   borderColor: titleError ? "#EF4444" : "#E2E8F0",
                   boxShadow: titleError ? "0 0 0 3px rgba(239,68,68,0.1)" : "none",
                 }}
@@ -594,9 +594,9 @@ function Editor({ article, onBack, onSave }: EditorProps) {
             <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]"
               style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04)" }}>
               <FLabel>Ảnh bìa bài viết</FLabel>
-              {!hasImage ? (
+              {!coverUrl ? (
                 <div className="border-2 border-dashed border-[#E2E8F0] rounded-xl p-6 flex flex-col items-center gap-3 text-center cursor-pointer hover:border-blue-300 transition-colors"
-                  onClick={() => setHasImage(true)}>
+                  onClick={() => fileInputRef.current?.click()}>
                   <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#F1F5F9" }}>
                     <Ico d={ic.upload} cls="w-4.5 h-4.5" style={{ color: "#94A3B8" }} />
                   </div>
@@ -610,13 +610,11 @@ function Editor({ article, onBack, onSave }: EditorProps) {
                   style={{ aspectRatio: "16/9", background: "#EFF6FF" }}
                   onMouseEnter={() => setImgHover(true)}
                   onMouseLeave={() => setImgHover(false)}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Ico d={ic.image} cls="w-10 h-10" style={{ color: "#93C5FD" }} />
-                  </div>
+                  <img src={coverUrl} alt="Cover Preview" className="w-full h-full object-cover" />
                   {imgHover && (
                     <div className="absolute inset-0 flex items-center justify-center"
                       style={{ background: "rgba(0,0,0,0.4)" }}>
-                      <button type="button" onClick={() => setHasImage(false)}
+                      <button type="button" onClick={() => { setCoverFile(null); setCoverUrl(""); }}
                         className="w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer border-none bg-transparent"
                         style={{ background: "rgba(239,68,68,0.9)" }}>
                         <Ico d={ic.trash} cls="w-4 h-4 text-white" />
@@ -625,6 +623,13 @@ function Editor({ article, onBack, onSave }: EditorProps) {
                   )}
                 </div>
               )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleCoverPhotoChange}
+                accept="image/*"
+                className="hidden"
+              />
             </div>
 
             {/* Publish status */}
@@ -633,8 +638,8 @@ function Editor({ article, onBack, onSave }: EditorProps) {
               <FLabel>Cài đặt trạng thái</FLabel>
               <div className="flex flex-col gap-2 mt-1">
                 {([
-                  { val: "draft",   label: "Lưu nháp",            sub: "Bài viết chưa được công khai" },
-                  { val: "publish", label: "Xuất bản trực tiếp",  sub: "Bài viết sẽ hiển thị ngay"  },
+                  { val: "DRAFT",   label: "Lưu nháp",            sub: "Bài viết chưa được công khai" },
+                  { val: "PUBLISHED", label: "Xuất bản trực tiếp",  sub: "Bài viết sẽ hiển thị ngay"  },
                 ] as const).map(opt => (
                   <label key={opt.val}
                     className="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all text-left"
@@ -658,7 +663,7 @@ function Editor({ article, onBack, onSave }: EditorProps) {
               {/* Auto-save indicator */}
               <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#F1F5F9]">
                 <Ico d={ic.checkCircle} cls="w-3.5 h-3.5 shrink-0" style={{ color: "#10B981" }} />
-                <p style={{ fontSize: 11, color: "#94A3B8" }}>Tự động lưu nháp thành công</p>
+                <p style={{ fontSize: 11, color: "#94A3B8" }}>Tự động đồng bộ với máy chủ</p>
               </div>
             </div>
           </div>
@@ -668,18 +673,22 @@ function Editor({ article, onBack, onSave }: EditorProps) {
       {/* Bottom action bar */}
       <div className="bg-white border-t border-[#E2E8F0] px-8 py-4 flex items-center justify-end gap-3 shrink-0">
         <button type="button" onClick={onBack}
-          className="h-10 px-6 text-sm font-semibold rounded-xl border cursor-pointer hover:bg-slate-50 transition-colors bg-white text-slate-600"
-          style={{ borderColor: "#E2E8F0" }}>
+          className="h-10 px-6 text-sm font-semibold rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors bg-white text-slate-600"
+          style={{ borderColor: "#E2E8F0" }}
+          disabled={isSaving}>
           Hủy
         </button>
         <button type="button" onClick={handleSave}
-          className="h-10 px-6 text-sm font-bold text-white rounded-xl cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all border-none"
-          style={{ background: "#2563EB", boxShadow: "0 2px 8px rgba(37,99,235,0.35)" }}>
+          className="h-10 px-6 text-sm font-bold text-white rounded-xl cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all border-none flex items-center gap-2"
+          style={{ background: "#2563EB", boxShadow: "0 2px 8px rgba(37,99,235,0.35)" }}
+          disabled={isSaving}>
+          {isSaving && <Loader2 className="animate-spin h-4 w-4 text-white" />}
           Lưu bài viết
         </button>
       </div>
 
       <ImageInsertModal 
+        newsId={article.newsId}
         isOpen={imageModalOpen}
         onClose={() => setImageModalOpen(false)}
         onInsert={insertImage}
@@ -692,45 +701,191 @@ type Screen = { view: "dashboard" } | { view: "editor"; article: Article };
 
 export default function MedicalNewsPage() {
   const [screen, setScreen] = useState<Screen>({ view: "dashboard" });
-  const [rows, setRows] = useState<Article[]>(SAMPLE);
+  const [rows, setRows] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleCreateDraft = () => {
-    // Immediately create a record with 'draft' status
-    const newDraft: Article = {
-      id: rows.length + 1,
-      title: "",
-      body: "<p>Nhập nội dung bài viết mới tại đây...</p>",
-      uploadBy: "BS. Nguyễn Văn A",
-      status: "draft",
-      updated: new Date().toLocaleString("vi-VN"),
-      thumb: "brain",
-    };
-
-    setRows(prev => [newDraft, ...prev]);
-    setScreen({ view: "editor", article: newDraft });
+  const fetchNews = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setRows(result.data);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch news articles:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSaveArticle = (updatedArticle: Article) => {
-    setRows(prev => prev.map(r => r.id === updatedArticle.id ? updatedArticle : r));
-    setScreen({ view: "dashboard" });
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const handleCreateDraft = async () => {
+    setIsSaving(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const formData = new FormData();
+      
+      const newsRequestJson = JSON.stringify({
+        title: "Bài viết nháp mới",
+        content: "<p>Nhập nội dung bài viết mới tại đây...</p>",
+        status: "DRAFT"
+      });
+
+      formData.append("news", new Blob([newsRequestJson], { type: "application/json" }));
+
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          const newDraft = result.data as Article;
+          setRows(prev => [newDraft, ...prev]);
+          setScreen({ view: "editor", article: newDraft });
+        } else {
+          alert(result.message || "Tạo bản nháp thất bại.");
+        }
+      } else {
+        alert("Lỗi kết nối máy chủ khi tạo bài viết.");
+      }
+    } catch (error) {
+      console.error("Failed to create draft article:", error);
+      alert("Đã xảy ra lỗi khi tạo bản nháp.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  if (screen.view === "editor") {
+  const handleSaveArticle = async (updatedArticle: Article, coverFile: File | null) => {
+    setIsSaving(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const formData = new FormData();
+      
+      const newsRequestJson = JSON.stringify({
+        title: updatedArticle.title,
+        content: updatedArticle.content,
+        status: updatedArticle.status
+      });
+
+      formData.append("news", new Blob([newsRequestJson], { type: "application/json" }));
+
+      if (coverFile) {
+        formData.append("coverPhoto", coverFile);
+      }
+
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news/${updatedArticle.newsId}`, {
+        method: "PATCH",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setToastMessage("Lưu bài viết thành công!");
+          await fetchNews();
+          setTimeout(() => {
+            setToastMessage(null);
+            setScreen({ view: "dashboard" });
+          }, 1500);
+        } else {
+          alert(result.message || "Lưu bài viết thất bại.");
+        }
+      } else {
+        alert("Lỗi kết nối máy chủ khi cập nhật bài viết.");
+      }
+    } catch (error) {
+      console.error("Failed to save article:", error);
+      alert("Đã xảy ra lỗi khi lưu bài viết.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePublish = async (newsId: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news/${newsId}/publish`, {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          setToastMessage("Đã xuất bản bài viết thành công!");
+          await fetchNews();
+          setTimeout(() => setToastMessage(null), 2500);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to publish news:", error);
+    }
+  };
+
+  const handleDisable = async (newsId: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const res = await fetchWithAuth(`${apiUrl}/api/staff/news/${newsId}/disable`, {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          setToastMessage("Đã ẩn bài viết thành công!");
+          await fetchNews();
+          setTimeout(() => setToastMessage(null), 2500);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to disable news:", error);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <Editor
-        article={screen.article}
-        onBack={() => setScreen({ view: "dashboard" })}
-        onSave={handleSaveArticle}
-      />
+      <div className="flex-grow flex flex-col items-center justify-center p-12">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-600 mb-3" />
+        <p className="text-slate-400 text-xs font-semibold">Đang tải danh sách bài viết y khoa...</p>
+      </div>
     );
   }
 
   return (
-    <Dashboard
-      rows={rows}
-      setRows={setRows}
-      onEdit={a => setScreen({ view: "editor", article: a })}
-      onCreate={handleCreateDraft}
-    />
+    <div className="flex flex-col h-full overflow-hidden bg-white text-left relative">
+      {toastMessage && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 transition-all duration-300">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border border-green-200" style={{ background: "#ECFDF5" }}>
+            <Ico d={ic.checkCircle} cls="w-4 h-4" style={{ color: "#10B981" }} />
+            <p className="text-sm font-semibold" style={{ color: "#065F46" }}>{toastMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {screen.view === "editor" ? (
+        <Editor
+          article={screen.article}
+          onBack={() => setScreen({ view: "dashboard" })}
+          onSave={handleSaveArticle}
+          isSaving={isSaving}
+        />
+      ) : (
+        <Dashboard
+          rows={rows}
+          onEdit={a => setScreen({ view: "editor", article: a })}
+          onCreateDraft={handleCreateDraft}
+          onPublish={handlePublish}
+          onDisable={handleDisable}
+        />
+      )}
+    </div>
   );
 }
