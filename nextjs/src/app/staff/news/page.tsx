@@ -427,9 +427,16 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
                             <Ico d={ic.image} cls="w-4 h-4 text-sky-500" />
                           )}
                         </div>
-                        <p className="font-semibold leading-snug line-clamp-2" style={{ fontSize: 13, color: "#0F172A" }}>
-                          {row.title || "(Chưa có tiêu đề)"}
-                        </p>
+                        <div className="min-w-0 text-left">
+                          <p className="font-semibold leading-snug line-clamp-2" style={{ fontSize: 13, color: "#0F172A" }}>
+                            {row.title || "(Chưa có tiêu đề)"}
+                          </p>
+                          {row.uploadBy && (
+                            <p className="text-[10px] text-slate-400 mt-1.5 font-medium">
+                              Người viết: <span className="text-slate-500 font-semibold">{row.uploadBy}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     {/* Status badge */}
