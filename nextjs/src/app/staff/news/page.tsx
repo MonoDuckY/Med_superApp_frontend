@@ -1,14 +1,20 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
 
+// Icons & Helpers
 function Ico({ d, cls = "", style }: { d: string | string[]; cls?: string; style?: React.CSSProperties }) {
-  const paths = Array.isArray(d) ? d : [d]
+  const paths = Array.isArray(d) ? d : [d];
   return (
     <svg className={cls} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       {paths.map((p, i) => <path key={i} d={p} />)}
     </svg>
-  )
+  );
 }
 
 const ic = {
@@ -29,24 +35,26 @@ const ic = {
   listOl:      ["M10 6h11", "M10 12h11", "M10 18h11", "M4 6h1v4", "M4 10H3", "M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"],
   link:        ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
   image:       ["M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z", "M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
-}
+};
 
-type Status = "published" | "draft" | "hidden"
+type Status = "published" | "draft" | "hidden";
 
 interface Article {
-  id: number
-  title: string
-  author: string
-  source: string
-  status: Status
-  updated: string
-  thumb: string
+  id: number;
+  title: string;
+  body: string;
+  author: string;
+  source: string;
+  status: Status;
+  updated: string;
+  thumb: string;
 }
 
 const SAMPLE: Article[] = [
   {
     id: 1,
     title: "Phát hiện sớm ung thư gan qua siêu âm định kỳ: Những điều cần biết",
+    body: "<p>Nội dung bài viết về Ung thư gan. Siêu âm định kỳ đóng vai trò cực kỳ quan trọng...</p>",
     author: "BS. Nguyễn Văn A",
     source: "Báo Sức khỏe & Đời sống",
     status: "published",
@@ -56,6 +64,7 @@ const SAMPLE: Article[] = [
   {
     id: 2,
     title: "Vai trò của trí tuệ nhân tạo trong chẩn đoán hình ảnh y tế",
+    body: "<p>Nội dung bài viết về Trí tuệ nhân tạo (AI) trong Y tế. Chẩn đoán hình ảnh đang thay đổi mạnh mẽ...</p>",
     author: "TS. Trần Minh Khoa",
     source: "Tạp chí Y học Việt Nam",
     status: "published",
@@ -65,37 +74,20 @@ const SAMPLE: Article[] = [
   {
     id: 3,
     title: "Hướng dẫn phòng ngừa đột quỵ cho người cao tuổi",
+    body: "<p>Nội dung bài viết phòng ngừa đột quỵ...</p>",
     author: "BS.CK2 Lê Thị Hương",
     source: "Bệnh viện Bạch Mai",
     status: "draft",
     updated: "16/08/2026 14:00",
     thumb: "heart",
   },
-  {
-    id: 4,
-    title: "Tiêm phòng vaccine cúm mùa: Lịch trình và đối tượng ưu tiên 2026",
-    author: "ThS. Phạm Quốc Bảo",
-    source: "Cục Y tế dự phòng",
-    status: "draft",
-    updated: "15/08/2026 11:45",
-    thumb: "vaccine",
-  },
-  {
-    id: 5,
-    title: "Cập nhật phác đồ điều trị tiểu đường type 2 theo hướng dẫn ADA 2026",
-    author: "GS.TS Ngô Quý Châu",
-    source: "Hội Nội tiết Việt Nam",
-    status: "hidden",
-    updated: "12/08/2026 08:20",
-    thumb: "diabetes",
-  },
-]
+];
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; color: string }> = {
   published: { label: "Đã xuất bản", bg: "rgba(16,185,129,0.1)",  color: "#10B981" },
   draft:     { label: "Bản nháp",    bg: "#F1F5F9",                color: "#64748B" },
   hidden:    { label: "Tạm ẩn",      bg: "#FEF3C7",                color: "#D97706" },
-}
+};
 
 function Thumb({ kind, size = 40 }: { kind: string; size?: number }) {
   const colors: Record<string, [string, string]> = {
@@ -104,53 +96,189 @@ function Thumb({ kind, size = 40 }: { kind: string; size?: number }) {
     heart:   ["#FCE7F3", "#EC4899"],
     vaccine: ["#D1FAE5", "#10B981"],
     diabetes: ["#FEF3C7", "#F59E0B"],
-  }
-  const [bg, fg] = colors[kind] ?? ["#DBEAFE", "#2563EB"]
+  };
+  const [bg, fg] = colors[kind] ?? ["#DBEAFE", "#2563EB"];
   return (
     <div className="rounded-lg shrink-0 flex items-center justify-center"
       style={{ width: size, height: size, background: bg }}>
       <Ico d={ic.image} cls="w-4 h-4" style={{ color: fg }} />
     </div>
-  )
+  );
 }
 
 function FLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <div className="mb-1.5 font-semibold" style={{ fontSize: 12, color: "#374151" }}>
+    <div className="mb-1.5 font-semibold text-left" style={{ fontSize: 12, color: "#374151" }}>
       {children}{required && <span className="ml-0.5" style={{ color: "#EF4444" }}>*</span>}
     </div>
-  )
+  );
 }
 
-function Dashboard({ onEdit, onCreate }: { onEdit: (a: Article | null) => void; onCreate: () => void }) {
-  const [search, setSearch]   = useState("")
-  const [filter, setFilter]   = useState<"all" | Status>("all")
-  const [rows, setRows]       = useState(SAMPLE)
-  const [filterOpen, setFilterOpen] = useState(false)
+// Image Insert Dialog Component
+interface ImageInsertModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onInsert: (url: string) => void;
+}
+
+function ImageInsertModal({ isOpen, onClose, onInsert }: ImageInsertModalProps) {
+  const [url, setUrl] = useState("");
+  const [tab, setTab] = useState<"url" | "upload">("url");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!isOpen) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước hình ảnh tối đa là 5MB!");
+      return;
+    }
+
+    setIsUploading(true);
+    // Simulate image upload to server to get URL
+    setTimeout(() => {
+      // Convert to ObjectURL as temporary mock server image URL
+      const mockUrl = URL.createObjectURL(file);
+      onInsert(mockUrl);
+      setIsUploading(false);
+      onClose();
+    }, 800);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-xl max-w-md w-full p-6 text-left">
+        <h3 className="font-bold text-sm text-[#0F172A] mb-4">Chèn hình ảnh vào nội dung</h3>
+        
+        {/* Tab switch */}
+        <div className="flex border-b border-[#E2E8F0] mb-4">
+          <button
+            type="button"
+            onClick={() => setTab("url")}
+            className={`flex-1 pb-2 text-xs font-bold transition-all border-none bg-transparent cursor-pointer ${tab === "url" ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-400"}`}
+          >
+            Đường dẫn URL
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("upload")}
+            className={`flex-1 pb-2 text-xs font-bold transition-all border-none bg-transparent cursor-pointer ${tab === "upload" ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-400"}`}
+          >
+            Tải lên từ máy tính
+          </button>
+        </div>
+
+        {tab === "url" ? (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">ĐƯỜNG DẪN ẢNH (URL)</label>
+              <input
+                type="text"
+                placeholder="https://example.com/image.jpg"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                className="w-full h-9 px-3 text-xs border border-[#E2E8F0] rounded-lg outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#E2E8F0] rounded-xl text-center hover:border-blue-300 transition-colors cursor-pointer min-h-[140px]"
+            onClick={() => !isUploading && fileInputRef.current?.click()}>
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-xs font-semibold text-slate-600">Đang tải lên máy chủ...</p>
+              </div>
+            ) : (
+              <>
+                <svg className="w-10 h-10 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <p className="text-xs font-semibold text-slate-600">Chọn ảnh từ thiết bị</p>
+                <p className="text-[10px] text-slate-400 mt-1">Định dạng JPG, PNG, tối đa 5MB</p>
+              </>
+            )}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-[#F1F5F9]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 px-4 text-xs font-semibold border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors bg-white text-slate-600"
+            disabled={isUploading}
+          >
+            Hủy
+          </button>
+          {tab === "url" && (
+            <button
+              type="button"
+              onClick={() => {
+                if (url.trim()) {
+                  onInsert(url.trim());
+                  onClose();
+                  setUrl("");
+                }
+              }}
+              disabled={!url.trim() || isUploading}
+              className="h-9 px-4 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg cursor-pointer border-none"
+            >
+              Chèn ảnh
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Dashboard component
+interface DashboardProps {
+  rows: Article[];
+  setRows: React.Dispatch<React.SetStateAction<Article[]>>;
+  onEdit: (a: Article) => void;
+  onCreate: () => void;
+}
+
+function Dashboard({ rows, setRows, onEdit, onCreate }: DashboardProps) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | Status>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const filtered = rows.filter(r => {
     const matchSearch = r.title.toLowerCase().includes(search.toLowerCase()) ||
-      r.author.toLowerCase().includes(search.toLowerCase())
-    const matchFilter = filter === "all" || r.status === filter
-    return matchSearch && matchFilter
-  })
+      r.author.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "all" || r.status === filter;
+    return matchSearch && matchFilter;
+  });
 
   function toggleHide(id: number) {
     setRows(rs => rs.map(r => r.id === id
-      ? { ...r, status: r.status === "hidden" ? "published" : "hidden" }
-      : r))
+      ? { ...r, status: r.status === "hidden" ? "published" : "hidden" as Status }
+      : r));
   }
 
   function softDelete(id: number) {
-    setRows(rs => rs.filter(r => r.id !== id))
+    setRows(rs => rs.filter(r => r.id !== id));
   }
 
   const filterLabels: Record<string, string> = {
     all: "Tất cả", published: "Đã xuất bản", draft: "Bản nháp", hidden: "Tạm ẩn",
-  }
+  };
 
   return (
-    <div className="flex-grow min-h-0 overflow-y-auto" style={{ background: "#F8FAFC" }}>
+    <div className="flex-grow min-h-0 overflow-y-auto text-left" style={{ background: "#F8FAFC" }}>
       <div className="mx-auto py-6 px-8" style={{ maxWidth: 1200 }}>
 
         {/* Header */}
@@ -187,8 +315,8 @@ function Dashboard({ onEdit, onCreate }: { onEdit: (a: Article | null) => void; 
             {filterOpen && (
               <div className="absolute right-0 top-full mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-lg z-20 overflow-hidden py-1" style={{ minWidth: 160 }}>
                 {(["all", "published", "draft", "hidden"] as const).map(opt => (
-                  <button key={opt} onMouseDown={() => { setFilter(opt); setFilterOpen(false) }}
-                    className="w-full text-left px-4 py-2 text-xs font-medium hover:bg-blue-50 transition-colors flex items-center justify-between border-none bg-transparent cursor-pointer"
+                  <button key={opt} onMouseDown={() => { setFilter(opt); setFilterOpen(false); }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-blue-50 transition-colors flex items-center justify-between border-none bg-transparent cursor-pointer"
                     style={{ color: filter === opt ? "#2563EB" : "#374151" }}>
                     {filterLabels[opt]}
                     {filter === opt && <Ico d="M20 6 9 17l-5-5" cls="w-3.5 h-3.5" style={{ color: "#2563EB" }} />}
@@ -221,7 +349,7 @@ function Dashboard({ onEdit, onCreate }: { onEdit: (a: Article | null) => void; 
                 </tr>
               )}
               {filtered.map((row, i) => {
-                const st = STATUS_CFG[row.status]
+                const st = STATUS_CFG[row.status];
                 return (
                   <tr key={row.id}
                     style={{ borderBottom: i < filtered.length - 1 ? "1px solid #F8FAFC" : "none" }}
@@ -231,7 +359,7 @@ function Dashboard({ onEdit, onCreate }: { onEdit: (a: Article | null) => void; 
                       <div className="flex items-center gap-3">
                         <Thumb kind={row.thumb} size={40} />
                         <p className="font-semibold leading-snug line-clamp-2" style={{ fontSize: 13, color: "#0F172A" }}>
-                          {row.title}
+                          {row.title || "(Chưa có tiêu đề)"}
                         </p>
                       </div>
                     </td>
@@ -272,7 +400,7 @@ function Dashboard({ onEdit, onCreate }: { onEdit: (a: Article | null) => void; 
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -286,46 +414,106 @@ function Dashboard({ onEdit, onCreate }: { onEdit: (a: Article | null) => void; 
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function Editor({ article, onBack }: { article: Article | null; onBack: () => void }) {
-  const [title, setTitle]       = useState(article?.title ?? "")
-  const [body, setBody]         = useState(article ? "Nội dung bài viết y khoa được nhập tại đây. Quản lý bài viết bằng trình soạn thảo văn bản phong phú với đầy đủ tính năng định dạng." : "")
-  const [author, setAuthor]     = useState(article ? `${article.author} - ${article.source}` : "")
-  const [pubStatus, setPubStatus] = useState<"draft" | "publish">(article?.status === "published" ? "publish" : "draft")
-  const [hasImage, setHasImage] = useState(!!article)
-  const [imgHover, setImgHover] = useState(false)
-  const [boldOn, setBoldOn]     = useState(false)
-  const [italicOn, setItalicOn] = useState(false)
-  const [underOn, setUnderOn]   = useState(false)
-  const [titleTouched, setTitleTouched] = useState(false)
-  const [saved, setSaved]       = useState(false)
+// Editor component with Tiptap WYSIWYG
+interface EditorProps {
+  article: Article;
+  onBack: () => void;
+  onSave: (updated: Article) => void;
+}
 
-  const dateInputRef = useRef<HTMLInputElement>(null)
+function Editor({ article, onBack, onSave }: EditorProps) {
+  const [title, setTitle] = useState(article.title);
+  const [body, setBody] = useState(article.body);
+  const [author, setAuthor] = useState(article.author);
+  const [source, setSource] = useState(article.source);
+  const [pubStatus, setPubStatus] = useState<"draft" | "publish">(article.status === "published" ? "publish" : "draft");
+  const [hasImage, setHasImage] = useState(!!article.thumb);
+  const [imgHover, setImgHover] = useState(false);
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
-  const titleError = titleTouched && !title.trim() ? "Tiêu đề bài viết không được để trống" : undefined
+  const titleError = titleTouched && !title.trim() ? "Tiêu đề bài viết không được để trống" : undefined;
+
+  // Initialize Tiptap Editor
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Image,
+      Link.configure({
+        openOnClick: false,
+      }),
+    ],
+    content: article.body || "<p>Nhập nội dung bài viết y khoa tại đây...</p>",
+    onUpdate: ({ editor }) => {
+      setBody(editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    return () => {
+      editor?.destroy();
+    };
+  }, [editor]);
 
   function handleSave() {
-    setTitleTouched(true)
-    if (!title.trim()) return
-    setSaved(true)
+    setTitleTouched(true);
+    if (!title.trim()) return;
+    
+    const updated: Article = {
+      ...article,
+      title: title.trim(),
+      body: body,
+      author: author.trim() || "Bác sĩ",
+      source: source.trim() || "HMS News",
+      status: pubStatus === "publish" ? "published" : "draft",
+      updated: new Date().toLocaleString("vi-VN"),
+      thumb: hasImage ? "brain" : "",
+    };
+
+    setSaved(true);
     setTimeout(() => {
-      setSaved(false)
-      onBack()
-    }, 1500)
+      setSaved(false);
+      onSave(updated);
+    }, 1200);
   }
 
   const toolBtn = (active: boolean, onClick: () => void, icon: string | string[], tip: string) => (
     <button type="button" onClick={onClick} title={tip}
-      className="w-8 h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer border-none bg-transparent"
+      className="w-8 h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer border-none bg-transparent hover:bg-slate-100"
       style={{ background: active ? "#EFF6FF" : "transparent", color: active ? "#2563EB" : "#64748B" }}>
       <Ico d={icon} cls="w-3.5 h-3.5" />
     </button>
-  )
+  );
+
+  const insertLink = () => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("Nhập liên kết (URL):", previousUrl || "https://");
+    
+    // empty = unset link
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    
+    if (url) {
+      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    }
+  };
+
+  const insertImage = (url: string) => {
+    if (editor) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto" style={{ background: "#F8FAFC" }}>
+    <div className="flex-grow flex flex-col min-h-0 overflow-y-auto text-left" style={{ background: "#F8FAFC" }}>
       
       {/* Toast */}
       <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
@@ -337,7 +525,7 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
       </div>
 
       {/* Main workspace */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-grow overflow-y-auto px-8 py-6">
         <div className="mx-auto flex gap-6" style={{ maxWidth: 1200 }}>
 
           {/* Left 70% — Content form */}
@@ -354,7 +542,7 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
               </div>
               <input
                 value={title}
-                onChange={e => { if (e.target.value.length <= 150) { setTitle(e.target.value); setTitleTouched(false) } }}
+                onChange={e => { if (e.target.value.length <= 150) { setTitle(e.target.value); setTitleTouched(false); } }}
                 onBlur={() => setTitleTouched(true)}
                 placeholder="Nhập tiêu đề bài viết y khoa..."
                 className="w-full outline-none border rounded-xl px-4 py-3 transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
@@ -365,47 +553,43 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
                 }}
               />
               {titleError && (
-                <div className="flex items-center gap-1 mt-1.5">
+                <div className="flex items-center gap-1.5 mt-2">
                   <Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" cls="w-3.5 h-3.5 shrink-0" style={{ color: "#EF4444" }} />
                   <p style={{ fontSize: 11, color: "#EF4444" }}>{titleError}</p>
                 </div>
               )}
             </div>
 
-            {/* Rich text editor */}
-            <div className="bg-white rounded-2xl overflow-hidden border border-[#E2E8F0]"
+            {/* Rich text editor (Tiptap) */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-[#E2E8F0] flex flex-col"
               style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04)" }}>
-              <div className="px-6 pt-5 pb-2 border-b border-[#F1F5F9]">
+              
+              <div className="px-6 pt-5 pb-2 border-b border-[#F1F5F9] shrink-0">
                 <FLabel required>Nội dung bài viết</FLabel>
                 {/* Toolbar */}
-                <div className="flex items-center gap-0.5 mt-3 pb-2">
-                  {toolBtn(boldOn, () => setBoldOn(b => !b), ic.bold, "Đậm")}
-                  {toolBtn(italicOn, () => setItalicOn(b => !b), ic.italic, "Nghiêng")}
-                  {toolBtn(underOn, () => setUnderOn(b => !b), ic.underline, "Gạch chân")}
-                  <div className="w-px h-5 mx-1 bg-[#E2E8F0]" />
-                  {toolBtn(false, () => {}, ic.list, "Danh sách không thứ tự")}
-                  {toolBtn(false, () => {}, ic.listOl, "Danh sách có thứ tự")}
-                  <div className="w-px h-5 mx-1 bg-[#E2E8F0]" />
-                  {toolBtn(false, () => {}, ic.link, "Chèn liên kết")}
-                </div>
+                {editor && (
+                  <div className="flex items-center gap-0.5 mt-3 pb-2 flex-wrap">
+                    {toolBtn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), ic.bold, "Đậm")}
+                    {toolBtn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), ic.italic, "Nghiêng")}
+                    {toolBtn(editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), ic.underline, "Gạch chân")}
+                    <div className="w-px h-5 mx-1 bg-[#E2E8F0]" />
+                    {toolBtn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), ic.list, "Danh sách tròn")}
+                    {toolBtn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), ic.listOl, "Danh sách số")}
+                    <div className="w-px h-5 mx-1 bg-[#E2E8F0]" />
+                    {toolBtn(editor.isActive("link"), insertLink, ic.link, "Chèn liên kết")}
+                    {toolBtn(false, () => setImageModalOpen(true), ic.image, "Chèn hình ảnh")}
+                  </div>
+                )}
               </div>
-              <div className="relative px-6 pb-6 pt-4">
-                <textarea
-                  value={body}
-                  onChange={e => { if (e.target.value.length <= 10000) setBody(e.target.value) }}
-                  placeholder="Nhập nội dung bài viết y khoa tại đây..."
-                  className="w-full outline-none resize-none border border-[#E2E8F0] rounded-xl p-4 transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                  style={{
-                    fontSize: 13, color: "#0F172A", lineHeight: 1.7, minHeight: 280,
-                    fontStyle: italicOn ? "italic" : "normal",
-                    fontWeight: boldOn ? 700 : 400,
-                    textDecoration: underOn ? "underline" : "none",
-                  }}
+
+              {/* Editor Workspace */}
+              <div className="px-6 pb-6 pt-4 flex-grow min-h-[320px] overflow-y-auto">
+                <EditorContent 
+                  editor={editor} 
+                  className="w-full min-h-[280px] p-4 border border-[#E2E8F0] rounded-xl focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-100 outline-none" 
                 />
-                <div className="flex justify-end mt-1">
-                  <span style={{ fontSize: 11, color: body.length > 9000 ? "#EF4444" : "#94A3B8" }}>
-                    {body.length}/10,000
-                  </span>
+                <div className="flex justify-end mt-1 text-[11px] text-slate-400 font-semibold">
+                  {body.length}/10,000 ký tự
                 </div>
               </div>
             </div>
@@ -413,14 +597,28 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
             {/* Author & source */}
             <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0]"
               style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04)" }}>
-              <FLabel required>Tác giả &amp; Nguồn trích dẫn</FLabel>
-              <input
-                value={author}
-                onChange={e => setAuthor(e.target.value)}
-                placeholder="Nhập tên tác giả, nguồn trích dẫn y khoa hoặc liên kết tham khảo..."
-                className="w-full outline-none border border-[#E2E8F0] rounded-xl px-4 py-2.5 text-sm transition-all focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                style={{ color: "#0F172A", fontSize: 13 }}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <FLabel required>Tác giả</FLabel>
+                  <input
+                    value={author}
+                    onChange={e => setAuthor(e.target.value)}
+                    placeholder="Nhập tên tác giả..."
+                    className="w-full h-10 outline-none border border-[#E2E8F0] rounded-xl px-4 text-xs focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                    style={{ color: "#0F172A" }}
+                  />
+                </div>
+                <div>
+                  <FLabel required>Nguồn trích dẫn</FLabel>
+                  <input
+                    value={source}
+                    onChange={e => setSource(e.target.value)}
+                    placeholder="Nhập nguồn trích dẫn y khoa..."
+                    className="w-full h-10 outline-none border border-[#E2E8F0] rounded-xl px-4 text-xs focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                    style={{ color: "#0F172A" }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -474,7 +672,7 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
                   { val: "publish", label: "Xuất bản trực tiếp",  sub: "Bài viết sẽ hiển thị ngay"  },
                 ] as const).map(opt => (
                   <label key={opt.val}
-                    className="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+                    className="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all text-left"
                     style={{
                       borderColor: pubStatus === opt.val ? "#BFDBFE" : "#E2E8F0",
                       background: pubStatus === opt.val ? "#EFF6FF" : "transparent",
@@ -483,7 +681,7 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
                       onChange={() => setPubStatus(opt.val)}
                       className="mt-0.5 accent-blue-600 cursor-pointer" />
                     <div>
-                      <p className="font-semibold" style={{ fontSize: 12, color: pubStatus === opt.val ? "#1D4ED8" : "#374151" }}>
+                      <p className="font-semibold text-xs" style={{ color: pubStatus === opt.val ? "#1D4ED8" : "#374151" }}>
                         {opt.label}
                       </p>
                       <p style={{ fontSize: 10, color: "#94A3B8", marginTop: 1 }}>{opt.sub}</p>
@@ -495,7 +693,7 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
               {/* Auto-save indicator */}
               <div className="flex items-center gap-1.5 mt-4 pt-4 border-t border-[#F1F5F9]">
                 <Ico d={ic.checkCircle} cls="w-3.5 h-3.5 shrink-0" style={{ color: "#10B981" }} />
-                <p style={{ fontSize: 11, color: "#94A3B8" }}>Tự động lưu nháp thành công lúc 17:28:30</p>
+                <p style={{ fontSize: 11, color: "#94A3B8" }}>Tự động lưu nháp thành công</p>
               </div>
             </div>
           </div>
@@ -505,8 +703,8 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
       {/* Bottom action bar */}
       <div className="bg-white border-t border-[#E2E8F0] px-8 py-4 flex items-center justify-end gap-3 shrink-0">
         <button type="button" onClick={onBack}
-          className="h-10 px-6 text-sm font-semibold rounded-xl border cursor-pointer hover:bg-slate-50 transition-colors bg-white"
-          style={{ borderColor: "#E2E8F0", color: "#374151" }}>
+          className="h-10 px-6 text-sm font-semibold rounded-xl border cursor-pointer hover:bg-slate-50 transition-colors bg-white text-slate-600"
+          style={{ borderColor: "#E2E8F0" }}>
           Hủy
         </button>
         <button type="button" onClick={handleSave}
@@ -515,28 +713,60 @@ function Editor({ article, onBack }: { article: Article | null; onBack: () => vo
           Lưu bài viết
         </button>
       </div>
+
+      <ImageInsertModal 
+        isOpen={imageModalOpen}
+        onClose={() => setImageModalOpen(false)}
+        onInsert={insertImage}
+      />
     </div>
-  )
+  );
 }
 
-type Screen = { view: "dashboard" } | { view: "editor"; article: Article | null }
+type Screen = { view: "dashboard" } | { view: "editor"; article: Article };
 
 export default function MedicalNewsPage() {
-  const [screen, setScreen] = useState<Screen>({ view: "dashboard" })
+  const [screen, setScreen] = useState<Screen>({ view: "dashboard" });
+  const [rows, setRows] = useState<Article[]>(SAMPLE);
+
+  const handleCreateDraft = () => {
+    // Immediately create a record with 'draft' status
+    const newDraft: Article = {
+      id: rows.length + 1,
+      title: "",
+      body: "<p>Nhập nội dung bài viết mới tại đây...</p>",
+      author: "BS. Nguyễn Văn A",
+      source: "HMS News",
+      status: "draft",
+      updated: new Date().toLocaleString("vi-VN"),
+      thumb: "brain",
+    };
+
+    setRows(prev => [newDraft, ...prev]);
+    setScreen({ view: "editor", article: newDraft });
+  };
+
+  const handleSaveArticle = (updatedArticle: Article) => {
+    setRows(prev => prev.map(r => r.id === updatedArticle.id ? updatedArticle : r));
+    setScreen({ view: "dashboard" });
+  };
 
   if (screen.view === "editor") {
     return (
       <Editor
         article={screen.article}
         onBack={() => setScreen({ view: "dashboard" })}
+        onSave={handleSaveArticle}
       />
-    )
+    );
   }
 
   return (
     <Dashboard
+      rows={rows}
+      setRows={setRows}
       onEdit={a => setScreen({ view: "editor", article: a })}
-      onCreate={() => setScreen({ view: "editor", article: null })}
+      onCreate={handleCreateDraft}
     />
-  )
+  );
 }
