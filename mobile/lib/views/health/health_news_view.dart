@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_colors.dart';
+import '../../core/utils/html_utils.dart';
 import '../../models/dto/news_response.dart';
 import '../../view_models/health_news_viewmodel.dart';
 
@@ -335,7 +338,7 @@ class _ArticleItemCard extends StatelessWidget {
 
                 // Summary
                 Text(
-                  article.summary,
+                  HtmlUtils.stripHtml(article.summary),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -553,63 +556,123 @@ class _HealthNewsDetailScaffold extends StatelessWidget {
             ],
 
             // Summary quote box
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.sky100.withAlpha(70),
-                borderRadius: BorderRadius.circular(12),
-                border: const Border(
-                  left: BorderSide(color: AppColors.primary, width: 4),
+            if (article.summary.trim().isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.sky100.withAlpha(70),
+                  borderRadius: BorderRadius.circular(12),
+                  border: const Border(
+                    left: BorderSide(color: AppColors.primary, width: 4),
+                  ),
                 ),
+                child: HtmlUtils.isHtml(article.summary)
+                    ? HtmlWidget(
+                        article.summary,
+                        textStyle: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          height: 1.5,
+                          color: AppColors.textPrimary,
+                        ),
+                        customStylesBuilder: (element) {
+                          if (element.localName == 'p') {
+                            return {'margin': '0 0 6px 0'};
+                          }
+                          return null;
+                        },
+                      )
+                    : Text(
+                        article.summary,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          height: 1.45,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
               ),
-              child: Text(
-                article.summary,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontStyle: FontStyle.italic,
-                  height: 1.45,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+            ],
 
             // Body content
-            Text(
+            HtmlWidget(
               article.content,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                height: 1.7,
+              textStyle: GoogleFonts.inter(
+                fontSize: 15,
+                height: 1.65,
                 color: AppColors.textPrimary,
               ),
+              customStylesBuilder: (element) {
+                switch (element.localName) {
+                  case 'a':
+                    return {
+                      'color': '#0284C7',
+                      'text-decoration': 'none',
+                      'font-weight': '600',
+                    };
+                  case 'p':
+                    return {
+                      'margin-bottom': '12px',
+                      'line-height': '1.65',
+                    };
+                  case 'h1':
+                    return {
+                      'font-size': '20px',
+                      'font-weight': '700',
+                      'margin-top': '18px',
+                      'margin-bottom': '8px',
+                      'color': '#0F172A',
+                    };
+                  case 'h2':
+                    return {
+                      'font-size': '18px',
+                      'font-weight': '700',
+                      'margin-top': '16px',
+                      'margin-bottom': '8px',
+                      'color': '#0F172A',
+                    };
+                  case 'h3':
+                    return {
+                      'font-size': '16px',
+                      'font-weight': '600',
+                      'margin-top': '14px',
+                      'margin-bottom': '6px',
+                      'color': '#0F172A',
+                    };
+                  case 'blockquote':
+                    return {
+                      'border-left': '4px solid #0284C7',
+                      'padding-left': '12px',
+                      'font-style': 'italic',
+                      'color': '#475569',
+                      'margin': '12px 0',
+                    };
+                  case 'ul':
+                  case 'ol':
+                    return {
+                      'padding-left': '20px',
+                      'margin-bottom': '12px',
+                    };
+                  case 'li':
+                    return {
+                      'margin-bottom': '6px',
+                    };
+                  default:
+                    return null;
+                }
+              },
+              onTapUrl: (url) async {
+                final uri = Uri.tryParse(url);
+                if (uri != null && await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  return true;
+                }
+                return false;
+              },
             ),
             const SizedBox(height: 24),
-
-            // Attached Content Images (Gallery)
-            if (article.image.isNotEmpty) ...[
-              Text(
-                'Hình ảnh đính kèm',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              ...article.image.map((img) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        img.url,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  )),
-              const SizedBox(height: 16),
-            ],
 
             // Disclaimer
             Container(
