@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ShieldCheck, MessageSquare, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
+import { MessageSquare, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import { requestForgotPasswordApiCall, verifyForgotPasswordOtpApiCall } from "@/lib/auth";
 
 const ROLE_CODES = ["ADMIN", "DOCTOR", "STAFF", "RESEARCHER"];
@@ -115,67 +115,6 @@ export default function ForgotForm({ initialPhone, initialRoleIndex, onBack, onS
     }
   };
 
-  if (!otpSent) {
-    return (
-      <form onSubmit={(e) => { e.preventDefault(); handleRequestOtp(); }} className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
-        <div className="flex items-center gap-2.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-3.5 py-2 text-[#1D4ED8] text-xs font-semibold">
-          <ShieldCheck className="h-4.5 w-4.5 shrink-0 text-[#0EA5E9]" />
-          <span className="uppercase tracking-wider">Khôi phục mật khẩu</span>
-        </div>
-
-        <div>
-          <h2 className="font-bold text-neutral-900 text-2xl tracking-tight">
-            Yêu cầu mã xác minh
-          </h2>
-          <p className="mt-2 text-xs text-[#64748B] leading-relaxed">
-            Hệ thống sẽ gửi mã OTP gồm 6 chữ số đến số điện thoại đăng ký.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="forgot-phone" className="block text-xs font-semibold mb-1.5 text-[#0F172A]">
-              Số điện thoại của bạn
-            </label>
-            <input
-              id="forgot-phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="ví dụ: 0912345678"
-              className="w-full px-3 text-sm border border-[#E2E8F0] rounded-lg outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 bg-white"
-              style={{ height: 40 }}
-            />
-          </div>
-        </div>
-
-        {error && (
-          <div className="flex items-start gap-2.5 rounded-xl bg-red-50 p-3 border border-red-100 text-xs text-red-600 font-medium">
-            <AlertCircle size={16} className="mt-0.5 text-red-500 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full font-bold text-sm text-white rounded-lg transition-all cursor-pointer hover:opacity-90 active:scale-[0.99] border-none bg-[#0EA5E9] flex items-center justify-center"
-          style={{ height: 44, boxShadow: "0 2px 8px rgba(14,165,233,0.35)", marginTop: 4 }}
-        >
-          {loading ? <Loader2 className="animate-spin h-5 w-5 text-white" /> : "Gửi mã xác minh OTP"}
-        </button>
-
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex w-full h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-semibold text-[#64748B] hover:bg-slate-50 transition-all bg-white cursor-pointer"
-        >
-          <ArrowLeft size={13} /> Quay lại Đăng nhập
-        </button>
-      </form>
-    );
-  }
-
   return (
     <form onSubmit={handleVerifyOtp} className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
       <div className="flex items-center gap-2.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-3.5 py-2 text-[#1D4ED8] text-xs font-semibold">
@@ -245,7 +184,7 @@ export default function ForgotForm({ initialPhone, initialRoleIndex, onBack, onS
 
       <button
         type="button"
-        onClick={() => setOtpSent(false)}
+        onClick={onBack}
         className="flex w-full h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-semibold text-[#64748B] hover:bg-slate-50 transition-all bg-white cursor-pointer"
       >
         <ArrowLeft size={13} /> Thay đổi Số điện thoại
