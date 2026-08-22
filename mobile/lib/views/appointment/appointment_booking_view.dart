@@ -917,57 +917,37 @@ class _SummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderLight),
       ),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.receipt_long, size: 16, color: AppColors.primary),
-                        SizedBox(width: 8),
-                        Text('Tóm tắt lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.green100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text('Chờ xác nhận', style: TextStyle(color: Color(0xFF16A34A), fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.receipt_long, size: 16, color: AppColors.primary),
+                  SizedBox(width: 8),
+                  Text('Tóm tắt lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.green100,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 24),
-                _SummaryRow(icon: Icons.calendar_today, label: 'Ngày khám', value: dateStr),
-                const SizedBox(height: 16),
-                _SummaryRow(icon: Icons.access_time, label: 'Khung giờ', value: timeStr),
-                const SizedBox(height: 16),
-                _SummaryRow(icon: Icons.person_outline, label: 'Bác sĩ', value: docName),
-                const SizedBox(height: 16),
-                _SummaryRow(icon: Icons.business, label: 'Phòng khám', value: roomName),
-              ],
-            ),
+                child: const Text('Chờ xác nhận', style: TextStyle(color: Color(0xFF16A34A), fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: const BoxDecoration(
-              color: AppColors.yellow100,
-              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.notifications_active_outlined, size: 14, color: AppColors.amber600),
-                SizedBox(width: 8),
-                Expanded(child: Text('Thông báo sẽ được gửi qua SMS sau khi đặt lịch thành công.', style: TextStyle(fontSize: 11, color: AppColors.amber600))),
-              ],
-            ),
-          )
+          const SizedBox(height: 24),
+          _SummaryRow(icon: Icons.calendar_today, label: 'Ngày khám', value: dateStr),
+          const SizedBox(height: 16),
+          _SummaryRow(icon: Icons.access_time, label: 'Khung giờ', value: timeStr),
+          const SizedBox(height: 16),
+          _SummaryRow(icon: Icons.person_outline, label: 'Bác sĩ', value: docName),
+          const SizedBox(height: 16),
+          _SummaryRow(icon: Icons.business, label: 'Phòng khám', value: roomName),
         ],
       ),
     );
