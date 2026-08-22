@@ -56,6 +56,7 @@ interface Article {
   coverPhoto?: Attachment | null;
   status: Status;
   uploadTime: string;
+  updateTime: string;
 }
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; color: string }> = {
@@ -396,7 +397,7 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
           <table className="w-full" style={{ borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #F1F5F9", background: "#FAFAFA" }}>
-                {["Tiêu đề bài viết", "Trạng thái", "Ngày cập nhật", "Thao tác"].map(h => (
+                {["Tiêu đề bài viết", "Trạng thái", "Ngày cập nhật / Xuất bản", "Thao tác"].map(h => (
                   <th key={h} className="text-left px-5 py-3.5" style={{ fontSize: 11, color: "#94A3B8", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                     {h}
                   </th>
@@ -447,8 +448,13 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
                       </span>
                     </td>
                     {/* Date */}
-                    <td className="px-5 py-4 whitespace-nowrap" style={{ fontSize: 13, color: "#64748B" }}>
-                      {formatDate(row.uploadTime)}
+                    <td className="px-5 py-4 whitespace-nowrap text-left" style={{ fontSize: 12, color: "#64748B" }}>
+                      <div>Cập nhật: {formatDate(row.updateTime || row.uploadTime)}</div>
+                      {row.status === "PUBLISHED" && (
+                        <div className="mt-1 text-emerald-600 font-medium" style={{ fontSize: 11 }}>
+                          Xuất bản: {formatDate(row.uploadTime)}
+                        </div>
+                      )}
                     </td>
                     {/* Actions */}
                     <td className="px-5 py-4">
