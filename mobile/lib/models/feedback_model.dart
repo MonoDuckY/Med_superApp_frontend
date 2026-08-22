@@ -1,62 +1,127 @@
-// ── Feedback Model (UC-12) ────────────────────────────────────────────────────
+// ── Feedback Model (UC-13) ────────────────────────────────────────────────────
 
-/// Represents a completed appointment that can be reviewed
-class CompletedAppointmentOption {
+/// Danh mục dịch vụ bệnh viện phục vụ đánh giá (Service Feedback)
+class HospitalServiceOption {
   final String id;
-  final String specialty;
-  final String doctorName;
-  final DateTime completedAt;
+  final String label;
+  final String description;
 
-  const CompletedAppointmentOption({
+  const HospitalServiceOption({
     required this.id,
-    required this.specialty,
-    required this.doctorName,
-    required this.completedAt,
+    required this.label,
+    required this.description,
   });
 
-  /// Human-readable label shown in the dropdown
-  String get displayLabel {
-    final d = completedAt;
-    final day = d.day.toString().padLeft(2, '0');
-    final month = d.month.toString().padLeft(2, '0');
-    return '$specialty · $doctorName · $day/$month/${d.year}';
-  }
+  static const List<HospitalServiceOption> defaultServices = [
+    HospitalServiceOption(
+      id: 'CLINICAL_QUALITY',
+      label: 'Chất lượng khám chữa bệnh',
+      description: 'Chuyên môn bác sĩ, tư vấn điều trị và hiệu quả khám',
+    ),
+    HospitalServiceOption(
+      id: 'FACILITIES',
+      label: 'Cơ sở vật chất & Trang thiết bị',
+      description: 'Phòng khám, máy móc, vệ sinh và tiện nghi bệnh viện',
+    ),
+    HospitalServiceOption(
+      id: 'BOOKING_RECEPTION',
+      label: 'Dịch vụ đặt lịch & Tiếp đón',
+      description: 'Quy trình tiếp nhận, hướng dẫn và thủ tục đăng ký',
+    ),
+    HospitalServiceOption(
+      id: 'STAFF_ATTITUDE',
+      label: 'Thái độ phục vụ của nhân viên',
+      description: 'Sự nhiệt tình, chu đáo và tận tâm của nhân viên y tế',
+    ),
+    HospitalServiceOption(
+      id: 'WAIT_TIME',
+      label: 'Thời gian chờ đợi & Quy trình',
+      description: 'Thời gian chờ khám, xét nghiệm và thủ tục hành chính',
+    ),
+    HospitalServiceOption(
+      id: 'OTHER',
+      label: 'Dịch vụ khác',
+      description: 'Các ý kiến và đề xuất đóng góp khác',
+    ),
+  ];
 }
 
 // ── Highlight Tags ────────────────────────────────────────────────────────────
 
 enum FeedbackHighlight {
   attentiveDoctor('Bác sĩ tận tâm'),
-  longWait('Chờ đợi lâu'),
+  clearExplanation('Giải thích rõ ràng'),
   goodFacilities('Cơ sở vật chất tốt'),
   friendlyStaff('Nhân viên thân thiện'),
-  clearExplanation('Giải thích rõ ràng'),
+  fastProcess('Quy trình nhanh gọn'),
+  longWait('Chờ đợi lâu'),
   complicatedProcedures('Thủ tục phức tạp');
 
   final String label;
   const FeedbackHighlight(this.label);
 }
 
-// ── Feedback Draft (transient form state) ─────────────────────────────────────
+// ── Feedback Item (Dữ liệu nhận từ Backend API) ───────────────────────────────
+
+class FeedbackItem {
+  final String feedbackId;
+  final String? senderId;
+  final String? receiverId;
+  final String content;
+  final String status;
+  final int rating;
+  final String serviceType;
+  final String? response;
+
+  const FeedbackItem({
+    required this.feedbackId,
+    this.senderId,
+    this.receiverId,
+    required this.content,
+    required this.status,
+    required this.rating,
+    required this.serviceType,
+    this.response,
+  });
+
+  factory FeedbackItem.fromJson(Map<String, dynamic> json) {
+    return FeedbackItem(
+      feedbackId: json['feedbackId']?.toString() ?? '',
+      senderId: json['senderId']?.toString(),
+      receiverId: json['receiverId']?.toString(),
+      content: json['content']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'SUBMITTED',
+      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      serviceType: json['serviceType']?.toString() ?? '',
+      response: json['response']?.toString(),
+    );
+  }
+
+  bool get isResponded =>
+      status.toUpperCase() == 'RESPONDED' || (response != null && response!.isNotEmpty);
+
+  String get statusLabel => isResponded ? 'Đã phản hồi' : 'Chờ phản hồi';
+}
+
+// ── Feedback Draft (trạng thái form đang nhập) ────────────────────────────────
 
 class FeedbackDraft {
-  CompletedAppointmentOption? selectedAppointment;
-  int starRating; // 0 = not rated yet, 1–5
+  HospitalServiceOption? selectedService;
+  int starRating; // 0 = chưa đánh giá, 1–5
   Set<FeedbackHighlight> selectedHighlights;
   String comment;
 
   FeedbackDraft({
-    this.selectedAppointment,
+    this.selectedService,
     this.starRating = 0,
     Set<FeedbackHighlight>? selectedHighlights,
     this.comment = '',
   }) : selectedHighlights = selectedHighlights ?? {};
 
-  /// Validation: both appointment and a star rating are required to submit
-  bool get isValid =>
-      selectedAppointment != null && starRating > 0;
+  /// Validation: bắt buộc chọn dịch vụ và số sao > 0
+  bool get isValid => selectedService != null && starRating > 0;
 
-  /// Reset to empty state (used after successful submission)
+  /// Tạo bản sao trống để reset form
   FeedbackDraft get cleared => FeedbackDraft();
 }
 

@@ -55,20 +55,15 @@ class ApiClient {
     return prefs.getString(AppConstants.keyRefreshToken);
   }
 
-  /// Xóa toàn bộ token khi logout.
+  /// Xóa toàn bộ token và phiên đăng nhập khi logout.
   static Future<void> clearTokens() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Nếu dùng devBypassLogin, không logout (tránh đá văng user liên tục khi API lỗi)
-    if (prefs.getBool('is_dev_login') == true) {
-      return;
-    }
-
     await prefs.remove(AppConstants.keyAccessToken);
     await prefs.remove(AppConstants.keyRefreshToken);
     await prefs.remove(AppConstants.keyUserData);
     await prefs.remove(AppConstants.keyUserName);
     await prefs.remove(AppConstants.keyUserPhone);
+    await prefs.setBool('is_dev_login', false);
     await prefs.setBool('is_logged_in', false);
   }
 }
@@ -90,9 +85,11 @@ class _AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      // TODO (Sprint tiếp theo): Tự động refresh token và retry request
-      // Hiện tại: xóa token và để UI redirect về /login
-      await ApiClient.clearTokens();
+      final prefs = await SharedPreferences.getInstance();
+      // Nếu đang bật dev bypass thì không tự động đá văng khi API 401
+      if (prefs.getBool('is_dev_login') != true) {
+        await ApiClient.clearTokens();
+      }
     }
     handler.next(err);
   }

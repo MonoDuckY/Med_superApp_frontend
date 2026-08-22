@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/utils/l10n_extension.dart';
 
 /// Main shell that wraps all authenticated screens with a Bottom Navigation Bar.
 /// Uses go_router's ShellRoute — the [child] widget is the active tab's content.
@@ -14,55 +15,58 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  // ── Tab definitions ─────────────────────────────────────────────────────────
-  static const _tabs = [
+  List<_TabItem> _getTabs(BuildContext context) => [
     _TabItem(
-      label: 'Trang chủ',
+      label: context.l10n.home,
       icon: Icons.home_outlined,
       activeIcon: Icons.home_rounded,
       route: '/home',
     ),
     _TabItem(
-      label: 'Lịch khám',
+      label: context.l10n.appointments,
       icon: Icons.calendar_month_outlined,
       activeIcon: Icons.calendar_month_rounded,
       route: '/schedule',
     ),
     _TabItem(
-      label: 'Sức khỏe',
+      label: context.l10n.health,
       icon: Icons.favorite_border_rounded,
       activeIcon: Icons.favorite_rounded,
       route: '/health',
     ),
     _TabItem(
-      label: 'Hồ sơ',
+      label: context.l10n.profile,
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,
       route: '/profile',
     ),
   ];
 
-  int get _currentIndex {
+  int _getCurrentIndex(List<_TabItem> tabs) {
     final location = GoRouterState.of(context).uri.toString();
-    for (int i = 0; i < _tabs.length; i++) {
-      if (location.startsWith(_tabs[i].route)) return i;
+    for (int i = 0; i < tabs.length; i++) {
+      if (location.startsWith(tabs[i].route)) return i;
     }
     return 0;
   }
 
-  void _onTabTapped(int index) {
-    if (index == _currentIndex) return;
-    context.go(_tabs[index].route);
+  void _onTabTapped(List<_TabItem> tabs, int index) {
+    final currentIndex = _getCurrentIndex(tabs);
+    if (index == currentIndex) return;
+    context.go(tabs[index].route);
   }
 
   @override
   Widget build(BuildContext context) {
+    final tabs = _getTabs(context);
+    final currentIndex = _getCurrentIndex(tabs);
+
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: _BottomNav(
-        selectedIndex: _currentIndex,
-        tabs: _tabs,
-        onTabTapped: _onTabTapped,
+        selectedIndex: currentIndex,
+        tabs: tabs,
+        onTabTapped: (index) => _onTabTapped(tabs, index),
       ),
     );
   }
@@ -175,7 +179,7 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               tab.label,
-              style: GoogleFonts.inter(
+              style: AppTypography.caption.copyWith(
                 fontSize: 10,
                 fontWeight:
                     isSelected ? FontWeight.w600 : FontWeight.w400,

@@ -109,18 +109,19 @@ class RemoteAppointmentService implements IAppointmentService {
         },
       );
 
-      if (response.data['success'] != true) {
+      if (response.data is Map && response.data['success'] != true) {
         throw Exception(response.data['message'] ?? 'Lỗi khi hủy lịch');
       }
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
+      if (e.response?.data is Map) {
         final message = e.response?.data['message'];
-        if (message != null) {
-          throw Exception(message);
+        if (message != null && message.toString().isNotEmpty) {
+          throw Exception(message.toString());
         }
       }
-      throw Exception('Lỗi mạng. Không thể hủy lịch.');
+      throw Exception(e.message ?? 'Lỗi mạng. Không thể hủy lịch.');
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Lỗi hệ thống. Không thể hủy lịch.');
     }
   }

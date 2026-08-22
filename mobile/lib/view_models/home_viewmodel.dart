@@ -5,7 +5,6 @@ import '../models/appointment_models.dart';
 import '../models/health_news_model.dart';
 import '../models/vital_chart_model.dart';
 import '../services/abstract/medical_record_service_abstract.dart';
-import '../services/mock/mock_health_news_service.dart';
 import '../services/mock/mock_medical_record_service.dart';
 import '../services/remote/remote_medical_record_service.dart';
 import '../services/abstract/appointment_service_abstract.dart';
@@ -15,6 +14,9 @@ import '../core/config/environment_config.dart';
 import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
+import '../services/abstract/health_news_service_abstract.dart';
+import '../services/mock/mock_health_news_service.dart';
+import '../services/remote/remote_health_news_service.dart';
 import '../services/abstract/notification_service_abstract.dart';
 import '../services/mock/mock_notification_service.dart';
 import '../services/remote/remote_notification_service.dart';
@@ -26,7 +28,9 @@ class HomeViewModel extends ChangeNotifier {
   final IAppointmentService _appointmentService = EnvironmentConfig.isMock
       ? MockAppointmentService()
       : RemoteAppointmentService();
-  final MockHealthNewsService _newsService = MockHealthNewsService();
+  final IHealthNewsService _newsService = EnvironmentConfig.isMock
+      ? MockHealthNewsService()
+      : RemoteHealthNewsService();
   final AuthServiceAbstract _authService = EnvironmentConfig.isMock
       ? MockAuthService()
       : RemoteAuthService();
@@ -128,7 +132,12 @@ class HomeViewModel extends ChangeNotifier {
     } catch (_) {}
 
     _vitalHistory = await _buildVitalHistory();
-    _news = await _newsService.getArticles();
+    try {
+      final dtoList = await _newsService.getPublishedNews();
+      _news = dtoList.map(HealthNewsArticle.fromDto).toList();
+    } catch (_) {
+      _news = [];
+    }
 
     _isLoading = false;
     notifyListeners();

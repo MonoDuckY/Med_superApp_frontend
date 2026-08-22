@@ -76,12 +76,58 @@ class _HomeBody extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Health news
-              _SectionLabel(label: 'Tin tức & Kiến thức y khoa'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _SectionLabel(label: 'Tin tức & Kiến thức y khoa'),
+                  if (vm.news.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => context.push('/health/news'),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Xem tất cả',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 11,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
-              ...vm.news.map((article) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _NewsCard(article: article),
-                  )),
+              if (vm.news.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Chưa có bài viết mới',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...vm.news.take(3).map((article) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _NewsCard(article: article),
+                    )),
 
               const SizedBox(height: 8),
             ]),
@@ -1249,15 +1295,29 @@ class _NewsCard extends StatelessWidget {
                   ),
                 ),
 
-                // Chevron
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.textHint,
-                    size: 18,
+                // Cover image thumbnail or Chevron
+                if (article.coverUrl != null && article.coverUrl!.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      article.coverUrl!,
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
                   ),
-                ),
+                ] else ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textHint,
+                      size: 18,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
