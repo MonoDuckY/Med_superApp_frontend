@@ -7,6 +7,7 @@ import '../../core/app_colors.dart';
 import '../../models/dto/medicine_schedule_response.dart';
 import '../../view_models/medicine_schedule_viewmodel.dart';
 import '../../view_models/daily_activities_viewmodel.dart';
+import '../../view_models/health_news_viewmodel.dart';
 
 /// Tab 3 — Sức khỏe (Health Hub)
 /// Dashboard tổng hợp cho UC-08 (Daily Activities), UC-10 (Care Plan), UC-11 (Medicine Schedule).
@@ -19,6 +20,7 @@ class HealthDashboardView extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => MedicineScheduleViewModel()),
         ChangeNotifierProvider(create: (_) => DailyActivitiesViewModel()),
+        ChangeNotifierProvider(create: (_) => HealthNewsViewModel()..loadNews()),
       ],
       child: const _HealthScaffold(),
     );
@@ -907,145 +909,206 @@ class _DailyActivityCard extends StatelessWidget {
 // ── 5. Card: Kiến thức & Tin tức sức khỏe (UC-12) ───────────────────────────
 
 class _HealthNewsCard extends StatelessWidget {
+  const _HealthNewsCard();
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Tim mạch':
+        return AppColors.error;
+      case 'Dinh dưỡng':
+        return AppColors.success;
+      case 'Phòng bệnh':
+        return AppColors.teal;
+      case 'Lối sống':
+        return AppColors.purple;
+      default:
+        return AppColors.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/health/news'),
-      child: Container(
+    final newsVm = context.watch<HealthNewsViewModel>();
+    final articles = newsVm.articles.take(2).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderLight),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(4),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppColors.teal.withAlpha(15),
-                    borderRadius: BorderRadius.circular(10),
+            // Top Row (Title header & navigation)
+            InkWell(
+              onTap: () => context.push('/health/news'),
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.teal.withAlpha(15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 20,
+                      color: AppColors.teal,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.menu_book_rounded,
-                    size: 20,
-                    color: AppColors.teal,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              'Kiến thức & Tin tức',
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.teal.withAlpha(12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'Mới',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.teal,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Kiến thức & Tin tức',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Cẩm nang dinh dưỡng, lối sống & phòng bệnh',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.teal.withAlpha(12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Mới',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.teal,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          'Cẩm nang dinh dưỡng, lối sống & phòng bệnh',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: AppColors.textHint,
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: AppColors.textHint,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
 
-            // Featured Article Item 1
-            _MiniArticleTile(
-              category: 'Tim mạch',
-              categoryColor: AppColors.error,
-              title: '5 thói quen buổi sáng giúp ổn định huyết áp',
-              readTime: '3 phút đọc',
-              onTap: () => context.push('/health/news/news-001'),
-            ),
+            // Dynamic Articles or Loading / Empty state
+            if (newsVm.isLoading && newsVm.articles.isEmpty) ...[
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (articles.isNotEmpty) ...[
+              ...articles.map((article) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _MiniArticleTile(
+                      category: article.category,
+                      categoryColor: _getCategoryColor(article.category),
+                      title: article.title,
+                      readTime: article.estimatedReadTime,
+                      onTap: () => context.push('/health/news/${article.newsId}'),
+                    ),
+                  )),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.canvasColor,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 16, color: AppColors.textHint),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Chưa có bài viết mới',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
-
-            // Featured Article Item 2
-            _MiniArticleTile(
-              category: 'Dinh dưỡng',
-              categoryColor: AppColors.success,
-              title: 'Chế độ ăn DASH — giải pháp cho người có mỡ máu cao',
-              readTime: '5 phút đọc',
-              onTap: () => context.push('/health/news/news-002'),
-            ),
-            const SizedBox(height: 12),
 
             // "Xem tất cả bài viết" Link
             Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Xem tất cả bài viết y khoa',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+              child: InkWell(
+                onTap: () => context.push('/health/news'),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Xem tất cả bài viết y khoa',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
                         color: AppColors.primary,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 14,
-                      color: AppColors.primary,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
