@@ -19,6 +19,17 @@ Med_superApp_frontend/
 ### Yêu Cầu
 - Flutter SDK >= 3.10.4
 - Android Studio / Xcode
+- Java JDK 17+ (cho Android build)
+
+### Cấu Hình Biến Môi Trường (`mobile/.env`)
+Tạo file `.env` tại thư mục `mobile/` (nếu chưa có):
+```properties
+API_URL=http://10.0.2.2:8080
+```
+> **Lưu ý địa chỉ IP kết nối Backend:**
+> - **Android Emulator:** Dùng `http://10.0.2.2:8080` (trỏ về localhost máy host).
+> - **iOS Simulator:** Dùng `http://localhost:8080`.
+> - **Thiết bị thật (Android / iOS):** Dùng IP mạng LAN của máy chạy backend, ví dụ `http://192.168.1.x:8080`.
 
 ### Chạy Development
 ```bash
@@ -27,11 +38,20 @@ flutter pub get
 flutter run
 ```
 
+### Kiểm Tra Code & Test
+```bash
+# Kiểm tra lint / static analysis
+flutter analyze
+
+# Chạy unit & widget test
+flutter test
+```
+
 ### Cấu Trúc `mobile/lib/`
 ```
 lib/
-├── core/          ← constants, theme, utils
-├── models/        ← Data models
+├── core/          ← constants, theme, config, utils
+├── models/        ← Data models & DTOs
 ├── services/
 │   ├── abstract/  ← Service interfaces
 │   ├── mock/      ← Mock implementations (dùng khi chưa có API)
@@ -45,8 +65,14 @@ lib/
 ## Web — Next.js
 
 ### Yêu Cầu
-- Node.js >= 18
+- Node.js >= 18.x
 - npm / yarn / pnpm
+
+### Cấu Hình Biến Môi Trường (`nextjs/.env.local`)
+Tạo file `.env.local` tại thư mục `nextjs/`:
+```properties
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
 
 ### Chạy Development
 ```bash
@@ -54,6 +80,15 @@ cd nextjs
 npm install
 npm run dev
 # Mở http://localhost:3000
+```
+
+### Build & Lint
+```bash
+# Kiểm tra lint
+npm run lint
+
+# Build production
+npm run build
 ```
 
 ### Cấu Trúc `nextjs/src/`
@@ -71,7 +106,6 @@ src/
 └── types/         ← TypeScript interfaces
 ```
 
-
 ---
 
 ## Quy Ước Nhánh Git
@@ -87,7 +121,7 @@ src/
 
 ## API Communication
 
-Mọi API đều tuân theo format chuẩn:
+Mọi API giao tiếp với Backend đều tuân theo format chuẩn:
 ```json
 {
   "success": boolean,
@@ -96,16 +130,3 @@ Mọi API đều tuân theo format chuẩn:
   "errorCode": string | null
 }
 ```
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
