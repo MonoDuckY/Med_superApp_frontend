@@ -8,7 +8,6 @@ import {
   UserPlus,
   LogOut,
   ChevronRight,
-  Bell,
   Loader2,
   Newspaper,
   MessageSquare,
@@ -161,13 +160,6 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none border-none bg-transparent">
-                <Bell size={14} strokeWidth={1.75} />
-              </button>
-            </div>
-
-            <div className="h-8 w-px bg-[#E2E8F0] hidden sm:block" />
 
             <div className="flex items-center gap-3 shrink-0">
               <div className="text-right hidden sm:block">

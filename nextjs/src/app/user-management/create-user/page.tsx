@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
-  FileText, Settings, Bell, ChevronDown, ChevronRight, X,
+  FileText, Settings, ChevronDown, ChevronRight, X,
   CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Eye, EyeOff, HeartPulse, User
 } from "lucide-react";
 
@@ -386,10 +386,6 @@ export default function CreateUserPage() {
             <span className="font-semibold text-[#0F172A]">Tạo người dùng</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors text-[#64748B] cursor-pointer">
-              <Bell size={15} />
-              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 rounded-full flex items-center justify-center text-white font-bold" style={{ fontSize: 8 }}>3</span>
-            </button>
             <div ref={profileRef} className="relative">
               <div 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
