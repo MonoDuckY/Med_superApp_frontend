@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
+import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import { requestForgotPasswordApiCall, verifyForgotPasswordOtpApiCall } from "@/lib/auth";
 
 const ROLE_CODES = ["ADMIN", "DOCTOR", "STAFF", "RESEARCHER"];
@@ -117,10 +117,7 @@ export default function ForgotForm({ initialPhone, initialRoleIndex, onBack, onS
 
   return (
     <form onSubmit={handleVerifyOtp} className="flex flex-col gap-6 animate-[fadeIn_0.2s_ease-out]">
-      <div className="flex items-center gap-2.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] px-3.5 py-2 text-[#1D4ED8] text-xs font-semibold">
-        <MessageSquare className="h-4.5 w-4.5 shrink-0 text-[#0EA5E9]" />
-        <span className="uppercase tracking-wider">Xác minh bảo mật</span>
-      </div>
+
 
       <div>
         <h2 className="font-bold text-neutral-900 text-2xl tracking-tight">
