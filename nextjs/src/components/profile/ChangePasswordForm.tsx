@@ -138,14 +138,6 @@ export default function ChangePasswordForm() {
         />
       </div>
 
-      <div className="mt-5 flex items-start gap-3 px-4 py-3 rounded-xl border"
-        style={{ maxWidth: 480, background: "#FFFBEB", borderColor: "#FEF3C7" }}>
-        <Ico d={ic.shieldCheck} cls="w-4 h-4 shrink-0 mt-0.5" style={{ color: "#B45309" }} />
-        <p className="text-xs leading-relaxed" style={{ color: "#B45309" }}>
-          <strong>Quy định bảo mật bệnh viện:</strong> Không chia sẻ tài khoản. Mật khẩu mới không được trùng với 3 mật khẩu gần nhất. Hệ thống bắt buộc đổi mật khẩu mỗi <strong>90 ngày</strong>.
-        </p>
-      </div>
-
       <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-[#F1F5F9]">
         <button
           className="h-9 px-5 text-sm font-semibold border border-[#E2E8F0] rounded-lg hover:bg-slate-50 transition-colors cursor-pointer text-[#64748B] bg-transparent outline-none"

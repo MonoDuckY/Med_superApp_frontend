@@ -133,10 +133,6 @@ export default function ProfilePage() {
             <Ico d={ic.chevRight} cls="w-3 h-3 text-slate-300" />
             <span className="font-semibold" style={{ color: "#0F172A" }}>Hồ sơ cá nhân</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs font-medium bg-[#E6F4EA] border-[#CEEAD6] color-[#10B981] text-[#10B981]">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            Hệ thống Trực tuyến
-          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-6">

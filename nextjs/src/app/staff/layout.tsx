@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Calendar,
@@ -11,7 +11,8 @@ import {
   Bell,
   Loader2,
   Newspaper,
-  MessageSquare
+  MessageSquare,
+  User
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { logoutApiCall } from "@/lib/auth";
@@ -28,6 +29,8 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Auth check
   useEffect(() => {
@@ -59,6 +62,14 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     } catch (e) {
       router.push("/");
     }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [router]);
 
   const handleLogout = async () => {
@@ -128,18 +139,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Sidebar Footer */}
-        <div className="px-6 space-y-4">
-          <div className="border-t border-slate-800 pt-4 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#0EA5E9]/15 border border-[#0EA5E9]/20 flex items-center justify-center font-bold text-[#38BDF8] text-xs shrink-0">
-                {getInitials(user.fullName)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-slate-300 truncate leading-none">{user.fullName}</p>
-                <p className="text-[10px] text-slate-500 font-mono mt-1 truncate">{user.phoneNumber}</p>
-              </div>
-            </div>
-          </div>
+        <div className="px-6">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all border-none cursor-pointer outline-none"
@@ -165,6 +165,50 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
               <button className="relative p-2 rounded-lg hover:bg-slate-100 text-[#64748B] transition-colors cursor-pointer outline-none border-none bg-transparent">
                 <Bell size={14} strokeWidth={1.75} />
               </button>
+            </div>
+
+            <div className="h-8 w-px bg-[#E2E8F0] hidden sm:block" />
+
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-semibold text-[#0F172A]">{user?.fullName || "Nhân viên"}</p>
+                <p className="text-[10px] font-mono text-[#64748B]">{user?.phoneNumber || "N/A"}</p>
+              </div>
+
+              <div ref={profileRef} className="relative">
+                <div
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="w-9 h-9 rounded-full bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center cursor-pointer hover:bg-[#0EA5E9]/20 transition-all font-bold text-[#0EA5E9] text-xs"
+                >
+                  {getInitials(user?.fullName)}
+                </div>
+
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 py-1.5 animate-[fadeIn_0.15s_ease-out] text-left">
+                    <div className="px-4 py-2 border-b border-[#F1F5F9]">
+                      <p className="text-[12px] font-semibold text-[#0F172A] truncate">{user?.fullName || "Nhân viên"}</p>
+                      <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.phoneNumber || "N/A"}</p>
+                    </div>
+                    
+                    <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                      <button
+                        onClick={() => { setShowProfileMenu(false); router.push("/profile"); }}
+                        className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                      >
+                        <User size={13} className="shrink-0 text-slate-400" />
+                        <span>Hồ sơ cá nhân</span>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer outline-none font-bold border-none bg-transparent"
+                    >
+                      <LogOut size={13} /> Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>

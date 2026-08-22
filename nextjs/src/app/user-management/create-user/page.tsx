@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, Stethoscope, FlaskConical,
   FileText, Settings, Bell, ChevronDown, ChevronRight, X,
-  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Eye, EyeOff, HeartPulse
+  CheckCircle2, Search, Upload, FileCheck, AlertCircle, ShieldCheck, LogOut, Eye, EyeOff, HeartPulse, User
 } from "lucide-react";
 
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
@@ -403,9 +403,18 @@ export default function CreateUserPage() {
                     <p className="text-[12px] font-semibold text-[#0F172A] truncate">{currentUser?.fullName || "Super Admin"}</p>
                     <p className="text-[10px] text-[#64748B] truncate mt-0.5">{currentUser?.phoneNumber || "ADM-20241105"}</p>
                   </div>
+                  <div className="px-1.5 py-1.5 border-b border-[#F1F5F9]">
+                    <button
+                      onClick={() => { setShowProfileMenu(false); router.push("/profile"); }}
+                      className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md transition-colors flex items-center gap-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer border-none outline-none bg-transparent"
+                    >
+                      <User size={13} className="shrink-0 text-slate-400" />
+                      <span>Hồ sơ cá nhân</span>
+                    </button>
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer border-none outline-none"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-[#EF4444] hover:bg-[#FFF1F2] transition-colors cursor-pointer border-none outline-none bg-transparent"
                   >
                     <LogOut size={13} /> Đăng xuất
                   </button>

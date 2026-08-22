@@ -24,7 +24,8 @@ import {
   Loader2,
   Award,
   X,
-  Edit
+  Edit,
+  User
 } from "lucide-react";
 import { fetchWithAuth, logoutApiCall } from "@/lib/auth";
 import Logo from "@/components/Logo";
@@ -318,7 +319,10 @@ export default function UserAccountsList() {
 
         <div className="px-4 py-4 border-t border-white/8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <button 
+              onClick={() => router.push("/profile")}
+              className="flex items-center gap-2.5 min-w-0 text-left bg-transparent border-none outline-none cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <div className="flex items-center justify-center rounded-full shrink-0 font-bold text-[#38BDF8] bg-[#0EA5E9]/20 border border-[#0EA5E9]/30 text-[10px] w-7 h-7">
                 {getInitials(currentUser?.fullName)}
               </div>
@@ -326,14 +330,23 @@ export default function UserAccountsList() {
                 <p className="font-bold truncate text-[10px] text-[#CBD5E1]">{currentUser?.fullName || "Super Admin"}</p>
                 <p className="truncate text-[9px] text-[#475569]">{currentUser?.phoneNumber || "ADM-20241105"}</p>
               </div>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="text-slate-500 hover:text-rose-400 transition-colors cursor-pointer shrink-0 ml-1"
-              title="Đăng xuất"
-            >
-              <LogOut size={13} />
             </button>
+            <div className="flex items-center gap-1.5 shrink-0 ml-1">
+              <button 
+                onClick={() => router.push("/profile")}
+                className="text-slate-500 hover:text-[#38BDF8] transition-colors cursor-pointer border-none bg-transparent outline-none p-1 flex items-center"
+                title="Hồ sơ cá nhân"
+              >
+                <User size={13} />
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="text-slate-500 hover:text-rose-400 transition-colors cursor-pointer border-none bg-transparent outline-none p-1 flex items-center"
+                title="Đăng xuất"
+              >
+                <LogOut size={13} />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
