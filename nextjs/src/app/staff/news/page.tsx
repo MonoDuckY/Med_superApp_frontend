@@ -497,6 +497,20 @@ function Dashboard({ rows, onEdit, onCreateDraft, onPublish, onDisable }: Dashbo
   );
 }
 
+const isContentEmpty = (html: string) => {
+  if (!html) return true;
+  const text = html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  if (!text) return true;
+  if (
+    text === "Nhập nội dung bài viết mới tại đây..." ||
+    text === "Nhập nội dung bài viết y khoa tại đây..." ||
+    text === "Nhập nội dung bài viết mới tại đây..."
+  ) {
+    return true;
+  }
+  return false;
+};
+
 // Editor component with Tiptap WYSIWYG
 interface EditorProps {
   article: Article;
@@ -517,6 +531,7 @@ function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps
   
   const [imgHover, setImgHover] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
+  const [bodyTouched, setBodyTouched] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkDefaultText, setLinkDefaultText] = useState("");
@@ -524,6 +539,7 @@ function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const titleError = titleTouched && !title.trim() ? "Tiêu đề bài viết không được để trống" : undefined;
+  const bodyError = bodyTouched && isContentEmpty(body) ? "Nội dung bài viết không được để trống" : undefined;
 
   const [autoSaveStatus, setAutoSaveStatus] = useState<"synced" | "saving" | "saved" | "failed">("synced");
   const [lastSavedTime, setLastSavedTime] = useState<string>("");
@@ -567,7 +583,7 @@ function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps
         currentContent !== lastSavedRef.current.content ||
         currentCoverUrl !== lastSavedRef.current.coverPhotoUrl;
 
-      if (hasChanges && currentTitle && article.status === "DRAFT") {
+      if (hasChanges && currentTitle && !isContentEmpty(currentContent) && article.status === "DRAFT") {
         setAutoSaveStatus("saving");
         const updated: Article = {
           ...article,
@@ -612,6 +628,7 @@ function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps
     content: article.content || "<p>Nhập nội dung bài viết y khoa tại đây...</p>",
     onUpdate: ({ editor }) => {
       setBody(editor.getHTML());
+      setBodyTouched(true);
     },
   });
 
@@ -623,7 +640,11 @@ function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps
 
   function handleSave() {
     setTitleTouched(true);
-    if (!title.trim()) return;
+    setBodyTouched(true);
+    if (!title.trim() || isContentEmpty(body)) {
+      alert("Vui lòng nhập đầy đủ tiêu đề và nội dung bài viết trước khi lưu.");
+      return;
+    }
     
     const updated: Article = {
       ...article,
@@ -749,10 +770,24 @@ function Editor({ article, onBack, onSave, onSilentSave, isSaving }: EditorProps
               <div className="px-6 pb-6 pt-4 flex-grow min-h-[320px] overflow-y-auto">
                 <EditorContent 
                   editor={editor} 
-                  className="w-full min-h-[280px] p-4 border border-[#E2E8F0] rounded-xl focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-100 outline-none" 
+                  className="w-full min-h-[280px] p-4 border rounded-xl focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-100 outline-none" 
+                  style={{
+                    borderColor: bodyError ? "#EF4444" : "#E2E8F0",
+                    boxShadow: bodyError ? "0 0 0 3px rgba(239,68,68,0.1)" : "none",
+                  }}
                 />
-                <div className="flex justify-end mt-1 text-[11px] text-slate-400 font-semibold">
-                  {body.length}/10,000 ký tự
+                <div className="flex justify-between items-center mt-1">
+                  <div>
+                    {bodyError && (
+                      <div className="flex items-center gap-1.5 text-left">
+                        <Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" cls="w-3.5 h-3.5 shrink-0" style={{ color: "#EF4444" }} />
+                        <p style={{ fontSize: 11, color: "#EF4444" }}>{bodyError}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-semibold">
+                    {body.length}/10,000 ký tự
+                  </div>
                 </div>
               </div>
             </div>
