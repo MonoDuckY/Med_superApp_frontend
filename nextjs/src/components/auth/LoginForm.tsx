@@ -19,6 +19,19 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const handleForgotClick = () => {
+    setError(null);
+    if (!username.trim()) {
+      setError("Vui lòng nhập số điện thoại trước khi chọn Quên mật khẩu.");
+      return;
+    }
+    if (!/^(\+?84|0)\d{9}$/.test(username.replace(/\s/g, ""))) {
+      setError("Số điện thoại không đúng định dạng Việt Nam (ví dụ: 0912345678).");
+      return;
+    }
+    onForgotPassword(username.trim(), roleIndex);
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -139,7 +152,7 @@ export default function LoginForm({ onForgotPassword }: LoginFormProps) {
             <label htmlFor="password" className="text-xs font-semibold text-[#0F172A]">Mật khẩu</label>
             <button
               type="button"
-              onClick={() => onForgotPassword(username, roleIndex)}
+              onClick={handleForgotClick}
               className="text-xs font-medium hover:underline text-[#0EA5E9] bg-transparent border-none outline-none cursor-pointer"
             >
               Quên mật khẩu?
