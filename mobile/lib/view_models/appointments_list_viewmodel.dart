@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/appointment_models.dart';
 import '../services/remote/remote_appointment_service.dart';
@@ -23,6 +23,9 @@ class AppointmentsListViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
 
   String _userName = 'Khách';
   String get userName => _userName;
@@ -61,6 +64,7 @@ class AppointmentsListViewModel extends ChangeNotifier {
 
   Future<void> loadAppointments() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -150,27 +154,16 @@ class AppointmentsListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> cancelAppointment(String appointmentId, String reason, BuildContext context) async {
+  Future<bool> cancelAppointment(String appointmentId, String reason) async {
     try {
-      // Có thể thêm loading state nếu cần
+      _errorMessage = null;
       await _service.cancelAppointment(appointmentId, reason);
-      
-      // Hủy thành công, load lại danh sách
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Hủy lịch khám thành công.')),
-        );
-      }
       await loadAppointments();
+      return true;
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
     }
   }
 }

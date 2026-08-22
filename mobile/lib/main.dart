@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
 import 'core/config/environment_config.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/local/local_notification_service.dart';
 
 void main() async {
@@ -26,11 +26,9 @@ class MedSuperApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [
-        Locale('vi', 'VN'),
-        Locale('en', 'US'),
-      ],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('vi'),
     );
   }
 }
