@@ -1157,9 +1157,10 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
   }
 
   const translateGender = (g: string) => {
-    if (g === "Male") return "Nam"
-    if (g === "Female") return "Nữ"
-    return "Khác"
+    const raw = (g || "").toUpperCase();
+    if (raw === "MALE") return "Nam";
+    if (raw === "FEMALE") return "Nữ";
+    return "";
   }
 
   if (loading) {
@@ -1203,7 +1204,7 @@ export default function MedicalWorkspace({ appointmentId, onBackToSchedule }: Me
                 </div>
                 <div className="flex items-center gap-3 mt-0.5">
                   <p className="text-xs" style={{ color: "#64748B" }}>
-                    {calculateAge(patient.dateOfBirth)} · {translateGender(patient.gender)}
+                    {[calculateAge(patient.dateOfBirth), translateGender(patient.gender)].filter(Boolean).join(" · ")}
                   </p>
                 </div>
               </div>

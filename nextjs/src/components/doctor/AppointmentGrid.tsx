@@ -123,16 +123,19 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
             const start = item.slot?.startTime?.slice(0, 5) || "";
             const end = item.slot?.endTime?.slice(0, 5) || "";
             const age = calculateAge(item.patient?.dateOfBirth);
-            const gender = item.patient?.gender === "MALE" ? "Nam" : item.patient?.gender === "FEMALE" ? "Nữ" : "Khác";
+            const genderStr = (item.patient?.gender || "").toUpperCase();
+            const gender = genderStr === "MALE" ? "Nam" : genderStr === "FEMALE" ? "Nữ" : "";
+            const ageStr = age ? `${age} tuổi` : "";
+            const meta = [ageStr, gender].filter(Boolean).join(" · ");
             return {
               id: item.id,
               stt: String(idx + 1).padStart(2, "0"),
               time: start && end ? `${start} – ${end}` : "Chưa xếp",
               aptId: item.id.substring(0, 8).toUpperCase(),
               patient: item.patient?.fullName || "Chưa rõ",
-              meta: `${age ? `${age} tuổi` : ""} · ${gender}`,
+              meta: meta,
               symptom: item.medicalRecord?.note || "Khám lâm sàng định kỳ",
-              room: item.room?.roomCode || "Phòng khám",
+              room: item.room?.name || "Chưa nhận",
               status: mapStatus(item.status),
             };
           });

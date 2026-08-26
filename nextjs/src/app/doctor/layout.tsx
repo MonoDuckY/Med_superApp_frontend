@@ -157,7 +157,6 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right hidden sm:block">
             <p className="text-xs font-semibold text-[#0F172A]">{user?.fullName || "Bác sĩ"}</p>
-            <p className="text-[10px] font-mono text-[#64748B]">{doctorCode}</p>
           </div>
 
           <div ref={profileRef} className="relative">
