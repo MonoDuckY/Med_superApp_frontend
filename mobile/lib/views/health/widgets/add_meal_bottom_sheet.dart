@@ -188,12 +188,16 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
                         ..._dishes.asMap().entries.map((entry) {
                           return _DishFormField(
-                            key: ValueKey(entry.key),
+                            key: ObjectKey(entry.value),
                             data: entry.value,
                             index: entry.key,
                             canRemove: _dishes.length > 1,
-                            onRemove: () =>
-                                setState(() => _dishes.removeAt(entry.key)),
+                            onRemove: () {
+                              setState(() {
+                                final removed = _dishes.removeAt(entry.key);
+                                removed.dispose();
+                              });
+                            },
                           );
                         }),
 

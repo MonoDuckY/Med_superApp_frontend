@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../core/utils/device_utils.dart';
@@ -8,6 +6,13 @@ import '../services/abstract/auth_service_abstract.dart';
 import '../services/mock/mock_auth_service.dart';
 import '../services/remote/auth_service.dart';
 import '../core/config/environment_config.dart';
+
+enum LoginStepResult {
+  authenticated,
+  requiresOtp,
+  failed,
+}
+
 class LoginViewModel extends ChangeNotifier {
   String phoneNumber = '';
   bool isLoading = false;
@@ -38,10 +43,9 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Điều hướng sang màn OTP.
-  /// Khi backend hỗ trợ OTP, gọi API gửi SMS tại đây trước khi navigate.
-  Future<void> requestOtp(BuildContext context) async {
-    if (!isValid) return;
+  /// Yêu cầu gửi OTP hoặc đăng nhập trực tiếp nếu thiết bị tin cậy.
+  Future<LoginStepResult> requestOtp() async {
+    if (!isValid) return LoginStepResult.failed;
 
     isLoading = true;
     errorMessage = null;
@@ -65,26 +69,21 @@ class LoginViewModel extends ChangeNotifier {
           AppConstants.keyUserName,
           response.data?.fullName ?? 'Nguyễn Văn A',
         );
-        if (context.mounted) {
-          context.go('/home');
-        }
+        return LoginStepResult.authenticated;
       } else {
-        if (context.mounted) {
-          // Encode số điện thoại vào path parameter
-          final encoded = Uri.encodeComponent(phoneNumber.trim());
-          context.push('/otp/$encoded');
-        }
+        return LoginStepResult.requiresOtp;
       }
     } else {
       errorMessage = response.message;
       notifyListeners();
+      return LoginStepResult.failed;
     }
   }
 
   /// [DEV ONLY] Bypass login hoàn toàn — không gọi API, không cần OTP.
   /// Chỉ hoạt động khi chạy debug build (kDebugMode).
-  Future<void> devBypassLogin(BuildContext context) async {
-    if (!kDebugMode) return;
+  Future<bool> devBypassLogin() async {
+    if (!kDebugMode) return false;
 
     isLoading = true;
     notifyListeners();
@@ -98,9 +97,6 @@ class LoginViewModel extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
-
-    if (context.mounted) {
-      context.go('/home');
-    }
+    return true;
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../view_models/login_viewmodel.dart';
 import '../../core/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/utils/l10n_extension.dart';
 import '../../core/config/environment_config.dart';
 
 class LoginView extends StatelessWidget {
@@ -30,134 +32,187 @@ class _LoginBody extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // ── Top bar: step indicator ─────────────────────────────────
-              Row(
+              const Row(
                 children: [
-                  const SizedBox(width: 38), // balance placeholder
-                  const Spacer(),
+                  SizedBox(width: 38), // balance placeholder
+                  Spacer(),
                   _StepIndicator(currentStep: 0, totalSteps: 2),
-                  const Spacer(),
-                  const SizedBox(width: 38),
+                  Spacer(),
+                  SizedBox(width: 38),
                 ],
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
 
-              // ── Logo ─────────────────────────────────────────────────────
+              // ── Logo + Badge ─────────────────────────────────────────────
               Container(
-                width: 80,
-                height: 80,
+                width: 76,
+                height: 76,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.sky400, AppColors.primary],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    'assets/icons/app_icon.png',
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
+                child: const Center(
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 42,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // ── Branding ──────────────────────────────────────────────────
-              Text(
-                'HMS — NEXTGEN HEALTHCARE',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.6,
-                  color: AppColors.primary,
+              // ── Branding Pill ─────────────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.sky100,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.sky200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.verified_rounded, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'HMS — NEXTGEN HEALTHCARE',
+                      style: AppTypography.badge.copyWith(
+                        color: AppColors.primary,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
+              // ── Title & Subtitle ──────────────────────────────────────────
               Text(
                 'Chào mừng đến với HMS',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                textAlign: TextAlign.center,
+                style: AppTypography.h2.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
+                  height: 1.25,
                 ),
               ),
 
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
 
               Text(
-                'Your health, our priority',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                'Nền tảng y tế số thông minh & bảo mật',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
+                  height: 1.4,
                 ),
               ),
 
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
 
               // ── Phone Field ───────────────────────────────────────────────
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Số điện thoại',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  const Icon(Icons.phone_iphone_rounded, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    context.l10n.phoneNumber,
+                    style: AppTypography.subtitle.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
               TextFormField(
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-()]'))],
                 onChanged: vm.setPhoneNumber,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textPrimary,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'e.g. 0912345678',
-                  hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
+                  hintText: 'Nhập số điện thoại (vd: 0912345678)',
+                  hintStyle: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textHint,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.dialpad_rounded,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                   filled: true,
-                  fillColor: AppColors.canvasColor,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: AppColors.borderLight),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: AppColors.borderLight),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                 ),
               ),
 
               if (vm.errorMessage != null) ...[
                 const SizedBox(height: 10),
-                Text(
-                  vm.errorMessage!,
-                  style: TextStyle(color: AppColors.error, fontSize: 13),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.red100.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.error),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          vm.errorMessage!,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // ── Login Button ──────────────────────────────────────────────
               SizedBox(
@@ -165,13 +220,22 @@ class _LoginBody extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: vm.isValid && !vm.isLoading
-                      ? () => vm.requestOtp(context)
+                      ? () async {
+                          final result = await vm.requestOtp();
+                          if (!context.mounted) return;
+                          if (result == LoginStepResult.authenticated) {
+                            context.go('/home');
+                          } else if (result == LoginStepResult.requiresOtp) {
+                            final encoded = Uri.encodeComponent(vm.phoneNumber.trim());
+                            context.push('/otp/$encoded');
+                          }
+                        }
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.sky200,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
@@ -184,13 +248,16 @@ class _LoginBody extends StatelessWidget {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Đăng nhập',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              context.l10n.login,
+                              style: AppTypography.button,
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+                          ],
                         ),
                 ),
               ),
@@ -303,10 +370,8 @@ class _DevBannerState extends State<_DevBanner> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'DEV MODE',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      context.l10n.devMode,
+                      style: AppTypography.badge.copyWith(
                         color: AppColors.orange700,
                       ),
                     ),
@@ -318,9 +383,8 @@ class _DevBannerState extends State<_DevBanner> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Sử dụng Mock Data',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
+                    context.l10n.useMockData,
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -334,7 +398,12 @@ class _DevBannerState extends State<_DevBanner> {
               if (_isMock) ...[
                 const Divider(height: 16, color: AppColors.orange200),
                 GestureDetector(
-                  onTap: () => vm.devBypassLogin(context),
+                  onTap: () async {
+                    final success = await vm.devBypassLogin();
+                    if (context.mounted && success) {
+                      context.go('/home');
+                    }
+                  },
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -348,11 +417,10 @@ class _DevBannerState extends State<_DevBanner> {
                         const Icon(Icons.login, size: 16, color: AppColors.orange700),
                         const SizedBox(width: 8),
                         Text(
-                          'Bỏ qua đăng nhập',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                          context.l10n.skipLogin,
+                          style: AppTypography.subtitle.copyWith(
                             color: AppColors.orange700,
+                            fontSize: 13,
                           ),
                         ),
                       ],

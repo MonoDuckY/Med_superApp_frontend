@@ -1,65 +1,103 @@
 import 'package:flutter/foundation.dart';
+import '../core/config/environment_config.dart';
 import '../models/feedback_model.dart';
 import '../services/abstract/feedback_service_abstract.dart';
 import '../services/mock/mock_feedback_service.dart';
+import '../services/remote/remote_feedback_service.dart';
 
-/// ViewModel for UC-12: Góp ý & Phản hồi.
-/// Manages form state, validation, and submission lifecycle.
+/// ViewModel for UC-13: Góp ý & Phản hồi dịch vụ.
+/// Quản lý form nhập liệu, validation, gửi phản hồi và tải lịch sử phản hồi.
 class FeedbackViewModel extends ChangeNotifier {
   final IFeedbackService _service;
 
   FeedbackViewModel({IFeedbackService? service})
-      : _service = service ?? MockFeedbackService();
+      : _service = service ??
+            (EnvironmentConfig.isMock
+                ? MockFeedbackService()
+                : RemoteFeedbackService());
 
-  // ── State ───────────────────────────────────────────────────────────────────
+  // ── Form State ──────────────────────────────────────────────────────────────
 
-  List<CompletedAppointmentOption> _appointmentOptions = [];
-  bool _isLoadingAppointments = false;
+  List<HospitalServiceOption> _serviceOptions = [];
+  bool _isLoadingServices = false;
   bool _isSubmitting = false;
   bool _submitSuccess = false;
   String? _errorMessage;
 
-  // Form draft
   FeedbackDraft _draft = FeedbackDraft();
+
+  // ── History State ───────────────────────────────────────────────────────────
+
+  List<FeedbackItem> _myFeedbacks = [];
+  bool _isLoadingHistory = false;
+  String? _historyErrorMessage;
 
   // ── Getters ─────────────────────────────────────────────────────────────────
 
-  List<CompletedAppointmentOption> get appointmentOptions => _appointmentOptions;
-  bool get isLoadingAppointments => _isLoadingAppointments;
+  List<HospitalServiceOption> get serviceOptions => _serviceOptions;
+  bool get isLoadingServices => _isLoadingServices;
   bool get isSubmitting => _isSubmitting;
   bool get submitSuccess => _submitSuccess;
   String? get errorMessage => _errorMessage;
 
-  CompletedAppointmentOption? get selectedAppointment => _draft.selectedAppointment;
+  HospitalServiceOption? get selectedService => _draft.selectedService;
   int get starRating => _draft.starRating;
   Set<FeedbackHighlight> get selectedHighlights => _draft.selectedHighlights;
   String get comment => _draft.comment;
 
   bool get canSubmit => _draft.isValid && !_isSubmitting;
-
   String get starLabel => starRatingLabel(_draft.starRating);
+
+  List<FeedbackItem> get myFeedbacks => _myFeedbacks;
+  bool get isLoadingHistory => _isLoadingHistory;
+  String? get historyErrorMessage => _historyErrorMessage;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
-  Future<void> loadCompletedAppointments() async {
-    _isLoadingAppointments = true;
+  Future<void> init() async {
+    await Future.wait([
+      loadServices(),
+      loadMyFeedbacks(),
+    ]);
+  }
+
+  Future<void> loadServices() async {
+    _isLoadingServices = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _appointmentOptions = await _service.getCompletedAppointments();
+      _serviceOptions = await _service.getServiceCategories();
+      if (_serviceOptions.isNotEmpty && _draft.selectedService == null) {
+        _draft.selectedService = _serviceOptions.first;
+      }
     } catch (e) {
-      _errorMessage = 'Không thể tải danh sách ca khám. Vui lòng thử lại.';
+      _errorMessage = 'Không thể tải danh mục dịch vụ.';
     } finally {
-      _isLoadingAppointments = false;
+      _isLoadingServices = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMyFeedbacks() async {
+    _isLoadingHistory = true;
+    _historyErrorMessage = null;
+    notifyListeners();
+
+    try {
+      _myFeedbacks = await _service.getMyFeedbacks();
+    } catch (e) {
+      _historyErrorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoadingHistory = false;
       notifyListeners();
     }
   }
 
   // ── Form Actions ─────────────────────────────────────────────────────────────
 
-  void selectAppointment(CompletedAppointmentOption? option) {
-    _draft.selectedAppointment = option;
+  void selectService(HospitalServiceOption? option) {
+    _draft.selectedService = option;
     notifyListeners();
   }
 
@@ -96,11 +134,14 @@ class FeedbackViewModel extends ChangeNotifier {
       final success = await _service.submitFeedback(_draft);
       if (success) {
         _submitSuccess = true;
-        // Clear the form but stay on screen (per spec Q3)
-        _draft = FeedbackDraft();
+        final currentService = _draft.selectedService;
+        // Reset form nhưng giữ default service
+        _draft = FeedbackDraft(selectedService: currentService);
+        // Tải lại lịch sử phản hồi
+        loadMyFeedbacks();
       }
     } catch (e) {
-      _errorMessage = 'Gửi phản hồi thất bại. Vui lòng thử lại.';
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isSubmitting = false;
       notifyListeners();
@@ -112,3 +153,4 @@ class FeedbackViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
+

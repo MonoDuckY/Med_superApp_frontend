@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../core/utils/device_utils.dart';
@@ -98,8 +97,8 @@ class OtpViewModel extends ChangeNotifier {
   }
 
   // ── Verify ────────────────────────────────────────────────────────────────
-  Future<void> verifyOtp(BuildContext context) async {
-    if (!isComplete) return;
+  Future<bool> verifyOtp() async {
+    if (!isComplete) return false;
 
     isLoading = true;
     errorMessage = null;
@@ -123,14 +122,12 @@ class OtpViewModel extends ChangeNotifier {
 
       isLoading = false;
       notifyListeners();
-
-      if (context.mounted) {
-        context.go('/home');
-      }
+      return true;
     } else {
       isLoading = false;
       errorMessage = response.message;
       notifyListeners();
+      return false;
     }
   }
 

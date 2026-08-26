@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/utils/l10n_extension.dart';
 import '../../models/appointment_models.dart';
 import '../../view_models/appointments_list_viewmodel.dart';
 import '../shared/app_calendar.dart';
@@ -300,51 +304,12 @@ class _AppointmentCard extends StatelessWidget {
 
   void _showCancelDialog(BuildContext context, AppointmentRecord record) {
     final vm = context.read<AppointmentsListViewModel>();
-    final reasonController = TextEditingController();
-
     showDialog(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Hủy lịch khám', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Vui lòng nhập lý do hủy lịch:'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: reasonController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Nhập lý do...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Đóng'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final reason = reasonController.text.trim();
-                if (reason.isNotEmpty) {
-                  Navigator.pop(ctx);
-                  vm.cancelAppointment(record.id, reason, context);
-                } else {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Vui lòng nhập lý do hủy lịch')),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('Xác nhận hủy', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+      builder: (ctx) => _CancelAppointmentDialog(
+        record: record,
+        viewModel: vm,
+      ),
     );
   }
 
@@ -703,6 +668,141 @@ class _SummaryRow extends StatelessWidget {
         Text(label, style: const TextStyle(color: AppColors.textHint, fontSize: 14)),
         const Spacer(),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+      ],
+    );
+  }
+}
+
+// ── Dialog Hủy Lịch Khám ───────────────────────────────────────────────────────
+
+class _CancelAppointmentDialog extends StatefulWidget {
+  final AppointmentRecord record;
+  final AppointmentsListViewModel viewModel;
+
+  const _CancelAppointmentDialog({
+    required this.record,
+    required this.viewModel,
+  });
+
+  @override
+  State<_CancelAppointmentDialog> createState() => _CancelAppointmentDialogState();
+}
+
+class _CancelAppointmentDialogState extends State<_CancelAppointmentDialog> {
+  late final TextEditingController _reasonController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitCancel() async {
+    final reason = _reasonController.text.trim();
+    if (reason.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.cancelAppointmentReason)),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final success = await widget.viewModel.cancelAppointment(widget.record.id, reason);
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? context.l10n.cancelSuccess
+                : (widget.viewModel.errorMessage ?? context.l10n.cancelFailed),
+          ),
+          backgroundColor: success ? AppColors.success : AppColors.error,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.cancelFailed}: ${e.toString().replaceAll("Exception: ", "")}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        context.l10n.cancelAppointment,
+        style: AppTypography.headline,
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            context.l10n.cancelAppointmentReason,
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.m),
+          TextField(
+            controller: _reasonController,
+            maxLines: 3,
+            style: AppTypography.bodyMedium,
+            decoration: InputDecoration(
+              hintText: context.l10n.cancelAppointmentReasonHint,
+              hintStyle: AppTypography.bodySmall,
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.inputBorder,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: Text(
+            context.l10n.close,
+            style: AppTypography.subtitle.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submitCancel,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.buttonBorder,
+            ),
+          ),
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  context.l10n.confirm,
+                  style: AppTypography.buttonSmall,
+                ),
+        ),
       ],
     );
   }

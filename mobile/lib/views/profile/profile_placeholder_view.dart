@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/config/environment_config.dart';
 import '../../services/mock/mock_auth_service.dart';
 import '../../services/remote/auth_service.dart';
+import '../../services/remote/api_client.dart';
 
 /// Tab 4 — Hồ sơ
 /// Thông tin cá nhân, hồ sơ bệnh án (UC-06), cài đặt tài khoản.
@@ -14,8 +15,13 @@ class ProfilePlaceholderView extends StatelessWidget {
   const ProfilePlaceholderView({super.key});
 
   Future<void> _doLogout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', false);
+    final authService = EnvironmentConfig.isMock
+        ? MockAuthService()
+        : RemoteAuthService();
+    try {
+      await authService.logout();
+    } catch (_) {}
+    await ApiClient.clearTokens();
     if (context.mounted) {
       context.go('/login');
     }

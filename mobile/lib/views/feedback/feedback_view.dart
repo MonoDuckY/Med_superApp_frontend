@@ -13,16 +13,36 @@ class FeedbackView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => FeedbackViewModel()..loadCompletedAppointments(),
+      create: (_) => FeedbackViewModel()..init(),
       child: const _FeedbackScaffold(),
     );
   }
 }
 
-// ── Scaffold ──────────────────────────────────────────────────────────────────
+// ── Scaffold with Tabs ────────────────────────────────────────────────────────
 
-class _FeedbackScaffold extends StatelessWidget {
+class _FeedbackScaffold extends StatefulWidget {
   const _FeedbackScaffold();
+
+  @override
+  State<_FeedbackScaffold> createState() => _FeedbackScaffoldState();
+}
+
+class _FeedbackScaffoldState extends State<_FeedbackScaffold>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +51,16 @@ class _FeedbackScaffold extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _FeedbackHeader(),
+            _FeedbackHeader(tabController: _tabController),
             Expanded(
-              child: _FeedbackBody(),
+              child: TabBarView(
+                controller: _tabController,
+                children: const [
+                  _FeedbackFormTab(),
+                  _FeedbackHistoryTab(),
+                ],
+              ),
             ),
-            _SubmitSection(),
           ],
         ),
       ),
@@ -43,9 +68,13 @@ class _FeedbackScaffold extends StatelessWidget {
   }
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
+// ── Header & Tab Bar ──────────────────────────────────────────────────────────
 
 class _FeedbackHeader extends StatelessWidget {
+  final TabController tabController;
+
+  const _FeedbackHeader({required this.tabController});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -54,10 +83,9 @@ class _FeedbackHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 12, 20, 14),
+            padding: const EdgeInsets.fromLTRB(12, 12, 20, 10),
             child: Row(
               children: [
-                // Back button
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
                   color: AppColors.textPrimary,
@@ -69,24 +97,102 @@ class _FeedbackHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Góp ý & Phản hồi',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Góp ý & Đánh giá dịch vụ',
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-
-                  ],
+                      Text(
+                        'Ý kiến của bạn giúp nâng cao chất lượng phục vụ',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          // Tab selection bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Container(
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: tabController,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: const [
+                  Tab(
+                    iconMargin: EdgeInsets.zero,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit_note_rounded, size: 18),
+                          SizedBox(width: 4),
+                          Text('Gửi góp ý'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    iconMargin: EdgeInsets.zero,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.history_rounded, size: 18),
+                          SizedBox(width: 4),
+                          Text('Lịch sử phản hồi'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
           const Divider(height: 1, color: AppColors.borderLight),
         ],
       ),
@@ -94,35 +200,46 @@ class _FeedbackHeader extends StatelessWidget {
   }
 }
 
-// ── Scrollable Body ───────────────────────────────────────────────────────────
+// ── Tab 1: Form gửi phản hồi ──────────────────────────────────────────────────
 
-class _FeedbackBody extends StatelessWidget {
+class _FeedbackFormTab extends StatelessWidget {
+  const _FeedbackFormTab();
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _AppointmentDropdown(),
-          const SizedBox(height: 24),
-          _StarRatingSection(),
-          const SizedBox(height: 24),
-          _HighlightsSection(),
-          const SizedBox(height: 24),
-          _CommentSection(),
-          const SizedBox(height: 16),
-          _WarningNote(),
-          const SizedBox(height: 8),
-        ],
-      ),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                _ServiceDropdown(),
+                SizedBox(height: 20),
+                _StarRatingSection(),
+                SizedBox(height: 20),
+                _HighlightsSection(),
+                SizedBox(height: 20),
+                _CommentSection(),
+                SizedBox(height: 16),
+                _WarningNote(),
+                SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+        const _SubmitSection(),
+      ],
     );
   }
 }
 
-// ── Section: Appointment Dropdown ─────────────────────────────────────────────
+// ── Section: Service Dropdown ─────────────────────────────────────────────────
 
-class _AppointmentDropdown extends StatelessWidget {
+class _ServiceDropdown extends StatelessWidget {
+  const _ServiceDropdown();
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FeedbackViewModel>();
@@ -130,11 +247,11 @@ class _AppointmentDropdown extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionLabel(
-          label: 'Chọn dịch vụ / ca khám',
+        const _SectionLabel(
+          label: 'Chọn dịch vụ / phương diện đánh giá',
           required: true,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -148,7 +265,7 @@ class _AppointmentDropdown extends StatelessWidget {
               ),
             ],
           ),
-          child: vm.isLoadingAppointments
+          child: vm.isLoadingServices
               ? const Padding(
                   padding: EdgeInsets.all(16),
                   child: Center(
@@ -160,39 +277,55 @@ class _AppointmentDropdown extends StatelessWidget {
                   ),
                 )
               : Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
-                  child: DropdownButton<CompletedAppointmentOption>(
-                    value: vm.selectedAppointment,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: DropdownButton<HospitalServiceOption>(
+                    value: vm.selectedService,
                     isExpanded: true,
                     underline: const SizedBox.shrink(),
                     hint: Text(
-                      'Chọn dịch vụ hoặc ca khám đã hoàn thành...',
+                      'Chọn dịch vụ cần góp ý...',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: AppColors.textHint,
                       ),
                     ),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                    ),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.textPrimary,
                     ),
-                    items: vm.appointmentOptions.map((option) {
+                    items: vm.serviceOptions.map((service) {
                       return DropdownMenuItem(
-                        value: option,
-                        child: Text(
-                          option.displayLabel,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        value: service,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              service.label,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              service.description,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       );
                     }).toList(),
-                    onChanged: vm.selectAppointment,
+                    onChanged: vm.selectService,
                   ),
                 ),
         ),
@@ -204,6 +337,8 @@ class _AppointmentDropdown extends StatelessWidget {
 // ── Section: Star Rating ──────────────────────────────────────────────────────
 
 class _StarRatingSection extends StatelessWidget {
+  const _StarRatingSection();
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FeedbackViewModel>();
@@ -211,11 +346,11 @@ class _StarRatingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionLabel(label: 'Đánh giá chất lượng dịch vụ', required: true),
-        const SizedBox(height: 10),
+        const _SectionLabel(label: 'Mức độ hài lòng của bạn', required: true),
+        const SizedBox(height: 8),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
@@ -230,7 +365,7 @@ class _StarRatingSection extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Star row
+              // Stars
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(5, (index) {
@@ -247,25 +382,22 @@ class _StarRatingSection extends StatelessWidget {
                         child: Icon(
                           isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
                           key: ValueKey('star_${starIndex}_$isFilled'),
-                          size: 40,
-                          color: isFilled
-                              ? AppColors.warning
-                              : AppColors.slate300,
+                          size: 42,
+                          color: isFilled ? AppColors.warning : AppColors.slate300,
                         ),
                       ),
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               // Rating label badge
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: Container(
                   key: ValueKey(vm.starRating),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                   decoration: BoxDecoration(
                     color: vm.starRating == 0
                         ? AppColors.surfaceLight
@@ -285,25 +417,19 @@ class _StarRatingSection extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
-              // Min/Max label row
+              // Labels
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Rất tệ',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: AppColors.textHint,
-                    ),
+                    '1★ Rất tệ',
+                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
                   ),
                   Text(
-                    'Xuất sắc',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: AppColors.textHint,
-                    ),
+                    '5★ Xuất sắc',
+                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
                   ),
                 ],
               ),
@@ -335,6 +461,8 @@ class _StarRatingSection extends StatelessWidget {
 // ── Section: Highlight Chips ──────────────────────────────────────────────────
 
 class _HighlightsSection extends StatelessWidget {
+  const _HighlightsSection();
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FeedbackViewModel>();
@@ -344,21 +472,20 @@ class _HighlightsSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(
-              'Điểm nổi bật',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            Flexible(
+              child: Text(
+                'Điểm nổi bật',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             const SizedBox(width: 6),
             Text(
               '(Tùy chọn)',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppColors.textHint,
-              ),
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint),
             ),
           ],
         ),
@@ -372,30 +499,21 @@ class _HighlightsSection extends StatelessWidget {
               onTap: () => vm.toggleHighlight(highlight),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withAlpha(15)
-                      : Colors.white,
+                  color: isSelected ? AppColors.primary.withAlpha(15) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.borderLight,
+                    color: isSelected ? AppColors.primary : AppColors.borderLight,
                     width: isSelected ? 1.5 : 1.0,
                   ),
                 ),
                 child: Text(
                   highlight.label,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.textPrimary,
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -410,6 +528,8 @@ class _HighlightsSection extends StatelessWidget {
 // ── Section: Comment Textarea ─────────────────────────────────────────────────
 
 class _CommentSection extends StatefulWidget {
+  const _CommentSection();
+
   @override
   State<_CommentSection> createState() => _CommentSectionState();
 }
@@ -427,7 +547,6 @@ class _CommentSectionState extends State<_CommentSection> {
   Widget build(BuildContext context) {
     final vm = context.watch<FeedbackViewModel>();
 
-    // Sync controller if draft was cleared (after submit)
     if (_controller.text.isNotEmpty && vm.comment.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _controller.clear();
@@ -439,25 +558,24 @@ class _CommentSectionState extends State<_CommentSection> {
       children: [
         Row(
           children: [
-            Text(
-              'Ý kiến đóng góp',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            Flexible(
+              child: Text(
+                'Ý kiến đóng góp chi tiết',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             const SizedBox(width: 6),
             Text(
               '(Tùy chọn)',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppColors.textHint,
-              ),
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textHint),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -474,27 +592,17 @@ class _CommentSectionState extends State<_CommentSection> {
           child: TextField(
             controller: _controller,
             maxLength: 500,
-            maxLines: 5,
+            maxLines: 4,
             onChanged: vm.updateComment,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.textPrimary,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
             decoration: InputDecoration(
-              hintText:
-                  'Chia sẻ trải nghiệm của bạn để chúng tôi phục vụ tốt hơn...',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.textHint,
-              ),
-              contentPadding: const EdgeInsets.all(16),
+              hintText: 'Chia sẻ trải nghiệm cụ thể để chúng tôi phục vụ tốt hơn...',
+              hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint),
+              contentPadding: const EdgeInsets.all(14),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
-              counterStyle: GoogleFonts.inter(
-                fontSize: 11,
-                color: AppColors.textHint,
-              ),
+              counterStyle: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
             ),
           ),
         ),
@@ -506,6 +614,8 @@ class _CommentSectionState extends State<_CommentSection> {
 // ── Warning Note ──────────────────────────────────────────────────────────────
 
 class _WarningNote extends StatelessWidget {
+  const _WarningNote();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -525,24 +635,12 @@ class _WarningNote extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: AppColors.textPrimary),
-                children: [
-                  TextSpan(
-                    text: 'Lưu ý: ',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.amber600,
-                    ),
-                  ),
-                  const TextSpan(
-                    text:
-                        'Phản hồi không thể chỉnh sửa sau khi gửi. Mỗi dịch vụ chỉ được đánh giá một lần.',
-                  ),
-                ],
+            child: Text(
+              'Ý kiến phản hồi sẽ được gửi trực tiếp đến ban quản lý bệnh viện để tiếp nhận và phản hồi sớm nhất.',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.amber900,
+                height: 1.4,
               ),
             ),
           ),
@@ -555,11 +653,13 @@ class _WarningNote extends StatelessWidget {
 // ── Submit Section (pinned bottom) ────────────────────────────────────────────
 
 class _SubmitSection extends StatelessWidget {
+  const _SubmitSection();
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FeedbackViewModel>();
 
-    // Show success dialog once
+    // Hiển thị dialog thành công khi gửi xong
     if (vm.submitSuccess) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
@@ -569,60 +669,64 @@ class _SubmitSection extends StatelessWidget {
       });
     }
 
+    // Hiển thị snackbar nếu có lỗi
+    if (vm.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(vm.errorMessage!),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      });
+    }
+
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
             width: double.infinity,
-            height: 50,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              child: ElevatedButton.icon(
-                onPressed: vm.canSubmit ? vm.submit : null,
-                icon: vm.isSubmitting
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.send_rounded, size: 18),
-                label: Text(
-                  'Gửi phản hồi',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: vm.canSubmit ? vm.submit : null,
+              icon: vm.isSubmitting
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.send_rounded, size: 18),
+              label: Text(
+                'Gửi phản hồi',
+                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    vm.canSubmit ? AppColors.primary : AppColors.surfaceLight,
+                foregroundColor: vm.canSubmit ? Colors.white : AppColors.textHint,
+                elevation: vm.canSubmit ? 2 : 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: vm.canSubmit
-                      ? AppColors.primary
-                      : AppColors.surfaceLight,
-                  foregroundColor:
-                      vm.canSubmit ? Colors.white : AppColors.textHint,
-                  elevation: vm.canSubmit ? 2 : 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  disabledBackgroundColor: AppColors.surfaceLight,
-                  disabledForegroundColor: AppColors.textHint,
-                ),
+                disabledBackgroundColor: AppColors.surfaceLight,
+                disabledForegroundColor: AppColors.textHint,
               ),
             ),
           ),
           if (!vm.canSubmit) ...[
             const SizedBox(height: 6),
             Text(
-              'Vui lòng chọn dịch vụ và đánh giá sao để tiếp tục',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: AppColors.textHint,
-              ),
+              'Vui lòng chọn dịch vụ và đánh giá số sao để gửi',
+              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint),
               textAlign: TextAlign.center,
             ),
           ],
@@ -640,25 +744,24 @@ class _SubmitSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Success icon
               Container(
-                width: 64,
-                height: 64,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   color: AppColors.success.withAlpha(20),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle_rounded,
-                  size: 40,
+                  size: 38,
                   color: AppColors.success,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Text(
                 'Gửi phản hồi thành công!',
                 style: GoogleFonts.inter(
@@ -670,15 +773,15 @@ class _SubmitSection extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Cảm ơn bạn đã chia sẻ trải nghiệm. Ý kiến của bạn giúp chúng tôi phục vụ tốt hơn.',
+                'Cảm ơn bạn đã đóng góp ý kiến. Bạn có thể theo dõi phản hồi từ nhân viên y tế trong tab "Lịch sử phản hồi".',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppColors.textSecondary,
-                  height: 1.5,
+                  height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -688,21 +791,304 @@ class _SubmitSection extends StatelessWidget {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Text(
                     'Đã hiểu',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Tab 2: Lịch sử phản hồi ───────────────────────────────────────────────────
+
+class _FeedbackHistoryTab extends StatelessWidget {
+  const _FeedbackHistoryTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<FeedbackViewModel>();
+
+    if (vm.isLoadingHistory) {
+      return const Center(
+        child: CircularProgressIndicator(strokeWidth: 2.5),
+      );
+    }
+
+    if (vm.historyErrorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text(
+                vm.historyErrorMessage!,
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: vm.loadMyFeedbacks,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Thử lại'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (vm.myFeedbacks.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: vm.loadMyFeedbacks,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(32),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 60),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.rate_review_outlined,
+                    size: 36,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Chưa có phản hồi nào',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Mọi ý kiến đóng góp của bạn sau khi gửi sẽ được lưu và hiển thị tại đây.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: vm.loadMyFeedbacks,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        itemCount: vm.myFeedbacks.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final item = vm.myFeedbacks[index];
+          return _FeedbackItemCard(item: item);
+        },
+      ),
+    );
+  }
+}
+
+// ── Card lịch sử phản hồi ─────────────────────────────────────────────────────
+
+class _FeedbackItemCard extends StatelessWidget {
+  final FeedbackItem item;
+
+  const _FeedbackItemCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final isResponded = item.isResponded;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isResponded ? AppColors.emerald100 : AppColors.borderLight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Dịch vụ & Badge trạng thái
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  item.serviceType.isNotEmpty
+                      ? item.serviceType
+                      : 'Dịch vụ bệnh viện',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isResponded
+                      ? AppColors.success.withAlpha(20)
+                      : AppColors.warning.withAlpha(20),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isResponded
+                          ? Icons.check_circle_rounded
+                          : Icons.access_time_rounded,
+                      size: 12,
+                      color: isResponded ? AppColors.success : AppColors.warning,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      item.statusLabel,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isResponded ? AppColors.success : AppColors.warning,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Rating Stars
+          Row(
+            children: [
+              Row(
+                children: List.generate(5, (i) {
+                  return Icon(
+                    i < item.rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 18,
+                    color: i < item.rating
+                        ? AppColors.warning
+                        : AppColors.slate300,
+                  );
+                }),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${item.rating}/5 sao',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+
+          if (item.content.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              item.content,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+                height: 1.4,
+              ),
+            ),
+          ],
+
+          // Khung phản hồi từ nhân viên / bệnh viện
+          if (isResponded && item.response != null && item.response!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.sky100.withAlpha(40),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.sky200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.support_agent_rounded,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Phản hồi từ Bệnh viện',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.response!,
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -720,12 +1106,14 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+        Flexible(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
         if (required) ...[
@@ -743,3 +1131,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../view_models/otp_viewmodel.dart';
 import '../../core/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/utils/l10n_extension.dart';
 
 class OtpView extends StatelessWidget {
   final String phoneNumber;
@@ -58,9 +63,7 @@ class _OtpBodyState extends State<_OtpBody> {
 
     final singleDigit = digit[digit.length - 1];
     _controllers[index].text = singleDigit;
-    _controllers[index].selection = TextSelection.fromPosition(
-      TextPosition(offset: 1),
-    );
+    _controllers[index].selection = const TextSelection.collapsed(offset: 1);
     vm.setDigit(index, singleDigit);
     if (index < 5) _focusNodes[index + 1].requestFocus();
   }
@@ -77,7 +80,7 @@ class _OtpBodyState extends State<_OtpBody> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
 
               // ── Top bar: back + step indicator ───────────────────────────
               Row(
@@ -96,13 +99,13 @@ class _OtpBodyState extends State<_OtpBody> {
                     ),
                   ),
                   const Spacer(),
-                  _StepIndicator(currentStep: 1, totalSteps: 2),
+                  const _StepIndicator(currentStep: 1, totalSteps: 2),
                   const Spacer(),
                   const SizedBox(width: 38), // balance
                 ],
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.huge),
 
               // ── Logo + badge ──────────────────────────────────────────────
               Column(
@@ -116,7 +119,7 @@ class _OtpBodyState extends State<_OtpBody> {
                         end: Alignment.bottomRight,
                         colors: [AppColors.sky400, AppColors.primary],
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: AppRadius.cardBorder,
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.primary.withValues(alpha: 0.35),
@@ -132,7 +135,7 @@ class _OtpBodyState extends State<_OtpBody> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: AppColors.sky100,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: AppRadius.chipBorder,
                       border: Border.all(color: AppColors.sky200),
                     ),
                     child: Row(
@@ -143,9 +146,7 @@ class _OtpBodyState extends State<_OtpBody> {
                         const SizedBox(width: 4),
                         Text(
                           'SMS Verification',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                          style: AppTypography.badge.copyWith(
                             color: AppColors.primary,
                           ),
                         ),
@@ -155,32 +156,28 @@ class _OtpBodyState extends State<_OtpBody> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
 
               // ── Title ─────────────────────────────────────────────────────
               Text(
-                'Mã xác nhận',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+                context.l10n.enterOtp,
+                style: AppTypography.h2,
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
 
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
-                    height: 1.5,
                   ),
                   children: [
-                    const TextSpan(text: 'We have sent a 6-digit code to your\nphone number '),
+                    TextSpan(text: '${context.l10n.otpSentTo} '),
                     TextSpan(
                       text: vm.maskedPhone,
-                      style: const TextStyle(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
@@ -209,18 +206,13 @@ class _OtpBodyState extends State<_OtpBody> {
                 )),
               ),
 
-              const SizedBox(height: 10),
-
-              Text(
-                'Enter the 6-digit code from your SMS',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
+              const SizedBox(height: AppSpacing.sm),
 
               if (vm.errorMessage != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   vm.errorMessage!,
-                  style: TextStyle(color: AppColors.error, fontSize: 13),
+                  style: AppTypography.bodySmall.copyWith(color: AppColors.error),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -233,13 +225,18 @@ class _OtpBodyState extends State<_OtpBody> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: vm.isComplete && !vm.isLoading
-                      ? () => vm.verifyOtp(context)
+                      ? () async {
+                          final success = await vm.verifyOtp();
+                          if (context.mounted && success) {
+                            context.go('/home');
+                          }
+                        }
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     disabledBackgroundColor: AppColors.sky200,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: AppRadius.buttonBorder,
                     ),
                     elevation: 0,
                   ),
@@ -252,15 +249,31 @@ class _OtpBodyState extends State<_OtpBody> {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Xác nhận',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                      : Text(
+                          context.l10n.verify,
+                          style: AppTypography.button,
                         ),
                 ),
+              ),
+
+              const SizedBox(height: AppSpacing.xxl),
+
+              // ── Resend Row ────────────────────────────────────────────────
+              Center(
+                child: vm.canResend
+                    ? TextButton(
+                        onPressed: vm.resendOtp,
+                        child: Text(
+                          context.l10n.resendOtp,
+                          style: AppTypography.subtitle.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        context.l10n.resendIn(vm.timerDisplay),
+                        style: AppTypography.bodySmall,
+                      ),
               ),
 
               const SizedBox(height: 24),
