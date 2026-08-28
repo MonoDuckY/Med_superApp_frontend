@@ -94,16 +94,6 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
     }
   };
 
-  const loadMockData = () => {
-    const mockData: Appointment[] = [
-      { id: "APT-9824", stt: "01", time: "09:00 – 09:30", aptId: "APT-9824", patient: "Nguyễn Văn An", meta: "28 tuổi · Nam", symptom: "Đau đầu âm ỉ kéo dài 3 ngày, sốt nhẹ", room: "Phòng 102", status: "inprogress" },
-      { id: "APT-9835", stt: "02", time: "09:30 – 10:00", aptId: "APT-9835", patient: "Trần Thị Bình", meta: "45 tuổi · Nữ", symptom: "Đau tức ngực kèm khó thở nhẹ khi vận động", room: "Phòng 102", status: "waiting" },
-      { id: "APT-9812", stt: "03", time: "08:30 – 09:00", aptId: "APT-9812", patient: "Phạm Minh Cường", meta: "34 tuổi · Nam", symptom: "Tái khám định kỳ sau phẫu thuật ruột thừa", room: "Phòng 102", status: "completed" },
-      { id: "APT-9799", stt: "04", time: "08:00 – 08:30", aptId: "APT-9799", patient: "Lê Hoàng Dung", meta: "19 tuổi · Nữ", symptom: "Đau rát họng, ho khan về đêm", room: "Phòng 102", status: "absent" }
-    ];
-    setAppointments(mockData);
-  };
-
   const fetchAppointments = async () => {
     setIsLoading(true);
     try {
@@ -141,14 +131,14 @@ export default function AppointmentGrid({ onStartExam, onBackToSchedule }: Appoi
           });
           setAppointments(mapped);
         } else {
-          loadMockData();
+          setAppointments([]);
         }
       } else {
-        loadMockData();
+        setAppointments([]);
       }
     } catch (error) {
       console.error("Failed to fetch doctor appointments:", error);
-      loadMockData();
+      setAppointments([]);
     } finally {
       setIsLoading(false);
     }
